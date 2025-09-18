@@ -551,12 +551,22 @@ sops:
         - recipient: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICvT+ITNOzjlDdcTk9kdYLrGYd0EJw6kMr6Ynw9165wR sander@nixos-laptop
           enc: |
             -----BEGIN AGE ENCRYPTED FILE-----
-            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IHNzaC1lZDI1NTE5IE9hRWxSdyB1T0JH
-            Z0h4YXpFRUhRaDZjZG5GKzBQK09BR3dLb0Z4TTZpUlRWQnVoTUJZCnRsOHpzVDlO
-            RnRHcC9zWktjYTZYUm9ZZUNrZXJQK1gzZDNRVEpONmRuT2cKLS0tIEtLWjE2Ty9p
-            cjRSSTBtY2h4SWxnRS9PYkhHTk9pRE1tM0lhM1J4UE9LSEUKnPJNwyU4r6R18jnq
-            6eQ+WsP2dXPtD/JWBcy/znmPhKt+JTq6J8KguV+ArEJXTGMd6Upbg4bo8K8jtff3
-            MWuQ0A==
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IHNzaC1lZDI1NTE5IE9hRWxSdyBoazl5
+            c1lWcnh6MnpORER1a3I2VGw2VzY5azBkUnRtd2M0MjhZVmUrV1NrCkJaRVNDUXJk
+            WmkycFkxQURnOEl5TFlka214c2pPeDg5OE9XWUlzbUFwZ1kKLS0tIHE3SGxBUzdR
+            VEN2anRKd2M5a1N2a0J4OWlRZTdNVm5LRkFGOTB5RzV3bnMKLSHV0nI1uzlgLQs0
+            xFiPbj6aFTGY5qwxloClQ+e7NHezlgl8x8PHq4pdXQ7aYcwlFkVdcM2QUAV/X0mC
+            ICPDyg==
+            -----END AGE ENCRYPTED FILE-----
+        - recipient: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGhMesnzIJ89Ic38a3cOFUtiqE/No4FRFkhX+IqIIO3S sander@nixos
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IHNzaC1lZDI1NTE5IHZpQ3Y3dyBTMCtq
+            eVplZUJFOGMzYlVXdTkyQWNJejR6TWNvZG9KMFBmSDJ4aTEwMUI0CisvT3prdzlm
+            empPMHJEN2FWZjMveW1rcUt5QjdPZlp1d1FxMzVwTlRHNHMKLS0tIHlrYUlpbyt3
+            MjdrV3BTYlo4dDJMK29rbVphZlJTYitobGVLcThvRllRdEUK9OmZfyAnVQAulYuP
+            O7Xx0YgfAtQdhM92V1xPtqMNSKJeQoEgvb0NzEXZpUv00Z0m+h2GSE8T7mY5HLmX
+            tazhyw==
             -----END AGE ENCRYPTED FILE-----
     lastmodified: "2025-09-18T19:01:41Z"
     mac: ENC[AES256_GCM,data:S3RpoqzLkuT99ZEhzH9NUk7PwmHrmQPI44v7VOdYFZ6OBYSNf+ixG9Wd5u9OZf0thLdYUdRziy5rZSXoPRfwXnWeJWC2pxLEFi8kia+GZgbOqAe5OfsINBkxkoKrj795DITfaszvbA/7jwPsG3OCFEDLOQc9/ZOzvF/wPSi31wo=,iv:RSNCkE52fIldXHMsX8Xp2mmuZv4YS39VsbgWK8HZBbA=,tag:DR4yVLYrce0q2QokPu0Hyg==,type:str]
