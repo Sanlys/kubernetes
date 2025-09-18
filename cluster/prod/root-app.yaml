@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: git@github.com:Sanlys/kubernetes.git
+    repoURL: https://github.com/Sanlys/kubernetes.git
     targetRevision: main
     path: clusters/prod
   destination:
