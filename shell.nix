@@ -7,6 +7,7 @@ pkgs.mkShell {
     cilium-cli
     sops
     age
+    kubernetes-helm
   ];
 }
 

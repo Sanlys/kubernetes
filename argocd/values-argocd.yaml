@@ -1,0 +1,14 @@
+controller:
+  replicas: 2
+repoServer:
+  replicas: 2
+  volumes:
+    - name: repo-cache
+      emptyDir: {}
+  volumeMounts:
+    - name: repo-cache
+      mountPath: /tmp/argocd
+server:
+  replicas: 2
+redis:
+  enabled: true
