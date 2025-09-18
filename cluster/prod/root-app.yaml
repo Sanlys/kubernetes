@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/Sanlys/kubernetes.git
     targetRevision: main
-    path: clusters/prod
+    path: cluster/prod
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
