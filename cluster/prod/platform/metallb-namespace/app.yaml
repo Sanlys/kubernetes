@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/Sanlys/kubernetes.git
     targetRevision: main
-    path: clusters/prod/platform/metallb-namespace
+    path: cluster/prod/platform/metallb-namespace
   destination:
     server: https://kubernetes.default.svc
     namespace: metallb-system
