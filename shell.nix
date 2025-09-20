@@ -8,6 +8,7 @@ pkgs.mkShell {
     sops
     age
     kubernetes-helm
+    tmux
   ];
 }
 

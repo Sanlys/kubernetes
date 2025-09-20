@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: am-discord
+  namespace: monitoring
+  labels: { app: am-discord }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: am-discord }
+  template:
+    metadata:
+      labels: { app: am-discord }
+    spec:
+      containers:
+        - name: discord-bridge
+          image: ghcr.io/rogerrum/alertmanager-discord:main
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9094
+              name: http
+          env:
+            - name: DISCORD_WEBHOOK
+              valueFrom:
+                secretKeyRef:
+                  name: am-discord-secrets
+                  key: DISCORD_WEBHOOK
+            - name: LISTEN_ADDRESS
+              value: "0.0.0.0:9094"
+      restartPolicy: Always
