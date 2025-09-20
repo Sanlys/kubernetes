@@ -4,6 +4,8 @@ alertmanager:
       resolve_timeout: 5m
     route:
       receiver: discord
+      routes:
+        - receiver: discord
     receivers:
       - name: discord
         webhook_configs:
