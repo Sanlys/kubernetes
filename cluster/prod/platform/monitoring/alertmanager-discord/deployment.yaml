@@ -27,4 +27,6 @@ spec:
                   key: DISCORD_WEBHOOK
             - name: LISTEN_ADDRESS
               value: "0.0.0.0:9094"
+            - name: DISCORD_USERNAME
+              value: alertmanager
       restartPolicy: Always
