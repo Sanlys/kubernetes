@@ -3,8 +3,8 @@ alertmanager:
     global:
       resolve_timeout: 5m
     route:
-      receiver: 'discord'
+      receiver: discord
     receivers:
-      - name: 'discord'
+      - name: discord
         webhook_configs:
           - url: "http://am-discord.monitoring.svc.cluster.local:9094/"
