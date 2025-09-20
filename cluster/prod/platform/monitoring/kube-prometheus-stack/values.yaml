@@ -6,13 +6,13 @@ alertmanager:
       receiver: discord
       routes:
         - matchers: [alertname="Watchdog"]
-          receiver: null
+          receiver: 'null'
         - receiver: discord
     receivers:
       - name: discord
         webhook_configs:
           - url: "http://am-discord.monitoring.svc.cluster.local:9094/"
-      - name: null
+      - name: 'null'
 
 kubeScheduler:
   enabled: true
