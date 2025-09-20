@@ -3,7 +3,7 @@ alertmanager:
     global:
       resolve_timeout: 5m
     route:
-      receivers: 'discord'
+      receiver: 'discord'
     receivers:
       - name: 'discord'
         webhook_configs:
