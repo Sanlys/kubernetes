@@ -1,0 +1,6 @@
+alertmanager:
+  config:
+    receivers:
+      - name: 'Discord webhook'
+        webhook_configs:
+          - url: "http://am-discord.monitoring.svc:9094/"
