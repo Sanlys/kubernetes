@@ -54,5 +54,5 @@ kubeEtcd:
     targetPort: 2381
   serviceMonitor:
     enabled: true
-    scheme: https
-    insecureSkipVerify: true
+    scheme: http
+    path: /metrics
