@@ -44,13 +44,15 @@ kubeControllerManager:
 
 kubeEtcd:
   enabled: true
-  endpoints: ["10.0.6.69", "10.0.6.102", "10.0.6.126"]
+  endpoints:
+    - "10.0.6.69"
+    - "10.0.6.102"
+    - "10.0.6.126"
   service:
     enabled: true
     port: 2381
     targetPort: 2381
-    name: http-metrics
   serviceMonitor:
     enabled: true
-    scheme: http
-    interval: 30s
+    scheme: https
+    insecureSkipVerify: true
