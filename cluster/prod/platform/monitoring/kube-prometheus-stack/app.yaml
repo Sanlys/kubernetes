@@ -22,3 +22,5 @@ spec:
     namespace: monitoring
   syncPolicy:
     automated: { prune: true, selfHeal: true }
+    syncOptions:
+      - ServerSideApply=true
