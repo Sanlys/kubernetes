@@ -509,6 +509,8 @@ cluster:
             #ENC[AES256_GCM,data:MC73fWYpy/lzBVn0IBfExJAzj7N0suIQmRlYXPTkBr0PJuwOHzUa,iv:HYeBjCaz/qIBLL0OWdH2Lq/bFI/mzerYx4Up3GfqNLA=,tag:jLLP9IhXpphhMjpxmMvoXg==,type:comment]
     #ENC[AES256_GCM,data:gwX8XREeI3Q7Pn8qR2Y+KSMZDkwjPmv/yDO7Nzjr+MB8ZMT43g==,iv:xdDQTcowiH1DM/hsxp/gZDhEmBPn8+eqFKyA3tu9WbQ=,tag:Sx7/KhkQ5x/kMzqHyA/YYA==,type:comment]
     etcd:
+        extraArgs:
+            listen-metrics-urls: ENC[AES256_GCM,data:nUMiMPh0H2ggTpKG0H4VdEm92A==,iv:tvzuc3WLuMqur9r1nb6/laMVw5N05Y0k0GuyYXvSg7M=,tag:NwU+ZB/mrESJGQu9NAHwRw==,type:str]
         #ENC[AES256_GCM,data:Uehujq7ySUOs0vBe4B9DFCWaTnOMdDf64//CW8qzybqdZHHuuRI0CqtUuDzZqJ9tYhVYT4breg==,iv:thPzSrWD/x3n2//EMRrbH2NC7RhgK88slFpS/AVATVc=,tag:xKT1B1DDcx9KaK54DXEj3A==,type:comment]
         ca:
             crt: ENC[AES256_GCM,data:bOFmgUz7nmhLQ+QmkvhTgVJHzjZe5XtP8Jq0O7q/iyNrTjeiYah1UgMPQ5jBV+p3RAyUlTTU3IvS9Y6zw4w0yzHl4fPsCFoTcQMgpLuuZhY1AisiaW2/DXR7bWDXtGqkAU5JpO4AfNObFia9oCPmCOkt1yVI6YNLjv/SUcvBXmpGGR08ZR3Rle6Zr/T81lWWNmuomu/s5ORYTiGS24GgqAohRGXGkiINSqPtb4l4TMrGg2LdRY/IJJU0ByeF6NbOQvv8jC9ki/TiADuuCK+zNfFe780A2TcEJ/M2HF/fcyupMqjufWP8ulipU/fT/IKEwTmazHu6CkJuue6TlH10FmP/NLctpxzOJoc3MoYzUyHrQnkxqMSUd37X3QAZPpML412LEyTXlXAC7oeYgHrf8Yeys4aLlb/NyRP2t/hh6tLwQ0Zh/PWWfyD9jH/TrrRCUvyy10MnOGSoGjv2mihchC1Llqj4X/aGPA9Cb+XzXTPtdUfNBGAFrNSQmtKu0g0zaYujHUZBa+ZzYyOIJZ+IBFCKG+UZlxYin+8HzgP5DgGj2f5zwKFMTt9X1P9Vuzbwzl1pzZDEaJBdZoVszDToexEfoBkVvvIhfn537bQfme/36A25KZ02Dys+2u6Cy8t9Go+r3gpUmfIXEwpXY1GeRQAajKy1oxXjPFFGo9CW2k+YTQYeWG83nJfNknOPavJQZEJtot4OyBD8wBqtIorLdZEqBVVRLvLbugz31WRS+4QmNEEslmBhfnCicgkTYFZdWJrTWpjY30sw8UWZV53D1TC3Epx0yz84rQQ4mGYexWNWjWOSn6IXSr2H/ymzhIvQFMIl8rr14fTdL+JudSslCsS7NChdnNWBxO4ti6m6dNrMyBHtE2ze8P3lkdHvn3ytg1ebaXCTZ3yMp+m18IEWqsKnEpZ3mdVbAvYZbSbTi3AkjMomnJVG82FDkgdccTXhm7iiPnoSdU+GdhCcgyMFkzA6oKWDHknc/3qaTwr7tkH4jbPLGVGSv+LvRXwnmXTihDfIXw==,iv:1jgrKj3d800OGavVrYtc1688vqvIDmQ/iojW9HDxkbk=,tag:IlHu7ER1yuPDIMerxycvlw==,type:str]
@@ -574,7 +576,7 @@ sops:
             O7Xx0YgfAtQdhM92V1xPtqMNSKJeQoEgvb0NzEXZpUv00Z0m+h2GSE8T7mY5HLmX
             tazhyw==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2025-09-20T18:25:13Z"
-    mac: ENC[AES256_GCM,data:LlA2ndndCdGmtsjE1vucbLQ5QYBFTtkVqsB34hHX2itfvjkfU/Terlr2lopZHwBSwJEJ5ABijrqA5i2yKkRn3Knnwf7pUXX8q+m4FptIJOniTyE2LWnBOrot2OG0xFPJKYxw6U8WgdVZO46uJC5H/9SxgMiUX+E4Lkxjsywy/yI=,iv:aezPRlixxK0qVDMe8ioGpHfUydFvZLwe8RPq0Ookfas=,tag:gdySVj4ocLz0XAhUKM9F4g==,type:str]
+    lastmodified: "2025-09-20T19:51:12Z"
+    mac: ENC[AES256_GCM,data:n/YUKvKbndfnrJShYmicA0GHjZ5QNZ7kOXhLbbFKDOwib85LraEmwKfmc0QcMZo9ATJGcHGRy92q0arQCjHQNk2UQQ8rwu5u6nXavXCNmaW459FJlw7+RfAh/PHDGU7KpA7tnO8FGT0TW2RaS9oCMkxb/gdi4AvdjV+Sai+aUjM=,iv:Zx4TIplZMULt16NCnXhjDT0ZP12eEP+50wwn53VbteI=,tag:URM3j8sCEeT6NeNhr8036w==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.10.2
