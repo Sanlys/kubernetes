@@ -26,6 +26,12 @@ spec:
               enabled: true
             prometheusRule:
               enabled: true
+          admissionWebhooks:
+            enabled: true
+            certManager:
+              enabled: true
+            patch:
+              enabled: true
   destination:
     server: https://kubernetes.default.svc
     namespace: ingress-public
