@@ -56,3 +56,9 @@ kubeEtcd:
     enabled: true
     scheme: http
     path: /metrics
+
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
