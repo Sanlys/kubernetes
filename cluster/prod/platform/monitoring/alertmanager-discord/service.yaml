@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: am-discord
+  namespace: monitoring
+  labels: { app: am-discord }
+spec:
+  type: ClusterIP
+  selector: { app: am-discord }
+  ports:
+    - name: http
+      port: 9094
+      targetPort: http
