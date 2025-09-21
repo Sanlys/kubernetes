@@ -13,6 +13,8 @@ pkgs.mkShell {
   shellHook = ''
     ./decrypt_talos.sh
     export TALOSCONFIG=$(realpath "./talos_dec/talosconfig")
+    export EDITOR=nvim
+    tmux
   '';
 
 }
