@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ingress-nginx-public
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://kubernetes.github.io/ingress-nginx
+    chart: ingress-nginx
+    targetRevision: 4.13.2
+    helm:
+      values: |
+        controller:
+          ingressClass: public
+          ingressClassResource:
+            name: public
+            controllerValue: k8s.io/ingress-nginx-public
+            default: false
+          service:
+            type: LoadBalancer
+            loadBalancerIP: 10.0.6.241
+          metrics:
+            enabled: true
+            serviceMonitor:
+              enabled: true
+            prometheusRule:
+              enabled: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ingress-public
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true, ServerSideApply=true]
+
