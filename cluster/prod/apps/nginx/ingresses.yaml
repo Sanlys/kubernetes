@@ -1,0 +1,48 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-internal
+  namespace: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-internal
+spec:
+  ingressClassName: internal
+  tls:
+    - hosts: [ "nginx.k8s.lysakermoen.com" ]
+      secretName: nginx-internal-tls
+  rules:
+    - host: nginx.k8s.lysakermoen.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-public
+  namespace: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-public
+spec:
+  ingressClassName: public
+  tls:
+    - hosts: [ "nginx.lysakermoen.com" ]
+      secretName: nginx-public-tls
+  rules:
+    - host: nginx.lysakermoen.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx
+                port:
+                  number: 80
+
