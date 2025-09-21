@@ -10,6 +10,6 @@ spec:
   namespaceSelector:
     matchNames: ["kube-system"]
   endpoints:
-    - port: monitoring
+    - port: metrics
       interval: 30s
       scheme: http
