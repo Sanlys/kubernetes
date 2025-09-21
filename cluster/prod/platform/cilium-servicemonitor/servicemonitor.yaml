@@ -10,6 +10,6 @@ spec:
   namespaceSelector:
     matchNames: ["kube-system"]
   endpoints:
-    - port: prometheus
+    - port: monitoring
       interval: 30s
       scheme: http
