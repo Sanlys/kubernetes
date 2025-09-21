@@ -8,6 +8,12 @@ pkgs.mkShell {
     sops
     age
     kubernetes-helm
+    tmux
   ];
+  shellHook = ''
+    ./decrypt_talos.sh
+    export TALOSCONFIG=$(realpath "./talos_dec/talosconfig")
+  '';
+
 }
 
