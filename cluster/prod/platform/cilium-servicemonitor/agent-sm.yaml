@@ -4,12 +4,18 @@ metadata:
   name: cilium-agent
   namespace: monitoring
 spec:
+  namespaceSelector:
+    matchNames: ["kube-system"]
   selector:
     matchLabels:
       k8s-app: cilium
-  namespaceSelector:
-    matchNames: ["kube-system"]
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: NotIn
+        values: ["hubble"]
   endpoints:
-    - port: metrics
+    - targetPort: 9962
       interval: 30s
       scheme: http
+      path: /metrics
+
