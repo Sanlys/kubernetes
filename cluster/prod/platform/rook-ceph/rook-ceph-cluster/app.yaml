@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rook-ceph-cluster
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://charts.rook.io/release
+    chart: rook-ceph-cluster
+    targetRevision: v1.18.2
+    helm:
+      values: |
+        cephClusterSpec:
+          mon:
+            allowMultiplePerNode: true
+          mgr:
+            allowMultiplePerNode: true
+          crashCollector:
+            disable: false
+          storage:
+            useAllNodes: true
+            useAllDevices: true
+          dashboard:
+            enabled: true
+            ssl: false
+        toolbox:
+          enabled: true
+        monitoring:
+          enabled: true
+          createPrometheusRules: true
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: rook-ceph
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [ServerSideApply=true]
+
