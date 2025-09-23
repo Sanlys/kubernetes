@@ -1,4 +1,16 @@
 alertmanager:
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-internal
+    hosts:
+      - alertmanager.k8s.lysakermoen.com
+    paths:
+      - /
+    tls:
+      - secretName: alertmanager-k8s-lysakermoen-com
+        hosts:
+          - alertmanager.k8s.lysakermoen.com
   config:
     global:
       resolve_timeout: 5m
@@ -58,6 +70,18 @@ kubeEtcd:
     path: /metrics
 
 prometheus:
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-internal
+    hosts:
+      - prometheus.k8s.lysakermoen.com
+    paths:
+      - /
+    tls:
+      - secretName: prometheus-k8s-lysakermoen-com
+        hosts:
+          - prometheus.k8s.lysakermoen.com
   prometheusSpec:
     serviceMonitorSelectorNilUsesHelmValues: false
     serviceMonitorSelector: {}
