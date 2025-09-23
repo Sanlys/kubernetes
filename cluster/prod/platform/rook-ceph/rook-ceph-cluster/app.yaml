@@ -34,6 +34,10 @@ spec:
             host:
               name:
                 ceph.k8s.lysakermoen.com
+            tls:
+              - hosts:
+                - ceph.k8s.lysakermoen.com
+                secretName: ceph-k8s-lysakermoen-com
 
   destination:
     server: https://kubernetes.default.svc
