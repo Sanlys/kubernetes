@@ -31,6 +31,8 @@ spec:
           createPrometheusRules: true
         ingress:
           dashboard:
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-internal
             host:
               name: ceph.k8s.lysakermoen.com
             tls:
