@@ -1,3 +1,5 @@
+global:
+  domain: argocd.k8s.lysakermoen.com
 controller:
   replicas: 2
 repoServer:
@@ -10,5 +12,15 @@ repoServer:
       mountPath: /tmp/argocd
 server:
   replicas: 2
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-internal
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    extraTls:
+      - hosts:
+        - argocd.k8s.lysakermoen.com
+        secretName: argocd-k8s-lysakermoen-com
 redis:
   enabled: true
