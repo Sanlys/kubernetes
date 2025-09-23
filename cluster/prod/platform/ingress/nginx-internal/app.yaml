@@ -16,7 +16,7 @@ spec:
           ingressClassResource:
             name: internal
             controllerValue: k8s.io/ingress-nginx-internal
-            default: false
+            default: true
           service:
             type: LoadBalancer
             loadBalancerIP: 10.0.6.240
