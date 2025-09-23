@@ -33,6 +33,7 @@ spec:
           dashboard:
             annotations:
               cert-manager.io/cluster-issuer: letsencrypt-internal
+              nginx.ingress.kubernetes.io/rewrite-target: /ceph-dashboard/$2
             host:
               name: ceph.k8s.lysakermoen.com
             tls:
