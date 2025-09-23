@@ -29,6 +29,11 @@ spec:
         monitoring:
           enabled: true
           createPrometheusRules: true
+        ingress:
+          dashboard:
+            host:
+              name:
+                ceph.k8s.lysakermoen.com
 
   destination:
     server: https://kubernetes.default.svc
