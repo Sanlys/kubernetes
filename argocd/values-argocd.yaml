@@ -16,8 +16,8 @@ server:
     enabled: true
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-internal
-      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+      nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     extraTls:
       - hosts:
         - argocd.k8s.lysakermoen.com
