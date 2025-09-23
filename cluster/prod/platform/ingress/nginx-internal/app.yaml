@@ -12,6 +12,7 @@ spec:
     helm:
       values: |
         controller:
+          watchIngressWithoutClass: true
           ingressClass: internal
           ingressClassResource:
             name: internal
