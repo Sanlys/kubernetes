@@ -6,3 +6,18 @@ metadata:
 spec:
   server:
     active: 1
+    placement:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: role
+              operator: In
+              values:
+              - nfs-node
+      topologySpreadConstraints:
+      tolerations:
+      - key: nfs-node
+        operator: Exists
+      podAffinity:
+      podAntiAffinity:
