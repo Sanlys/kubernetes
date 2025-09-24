@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nfs-server
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://kubernetes-sigs.github.io/nfs-ganesha-server-and-external-provisioner/
+    chart: nfs-server-provisioner
+    targetRevision: 1.8.0
+    helm:
+      values: |
+        persistence:
+          enabled: true
+          size: 50Gi
+          storageClass: rook-ceph-block-ssd
+        service:
+          type: LoadBalancer
+          port: 2049
+          targetPort: 2049
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nfs
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
