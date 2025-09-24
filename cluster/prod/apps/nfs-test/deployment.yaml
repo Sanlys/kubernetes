@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfs-server
+  namespace: nfs-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nfs-server
+  template:
+    metadata:
+      labels:
+        app: nfs-server
+    spec:
+      containers:
+        - name: nfs
+          image: itsthenetwork/nfs-server-alpine:latest
+          args: ["-N", "2,3,4"]
+          env:
+            - name: SHARED_DIRECTORY
+              value: /export
+            - name: MOUNTD_PORT
+              value: "20048"
+            - name: STATD_PORT
+              value: "662"
+            - name: LOCKD_TCPPORT
+              value: "32803"
+            - name: LOCKD_UDPPORT
+              value: "32769"
+          ports:
+            - name: nfs
+              containerPort: 2049
+              protocol: TCP
+            - name: nfs-udp
+              containerPort: 2049
+              protocol: UDP
+            - name: rpcbind
+              containerPort: 111
+              protocol: TCP
+            - name: rpcbind-udp
+              containerPort: 111
+              protocol: UDP
+            - name: mountd
+              containerPort: 20048
+              protocol: TCP
+            - name: mountd-udp
+              containerPort: 20048
+              protocol: UDP
+            - name: statd
+              containerPort: 662
+              protocol: TCP
+            - name: statd-udp
+              containerPort: 662
+              protocol: UDP
+            - name: lockd
+              containerPort: 32803
+              protocol: TCP
+            - name: lockd-udp
+              containerPort: 32769
+              protocol: UDP
+          volumeMounts:
+            - name: export
+              mountPath: /export
+          securityContext:
+            privileged: true
+            allowPrivilegeEscalation: true
+      volumes:
+        - name: export
+          persistentVolumeClaim:
+            claimName: nfs-data
