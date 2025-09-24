@@ -19,6 +19,11 @@ spec:
           type: LoadBalancer
           port: 2049
           targetPort: 2049
+        namespace:
+          labels:
+            pod-security.kubernetes.io/enforce: "baseline"
+            pod-security.kubernetes.io/audit: "baseline"
+            pod-security.kubernetes.io/warn: "baseline"
   destination:
     server: https://kubernetes.default.svc
     namespace: nfs
