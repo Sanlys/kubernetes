@@ -20,3 +20,7 @@ spec:
       port: 21027
       targetPort: 21027
       protocol: UDP
+    - name: ui
+      port: 8384
+      targetPort: 8384
+      protocol: TCP
