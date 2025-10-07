@@ -17,7 +17,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: syncthing
-          image: syncthing/syncthing:20.0.10
+          image: syncthing/syncthing:2.0.10
           imagePullPolicy: IfNotPresent
           ports:
             - name: gui
