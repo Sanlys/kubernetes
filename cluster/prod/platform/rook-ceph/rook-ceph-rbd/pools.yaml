@@ -19,6 +19,6 @@ spec:
   deviceClass: hdd
   failureDomain: osd
   replicated:
-    size: 1
+    size: 2
     requireSafeReplicaSize: false
 
