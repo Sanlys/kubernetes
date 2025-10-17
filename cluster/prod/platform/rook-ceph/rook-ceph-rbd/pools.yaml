@@ -7,7 +7,7 @@ spec:
   deviceClass: ssd
   failureDomain: osd
   replicated:
-    size: 1
+    size: 2
     requireSafeReplicaSize: false
 ---
 apiVersion: ceph.rook.io/v1
