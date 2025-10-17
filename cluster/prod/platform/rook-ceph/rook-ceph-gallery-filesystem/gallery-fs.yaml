@@ -7,12 +7,12 @@ spec:
   metadataPool:
     failureDomain: osd
     replicated:
-      size: 1
+      size: 2
   dataPools:
     - name: gallery
       failureDomain: osd
       replicated:
-        size: 1
+        size: 2
   preserveFilesystemOnDelete: true
   metadataServer:
     activeCount: 1
