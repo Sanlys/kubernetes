@@ -560,32 +560,42 @@ sops:
         - recipient: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICvT+ITNOzjlDdcTk9kdYLrGYd0EJw6kMr6Ynw9165wR sander@nixos-laptop
           enc: |
             -----BEGIN AGE ENCRYPTED FILE-----
-            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IHNzaC1lZDI1NTE5IE9hRWxSdyBzVFg1
-            OERvT0xxck13cVZqVGRpRmFiR3l0dDZYdGsyNG4vQmlRVS9xUXpVCnhXNjFOV1VU
-            T3NmTWVONkoydHhKdUdzbi9iVWw1ZklpcEg1UHNZcUw1ZzQKLS0tIDZ1dUZYVFE2
-            elVPRVpGREllRk9EZ28xcFEwQVE5R3grVGo2S2p6b2xoQlEKS1DCKSj7cdSdG8SZ
-            9iSvMNRWBo1xnsI8LL6oaOsbKp1c9RyCUcvt/AVWZ2b78jAmR7ndyPlMab1HF9LK
-            GijArA==
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IHNzaC1lZDI1NTE5IE9hRWxSdyBTTE1W
+            aGh2dERnaENMSTBkOGxwWitmQWdwVzI0eVIrUzVWRFlWU21YRG1BClVxSXFyV2JF
+            TXFuZ2lIenpacng3cElvSzlLS2tRczNlZVhEc2RDZUlSbzQKLS0tIFVxQ1ZMTkxt
+            S2ZZVHNSM1QyY2s1YTFhVW5XL0RyYzhBVDVZcjczV3lrZnMKUq+YgxSwVkRstetT
+            djTF+ED2lTsBlp2ll4OV/jMXd9YhBkS1zefQWhi7488DjCAknq5jEIOV/rd9KDkf
+            eR3ThQ==
             -----END AGE ENCRYPTED FILE-----
         - recipient: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGhMesnzIJ89Ic38a3cOFUtiqE/No4FRFkhX+IqIIO3S sander@nixos
           enc: |
             -----BEGIN AGE ENCRYPTED FILE-----
-            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IHNzaC1lZDI1NTE5IHZpQ3Y3dyBJLzBQ
-            TGhHRnFub0NvNlVaL1lYcDQvV1B0U0FoMC8wM0traGg2SExtMEFBCm1DYWx4RjVV
-            bTdDajN2TzZFUU5xY0s5eW81eGF6c2VzaVVOWi9VaEhETEUKLS0tIGRCZFowNkhh
-            SW9YZHZYWVFBYWFJRE5xMVFWZDhib3AycC9ueTlSTkREc1EKt+SM0tpQaEQsloZ9
-            6ADuwDVCQCjKBLBo7NP7Jc/sSvdz5hMKH8qh1aAYSIBUiGj1vshDtigNBSFXTr9I
-            BbqiGw==
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IHNzaC1lZDI1NTE5IHZpQ3Y3dyB1SHJw
+            anBDalp2aDltOFFGT3dPRWptUUowdnRKRVRsRXR0MEplWFUyMFhFCnNKQnR5M3Qy
+            SFZtREZKQ092Uzl3R0dxZWFzanNWYXlTd2FJMU5pRzBRaXMKLS0tIElBYXpzQVVB
+            OER3UGpHc2haYkRVUWRlYUJ0SzloRCtUM1U2QVJoSkIzMXcK6NhzBD8DyhN43PdO
+            Vot5zhOrX/pvlbwNzOTQHcEdfqbPNUXLDXKCn5cRfvTuG9KegRbRciQQlOwfVEDp
+            oNn8UQ==
             -----END AGE ENCRYPTED FILE-----
         - recipient: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFHe3wCRa3OBsJZJsnXgDDbWaIB18hq0RKUzU1eGqoco slysa@asus-proart
           enc: |
             -----BEGIN AGE ENCRYPTED FILE-----
-            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IHNzaC1lZDI1NTE5IElVbEhTQSBKZHh6
-            elFVUjVaUUZVK2RocHk5eDFDRHpuVzA4TkM2ZUlzZUVtSmZ3eXpFCkx5eHNDOFBH
-            Tk9FNGNqVVJLUDBpYkhKUlVKSVNrbUlmZzFXaXg1Tk1ZMXMKLS0tIDBWd05VWTB6
-            ZDRERTFKYitHdThsclQ1THJwakJZMWlEQUppRVF4djBUNWcKnuXv77QEUaWUbn7C
-            u0k9shGPyJlDuXF+qdke4H+5IJ77gR6HTM5FB21DmLIadODso4RvRFSLRFFd0Rt1
-            rlgDZQ==
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IHNzaC1lZDI1NTE5IElVbEhTQSA1TDRX
+            RHlmMEV4cDB1bWFJOXVxSlJUY3IyclNQNmExbmZ0eEdhNHNKd3hjCnhlZy9odysv
+            WVpZYUVNZndZQjNmVHo2c0h1RUZtYTJEaERKQ0ppbUpXelUKLS0tIHpLSHVYN1g3
+            UDFWbTM1RlMzb3JVZk5kSTRzcHJSZUtyMXpxZXV6SVYrUjQKesaYnFptkykxD9lH
+            HB2jYof5sebaNR8ZSPNVS7mWqqbsaUPSn1jktaXOM7LDNHVxeVt2DAiOrDGvWb+b
+            +cMBqQ==
+            -----END AGE ENCRYPTED FILE-----
+        - recipient: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB3+7P7YnvA6ghkemNkLLwoFZL/oTBLUOIz8K5SyQwS6 slysa@desktop
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IHNzaC1lZDI1NTE5IFBtM1RTUSB1Qm1R
+            cFZLSmRJQ2s5MWRmZ3ovaFl3MzBpdmZBWUVxL2FiYTFldEZpLzA0CjM5ZlVsdUkr
+            YTBDNlk0cnQxM2ljTE5OVEtjOE5TcHIySGtyVTh0REUzNWsKLS0tIGxnTjNnVk8z
+            WE8xQWpJWjRDVS9IMndaZ09wU0ZITElTdnFkOU14YXp0NUEKcaGqGdcE0DAvg+v8
+            EL9spazgAvQt+mv63AlvZjAEq0NA9cNzc7jhTyxiwedR2NAuKX2PVPOnQlbkDWgI
+            gXgp1g==
             -----END AGE ENCRYPTED FILE-----
     lastmodified: "2025-09-18T19:03:11Z"
     mac: ENC[AES256_GCM,data:Aia0FhGRQkMGBsPXY5yEd/ihhqEUnh1/r+X+tzpxU9pWtuJe5e/VvFu2ADIWgrJYyRJ8CvhdATnsz+txj21jrF5QFcdr1Pz7mlzkkWoEZuA2JCVUmSRb6Uxrimgi4d448yFaKjBBmkrY0kBN9aSR0Zmouap+L0QdVpDjo7neiCE=,iv:TbScSZwmEdX/GZztkREO7SYOreEiuvpFlD4iDGB0EYQ=,tag:AKhP9nay9ypI1P9kQCMQdQ==,type:str]
