@@ -5,12 +5,12 @@ metadata:
   namespace: rook-ceph
 spec:
   metadataPool:
-    failureDomain: osd
+    failureDomain: host
     replicated:
       size: 2
   dataPools:
     - name: gallery
-      failureDomain: osd
+      failureDomain: host
       replicated:
         size: 2
   preserveFilesystemOnDelete: true
