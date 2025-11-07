@@ -11,7 +11,7 @@ spec:
     path: cluster/prod/apps/vaultwarden
   destination:
     server: https://kubernetes.default.svc
-    namespace: nginx
+    namespace: vaultwarden
   syncPolicy:
     automated:
       prune: true
