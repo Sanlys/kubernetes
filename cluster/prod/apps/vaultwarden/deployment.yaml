@@ -36,5 +36,4 @@ spec:
           persistentVolumeClaim:
             claimName: vaultwarden-pvc
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
+        runAsNonRoot: false 
