@@ -30,3 +30,4 @@ spec:
             limits:   { cpu: "500m", memory: "1Gi" }
       securityContext:
         runAsNonRoot: true
+        runAsUser: 1000
