@@ -21,6 +21,9 @@ spec:
           ports:
             - name: http
               containerPort: 8000
+          volumeMounts:
+            - name: data
+              mountPath: /data
           readinessProbe:
             httpGet: { path: "/alive", port: http }
             initialDelaySeconds: 2
@@ -28,6 +31,10 @@ spec:
           resources:
             requests: { cpu: "100m", memory: "128Mi" }
             limits:   { cpu: "500m", memory: "1Gi" }
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: vaultwarden-pvc
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
