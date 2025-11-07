@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vaultwarden-internal
+  namespace: vaultwarden
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-internal
+spec:
+  ingressClassName: internal
+  tls:
+    - hosts: [ "vaultwarden.k8s.lysakermoen.com" ]
+      secretName: vaultwarden-internal-tls
+  rules:
+    - host: vaultwarden.k8s.lysakermoen.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vaultwarden
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vaultwarden-public
+  namespace: vaultwarden
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-public
+spec:
+  ingressClassName: public
+  tls:
+    - hosts: [ "vaultwarden.lysakermoen.com" ]
+      secretName: vaultwarden-public-tls
+  rules:
+    - host: vaultwarden.lysakermoen.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vaultwarden
+                port:
+                  number: 80

@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaultwarden
+  namespace: vaultwarden
+  labels: { app: vaultwarden }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: vaultwarden }
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  template:
+    metadata:
+      labels: { app: vaultwarden }
+    spec:
+      containers:
+        - name: vaultwarden
+          image: vaultwarden/server@sha256:84fd8a47f58d79a1ad824c27be0a9492750c0fa5216b35c749863093bfa3c3d7
+          ports:
+            - name: http
+              containerPort: 8000
+          readinessProbe:
+            httpGet: { path: "/alive", port: http }
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits:   { cpu: "500m", memory: "1Gi" }
+      securityContext:
+        runAsNonRoot: true
