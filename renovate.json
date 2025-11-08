@@ -6,7 +6,15 @@
   "argocd": {
     "managerFilePatterns": ["(^|/)app\\.ya?ml$"]
   },
-
+  "kubernetes": {
+    "fileMatch": [
+      "cluster/prod/.+\\.ya?ml$"
+    ],
+    "ignorePaths": [
+      ".*app\\.ya?ml$",
+      ".*\\.enc\\.ya?ml$"
+    ]
+  },
   "enabledManagers": [
     "argocd",
     "helm-values",
