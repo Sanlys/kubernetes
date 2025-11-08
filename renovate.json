@@ -21,7 +21,7 @@
   "helm-values": {
     "commitMessageTopic": "helm values {{depName}}",
     "managerFilePatterns": [
-      "/(^|/)values\\.ya?ml$/"
+      ".*values\\.ya?ml$"
     ],
     "pinDigests": false
   },
