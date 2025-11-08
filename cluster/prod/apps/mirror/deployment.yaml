@@ -26,7 +26,7 @@ spec:
               mountPath: /usr/share/nginx/html
               readOnly: true
             - name: nginx-conf
-              mountPath: /etc/nginx/conf.d
+              mountPath: /etc/nginx
           readinessProbe:
             httpGet: { path: /, port: 80 }
             initialDelaySeconds: 5
