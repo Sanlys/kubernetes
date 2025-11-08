@@ -11,7 +11,7 @@ spec:
     - hosts: [ "mirror.k8s.lysakermoen.com" ]
       secretName: mirror-internal-tls
   rules:
-    - host: mirror.k8s.lysakermoen.com
+    - host: archlinux.k8s.lysakermoen.com
       http:
         paths:
           - path: /
@@ -35,7 +35,7 @@ spec:
     - hosts: [ "mirror.lysakermoen.com" ]
       secretName: mirror-public-tls
   rules:
-    - host: mirror.lysakermoen.com
+    - host: archlinux.lysakermoen.com
       http:
         paths:
           - path: /
