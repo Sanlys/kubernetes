@@ -5,7 +5,7 @@
   ],
   "argocd": {
     "managerFilePatterns": [
-      "(^|/)app\\.ya?ml$"
+      ".*app\\.ya?ml$"
     ]
   },
   "kubernetes": {
