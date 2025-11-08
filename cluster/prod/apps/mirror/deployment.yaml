@@ -45,7 +45,7 @@ spec:
           args:
             - >
               set -e;
-              apk add --no-cache bash rsync curl util-linux ca-certificates busybox-initscripts;
+              apk add --no-cache bash rsync curl util-linux ca-certificates;
               chmod +x /mirror.sh;
               echo "[syncer] starting cron";
               crond -f -l 8
