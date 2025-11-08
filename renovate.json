@@ -12,8 +12,16 @@
     ],
     "ignorePaths": [
       ".*app\\.ya?ml$",
-      ".*\\.enc\\.ya?ml$"
+      ".*\\.enc\\.ya?ml$",
+      ".*values\\.ya?ml$"
     ]
+  },
+  "helm-values": {
+    "commitMessageTopic": "helm values {{depName}}",
+    "managerFilePatterns": [
+      "/(^|/)values\\.ya?ml$/"
+    ],
+    "pinDigests": false
   },
   "enabledManagers": [
     "argocd",
