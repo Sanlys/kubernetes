@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/metallb/metallb.git
-    targetRevision: v0.14.5
+    targetRevision: v0.15.2
     path: charts/metallb
     helm:
       valueFiles: [values.yaml]
