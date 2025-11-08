@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mirror
+  namespace: mirror
+  labels: { app: mirror }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: mirror }
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  template:
+    metadata:
+      labels: { app: mirror }
+    spec:
+      containers:
+        - name: mirror
+          image: nginx:1.29.3
+          ports:
+            - name: http
+              containerPort: 80
+          volumeMounts:
+            - name: archmirror
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits:   { cpu: "500m", memory: "512Mi" }
+
+        - name: syncer
+          image: alpine:3.22.2
+          command: ["/bin/sh", "-c"]
+          args:
+            - >
+              set -e;
+              apk add --no-cache bash rsync curl util-linux ca-certificates busybox-initscripts;
+              chmod +x /mirror.sh;
+              echo "[syncer] starting cron";
+              crond -f -l 8
+          volumeMounts:
+            - name: archmirror
+              mountPath: /mirrors/archlinux
+            - name: sync-script
+              mountPath: /mirror.sh
+              subPath: mirror.sh
+            - name: crontab
+              mountPath: /etc/crontabs/root
+              subPath: root
+      volumes:
+        - name: archmirror
+          persistentVolumeClaim:
+            claimName: archmirror-pvc
+        - name: sync-script
+          configMap:
+            name: mirror-script
+            defaultMode: 0755
+        - name: crontab
+          configMap:
+            name: crontab
+        - name: nginx-conf
+          configMap:
+            name: mirror-nginx
+      securityContext:
+        runAsNonRoot: false 
