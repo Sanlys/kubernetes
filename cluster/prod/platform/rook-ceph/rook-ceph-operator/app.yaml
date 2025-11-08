@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://charts.rook.io/release
     chart: rook-ceph
-    targetRevision: v1.18.2
+    targetRevision: v1.18.6
     helm:
       values: |
         monitoring:
