@@ -5,7 +5,7 @@
   ],
   "argocd": {
     "managerFilePatterns": [
-      ".*app\\.ya?ml$"
+      "/(^|/)app\\.ya?ml$/"
     ]
   },
   "kubernetes": {
@@ -13,21 +13,16 @@
       "/cluster/prod/.+\\.ya?ml$/"
     ],
     "ignorePaths": [
-      ".*app\\.ya?ml$",
-      ".*\\.enc\\.ya?ml$",
-      ".*values\\.ya?ml$"
+      "/\\.enc\\.ya?ml/",
+      "/(^|/)app\\.ya?ml$/",
+      "/(^|/)values\\.ya?ml$/"
     ]
   },
   "helm-values": {
     "commitMessageTopic": "helm values {{depName}}",
     "managerFilePatterns": [
-      ".*values\\.ya?ml$"
+      "/(^|/)values\\.ya?ml$/"
     ],
     "pinDigests": false
-  },
-  "enabledManagers": [
-    "argocd",
-    "helm-values",
-    "kubernetes"
-  ]
+  }
 }
