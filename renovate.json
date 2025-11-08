@@ -4,11 +4,13 @@
     "config:recommended"
   ],
   "argocd": {
-    "managerFilePatterns": ["(^|/)app\\.ya?ml$"]
+    "managerFilePatterns": [
+      "(^|/)app\\.ya?ml$"
+    ]
   },
   "kubernetes": {
-    "fileMatch": [
-      "cluster/prod/.+\\.ya?ml$"
+    "managerFilePatterns": [
+      "/cluster/prod/.+\\.ya?ml$/"
     ],
     "ignorePaths": [
       ".*app\\.ya?ml$",
