@@ -6,7 +6,7 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-internal
 spec:
-  ingressClassName: nginx
+  ingressClassName: internal
   tls:
     - hosts:
         - syncthing.k8s.lysakermoen.com
