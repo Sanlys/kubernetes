@@ -1,15 +1,15 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: mirror-internal
+  name: archlinux-internal
   namespace: mirror
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-internal
 spec:
   ingressClassName: internal
   tls:
-    - hosts: [ "mirror.k8s.lysakermoen.com" ]
-      secretName: mirror-internal-tls
+    - hosts: [ "archlinux.k8s.lysakermoen.com" ]
+      secretName: archlinux-internal-tls
   rules:
     - host: archlinux.k8s.lysakermoen.com
       http:
@@ -25,15 +25,15 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: mirror-public
+  name: archlinux-public
   namespace: mirror
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-public
 spec:
   ingressClassName: public
   tls:
-    - hosts: [ "mirror.lysakermoen.com" ]
-      secretName: mirror-public-tls
+    - hosts: [ "archlinux.lysakermoen.com" ]
+      secretName: archlinux-public-tls
   rules:
     - host: archlinux.lysakermoen.com
       http:
