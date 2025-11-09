@@ -48,3 +48,15 @@ alloy:
         targets    = discovery.relabel.pods.output
         forward_to = [loki.write.loki.receiver]
       }
+
+ingress:
+  enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-internal
+  ingressClassName: internal
+  hosts:
+   - alloy.k8s.lysakermoen.com
+  tls:
+    - secretName: alloy-internal-tls
+      hosts:
+        - alloy.k8s.lysakermoen.com
