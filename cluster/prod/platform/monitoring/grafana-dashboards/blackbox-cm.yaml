@@ -859,6 +859,25 @@ data:
       "templating": {
         "list": [
           {
+            "current": {
+              "selected": true,
+              "text": "Prometheus",
+              "value": "PBFA97CFB590B2093"
+            },
+            "hide": 0,
+            "includeAll": false,
+            "label": "datasource",
+            "multi": false,
+            "name": "DS_PROMETHEUS",
+            "options": [],
+            "query": "prometheus",
+            "queryValue": "",
+            "refresh": 1,
+            "regex": "",
+            "skipUrlSync": false,
+            "type": "datasource"
+          },
+          {
             "allValue": ".+",
             "current": {},
             "datasource": "${DS_PROMETHEUS}",
