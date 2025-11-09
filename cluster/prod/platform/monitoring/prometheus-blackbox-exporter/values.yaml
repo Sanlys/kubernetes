@@ -1,6 +1,7 @@
 serviceMonitor:
   enabled: true
-  selfMonitor: true
+  selfMonitor:
+    enabled: true
   targets:
     - name: "vaultwarden external"
       url: https://79.76.33.72
