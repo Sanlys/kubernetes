@@ -1,0 +1,15 @@
+deploymentMode: SingleBinary
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  storage:
+    type: filesystem
+
+singleBinary:
+  replicas: 1
+  persistence:
+    enabled: true
+    storageClass: rook-ceph-block-ssd
+    size: 20Gi
+retention_period: 168h # 7 days
