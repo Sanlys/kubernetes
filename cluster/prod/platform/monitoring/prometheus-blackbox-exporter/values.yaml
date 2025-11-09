@@ -27,6 +27,3 @@ serviceMonitor:
     - name: "syncthing-internal"
       url: https://syncthing.k8s.lysakermoen.com
       hostname: syncthing.k8s.lysakermoen.com
-
-prometheusRule:
-  enabled: true
