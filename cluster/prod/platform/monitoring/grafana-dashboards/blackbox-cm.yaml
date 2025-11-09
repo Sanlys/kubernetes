@@ -186,7 +186,7 @@ data:
         },
         {
           "cacheTimeout": null,
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {"type": "prometheus","uid": "${DS_PROMETHEUS}"},
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -282,7 +282,7 @@ data:
         },
         {
           "cacheTimeout": null,
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {"type": "prometheus","uid": "${DS_PROMETHEUS}"},
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -379,7 +379,7 @@ data:
         },
         {
           "cacheTimeout": null,
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {"type": "prometheus","uid": "${DS_PROMETHEUS}"},
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -458,7 +458,7 @@ data:
           "type": "stat"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {"type": "prometheus","uid": "${DS_PROMETHEUS}"},
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -554,7 +554,7 @@ data:
         },
         {
           "cacheTimeout": null,
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {"type": "prometheus","uid": "${DS_PROMETHEUS}"},
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -638,7 +638,7 @@ data:
         },
         {
           "cacheTimeout": null,
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {"type": "prometheus","uid": "${DS_PROMETHEUS}"},
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -724,7 +724,7 @@ data:
         },
         {
           "cacheTimeout": null,
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {"type": "prometheus","uid": "${DS_PROMETHEUS}"},
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -802,7 +802,7 @@ data:
           "type": "stat"
         },
         {
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {"type": "prometheus","uid": "${DS_PROMETHEUS}"},
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -893,7 +893,7 @@ data:
         },
         {
           "cacheTimeout": null,
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {"type": "prometheus","uid": "${DS_PROMETHEUS}"},
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -991,7 +991,7 @@ data:
         },
         {
           "cacheTimeout": null,
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {"type": "prometheus","uid": "${DS_PROMETHEUS}"},
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1087,7 +1087,7 @@ data:
         },
         {
           "cacheTimeout": null,
-          "datasource": "${DS_PROMETHEUS}",
+          "datasource": {"type": "prometheus","uid": "${DS_PROMETHEUS}"},
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -1286,7 +1286,7 @@ data:
           {
             "allValue": null,
             "current": {},
-            "datasource": "${DS_PROMETHEUS}",
+            "datasource": {"type": "prometheus","uid": "${DS_PROMETHEUS}"},
             "definition": "label_values(probe_success, target)",
             "description": null,
             "error": null,
@@ -1312,7 +1312,7 @@ data:
           {
             "allValue": null,
             "current": {},
-            "datasource": "${DS_PROMETHEUS}",
+            "datasource": {"type": "prometheus","uid": "${DS_PROMETHEUS}"},
             "definition": "label_values(probe_http_duration_seconds, phase)",
             "description": null,
             "error": null,
