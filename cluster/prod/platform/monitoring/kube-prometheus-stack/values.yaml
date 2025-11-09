@@ -95,3 +95,10 @@ prometheus:
           resources:
             requests:
               storage: 20Gi
+
+grafana:
+  additionalDataSources:
+    - name: Loki
+      type: Loki
+      access: proxy
+      url: http://loki-gateway.monitoring.svc.cluster.local
