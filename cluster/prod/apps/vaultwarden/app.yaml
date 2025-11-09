@@ -9,6 +9,8 @@ spec:
     repoURL: https://github.com/Sanlys/kubernetes.git
     targetRevision: main
     path: cluster/prod/apps/vaultwarden
+    directory:
+      exclude: "app.yaml"
   destination:
     server: https://kubernetes.default.svc
     namespace: vaultwarden
