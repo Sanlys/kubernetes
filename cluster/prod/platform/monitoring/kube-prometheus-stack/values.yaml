@@ -99,7 +99,7 @@ prometheus:
 grafana:
   additionalDataSources:
     - name: Loki
-      type: Loki
+      type: loki
       access: proxy
       url: http://loki-gateway.monitoring.svc.cluster.local
       jsonData:
