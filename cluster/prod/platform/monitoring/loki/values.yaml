@@ -1,10 +1,11 @@
 deploymentMode: SingleBinary
 loki:
   auth_enabled: false
-  commonConfig:
-    replication_factor: 1
   storage:
     type: filesystem
+
+SimpleScalable:
+
 
 singleBinary:
   replicas: 1
