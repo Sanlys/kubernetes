@@ -12,11 +12,11 @@ serviceMonitor:
       url: "https://vaultwarden.lysakermoen.com"
     - name: "arch-mirror-external"
       url: https://79.76.33.72
-      hostname: arch.lysakermoen.com
+      hostname: archlinux.lysakermoen.com
     - name: "arch-mirror-internal"
-      url: https://arch.k8s.lysakermoen.com
+      url: https://archlinux.k8s.lysakermoen.com
     - name: "arch-mirror-external-local"
-      url: https://arch.lysakermoen.com
+      url: https://archlinux.lysakermoen.com
     - name: "nginx-external"
       url: https://79.76.33.72
       hostname: nginx.lysakermoen.com
