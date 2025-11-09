@@ -10,7 +10,6 @@ serviceMonitor:
       url: https://vaultwarden.k8s.lysakermoen.com
     - name: "vaultwarden external local"
       url: "https://vaultwarden.lysakermoen.com"
-
     - name: "arch mirror external"
       url: https://79.76.33.72
       hostname: arch.lysakermoen.com
@@ -18,7 +17,6 @@ serviceMonitor:
       url: https://arch.k8s.lysakermoen.com
     - name: "arch mirror external local"
       url: https://arch.lysakermoen.com
-
     - name: "nginx external"
       url: https://79.76.33.72
       hostname: nginx.lysakermoen.com
@@ -26,7 +24,6 @@ serviceMonitor:
       url: https://nginx.k8s.lysakermoen.com
     - name: "nginx external local"
       url: https://nginx.lysakermoen.com
-
     - name: "syncthing internal"
       url: https://syncthing.k8s.lysakermoen.com
       hostname: syncthing.k8s.lysakermoen.com
