@@ -20,6 +20,13 @@ spec:
           replicas: 2
         reportsController:
           replicas: 2
+        policyReportsCleanup:
+          image:
+            tag: latest
+        webhooksCleanup:
+          image:
+            tag: latest
+        
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno
