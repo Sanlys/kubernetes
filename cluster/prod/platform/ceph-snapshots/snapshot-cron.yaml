@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: vaultwarden-snapshot
-  namespace: vaultwarden
+  namespace: snapshots
 spec:
   schedule: "0 */6 * * *"
   jobTemplate:
@@ -13,32 +13,26 @@ spec:
           containers:
             - name: snapshot
               image: bitnami/kubectl
-              env:
-                # Space-separated list of PVC names to snapshot
-                - name: PVC_LIST
-                  value: "archmirror-pvc prometheus-monitoring-kube-prometheus-prometheus-db-prometheus-monitoring-kube-prometheus-prometheus-0 storage-loki-0 syncthing-config syncthing-pvc valutwarden-pvc"
-                # Snapshot class to use for all of them
-                - name: SNAPSHOT_CLASS
-                  value: "csi-rbdplugin-snapclass"
               command: ["/bin/sh", "-c"]
               args:
                 - |
-                  set -e
                   TS=$(date +%Y%m%d-%H%M%S)
-                  for PVC in $PVC_LIST; do
+                  PVC_LIST="mirror/archmirror-pvc monitoring/prometheus-monitoring-kube-prometheus-prometheus-db-prometheus-monitoring-kube-prometheus-prometheus-0 monitoring/storage-loki-0 syncthing/syncthing-config syncthing/syncthing-pvc vaultwarden/vaultwarden-pvc"
+                  for ITEM in $PVC_LIST; do
+                    NS="${ITEM%%/*}"
+                    PVC="${ITEM##*/}"
                     SNAP="${PVC}-${TS}"
-                    echo "Creating snapshot $SNAP for PVC $PVC"
+                    echo "Creating snapshot $SNAP in $NS for PVC $PVC"
                     cat <<EOF | kubectl apply -f -
                   apiVersion: snapshot.storage.k8s.io/v1
                   kind: VolumeSnapshot
                   metadata:
                     name: ${SNAP}
-                    namespace: vaultwarden
+                    namespace: ${NS}
                     labels:
-                      app: vaultwarden
                       pvc: ${PVC}
                   spec:
-                    volumeSnapshotClassName: ${SNAPSHOT_CLASS}
+                    volumeSnapshotClassName: csi-rbdplugin-snapclass
                     source:
                       persistentVolumeClaimName: ${PVC}
                   EOF
