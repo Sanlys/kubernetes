@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vaultwarden-snapshot
+  namespace: vaultwarden
+spec:
+  schedule: "0 */6 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: snapshotter
+          containers:
+            - name: snapshot
+              image: bitnami/kubectl
+              env:
+                # Space-separated list of PVC names to snapshot
+                - name: PVC_LIST
+                  value: "archmirror-pvc prometheus-monitoring-kube-prometheus-prometheus-db-prometheus-monitoring-kube-prometheus-prometheus-0 storage-loki-0 syncthing-config syncthing-pvc valutwarden-pvc"
+                # Snapshot class to use for all of them
+                - name: SNAPSHOT_CLASS
+                  value: "csi-rbdplugin-snapclass"
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -e
+                  TS=$(date +%Y%m%d-%H%M%S)
+                  for PVC in $PVC_LIST; do
+                    SNAP="${PVC}-${TS}"
+                    echo "Creating snapshot $SNAP for PVC $PVC"
+                    cat <<EOF | kubectl apply -f -
+                  apiVersion: snapshot.storage.k8s.io/v1
+                  kind: VolumeSnapshot
+                  metadata:
+                    name: ${SNAP}
+                    namespace: vaultwarden
+                    labels:
+                      app: vaultwarden
+                      pvc: ${PVC}
+                  spec:
+                    volumeSnapshotClassName: ${SNAPSHOT_CLASS}
+                    source:
+                      persistentVolumeClaimName: ${PVC}
+                  EOF
+                  done
+          restartPolicy: OnFailure
