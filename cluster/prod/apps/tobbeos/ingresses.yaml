@@ -21,3 +21,10 @@ spec:
                 name: tobbeos
                 port:
                   number: 80
+          - path: /iso
+            pathType: Prefix
+            backend:
+              service:
+                name: iso-nginx
+                port:
+                  number: 80
