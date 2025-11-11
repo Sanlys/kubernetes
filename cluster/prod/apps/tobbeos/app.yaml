@@ -13,7 +13,7 @@ spec:
       exclude: "app.yaml"
   destination:
     server: https://kubernetes.default.svc
-    namespace: nginx
+    namespace: tobbeos
   syncPolicy:
     automated:
       prune: true

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tobbeos
+  namespace: tobbeos
+  labels: { app: tobbeos }
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector: { app: tobbeos }
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
