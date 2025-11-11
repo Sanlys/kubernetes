@@ -106,6 +106,7 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
+          suspend: true
           containers:
             - name: iso-sync
               image: curlimages/curl:8.5.0
