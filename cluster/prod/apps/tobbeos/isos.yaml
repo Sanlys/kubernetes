@@ -1,0 +1,118 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tobbeos
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: iso-pvc
+  namespace: tobbeos
+spec:
+  storageClassName: rook-ceph-block-hdd
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iso-nginx-config
+  namespace: tobbeos
+data:
+  nginx.conf: |
+    events {}
+
+    http {
+        server {
+            listen 80;
+            server_name _;
+
+            location / {
+                root /usr/share/nginx/html;
+                autoindex on;
+                autoindex_exact_size off;
+                autoindex_localtime on;
+            }
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iso-nginx
+  namespace: tobbeos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iso-nginx
+  template:
+    metadata:
+      labels:
+        app: iso-nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: iso-storage
+              mountPath: /usr/share/nginx/html
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: iso-nginx-config
+            items:
+              - key: nginx.conf
+                path: nginx.conf
+        - name: iso-storage
+          persistentVolumeClaim:
+            claimName: iso-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iso-nginx
+  namespace: tobbeos
+spec:
+  selector:
+    app: iso-nginx
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: iso-nginx
+  namespace: tobbeos
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-public
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: public
+  tls:
+    - hosts:
+        - tobbeos.lysakermoen.com
+      secretName: iso-tls
+  rules:
+    - host: tobbeos.lysakermoen.com
+      http:
+        paths:
+          - path: /iso(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: iso-nginx
+                port:
+                  number: 80
