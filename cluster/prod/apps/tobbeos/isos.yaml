@@ -132,6 +132,9 @@ spec:
           containers:
             - name: iso-sync
               image: curlimages/curl:8.5.0
+              securityContext:
+                runAsUser: 0
+                runAsGroup: 0
               env:
                 - name: TOBBEOS_RSS_URL
                   value: "https://sourceforge.net/projects/tobbeos/rss?path=/"
