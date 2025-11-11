@@ -2,7 +2,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: tobbeos-pvc
-  namespace: mirror
+  namespace: tobbeos
 spec:
   storageClassName: rook-ceph-block-hdd
   volumeMode: Filesystem
