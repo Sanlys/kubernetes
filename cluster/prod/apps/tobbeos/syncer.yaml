@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: git-sync-job
-  namespace: default
+  namespace: tobbeos
 spec:
   schedule: "*/30 * * * *"
   jobTemplate:
