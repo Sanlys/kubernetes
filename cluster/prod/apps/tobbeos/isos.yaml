@@ -110,7 +110,7 @@ spec:
       http:
         paths:
           - path: /iso(/|$)(.*)
-            pathType: Prefix
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: iso-nginx
