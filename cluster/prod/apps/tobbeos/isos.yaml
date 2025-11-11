@@ -116,3 +116,83 @@ spec:
                 name: iso-nginx
                 port:
                   number: 80
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: iso-sync
+  namespace: tobbeos
+spec:
+  schedule: "0 * * * *" # every hour
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: iso-sync
+              image: curlimages/curl:8.5.0
+              env:
+                - name: TOBBEOS_RSS_URL
+                  value: "https://sourceforge.net/projects/tobbeos/rss?path=/"
+                - name: TOBBEOS_DEST_DIR
+                  value: "/data"
+              volumeMounts:
+                - name: iso-storage
+                  mountPath: /data
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+
+                  RSS_URL="${TOBBEOS_RSS_URL:-https://sourceforge.net/projects/tobbeos/rss?path=/}"
+                  DEST_DIR="${TOBBEOS_DEST_DIR:-/data}"
+
+                  mkdir -p "$DEST_DIR"
+
+                  tmp="$(mktemp)"
+                  if ! curl -fsSL "$RSS_URL" -o "$tmp"; then
+                    echo "Failed to fetch RSS from $RSS_URL" >&2
+                    exit 1
+                  fi
+
+                  # Extract all SourceForge file download links, deduplicate
+                  grep -o 'https://sourceforge.net/projects/tobbeos/files[^<]*/download' "$tmp" | sort -u | \
+                  while IFS= read -r url; do
+                    # Strip everything up to /files/ and the trailing /download
+                    path="${url#*"/files/"}"
+                    path="${path%"/download"}"
+                    rel_path="$path"
+
+                    dest="$DEST_DIR/$rel_path"
+                    base="$(basename "$dest")"
+                    lower_base=$(printf '%s' "$base" | tr 'A-Z' 'a-z')
+
+                    # Always re-download readme files
+                    case "$lower_base" in
+                      *readme*) is_readme=1 ;;
+                      *)        is_readme=0 ;;
+                    esac
+
+                    if [ -f "$dest" ] && [ "$is_readme" -eq 0 ]; then
+                      echo "Skipping existing $dest"
+                      continue
+                    fi
+
+                    echo "Downloading $url -> $dest"
+                    mkdir -p "$(dirname "$dest")"
+
+                    if ! curl -fsSL "$url" -o "$dest.tmp"; then
+                      echo "Failed to download $url" >&2
+                      rm -f "$dest.tmp" || true
+                      continue
+                    fi
+
+                    mv "$dest.tmp" "$dest"
+                  done
+
+                  rm -f "$tmp"
+          volumes:
+            - name: iso-storage
+              persistentVolumeClaim:
+                claimName: iso-pvc
