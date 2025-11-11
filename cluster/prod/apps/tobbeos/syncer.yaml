@@ -19,7 +19,7 @@ spec:
               image: alpine/git:latest
               imagePullPolicy: IfNotPresent
               volumeMounts:
-                - name: git-storage
+                - name: tobbeos
                   mountPath: /repo
               env:
                 - name: GIT_REPO
