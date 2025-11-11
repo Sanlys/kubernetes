@@ -41,3 +41,5 @@ spec:
                     rm -rf /repo/*
                     git clone --branch $GIT_BRANCH $GIT_REPO /repo
                   fi
+                  echo "done"
+                  exit
