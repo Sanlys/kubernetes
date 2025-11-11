@@ -28,3 +28,29 @@ spec:
                 name: iso-nginx
                 port:
                   number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tos-redirect
+  namespace: tobbeos
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-public
+    nginx.ingress.kubernetes.io/permanent-redirect: "https://tobbeos.lysakermoen.com/iso"
+spec:
+  ingressClassName: public
+  tls:
+    - hosts:
+        - tos.lysakermoen.com
+      secretName: tos-tls
+  rules:
+    - host: tos.lysakermoen.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: # Not relevant, will never be reached
+                name: iso-nginx
+                port:
+                  number: 80
