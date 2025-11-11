@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: git-sync-job
+  namespace: default
+spec:
+  schedule: "*/30 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          volumes:
+            - name: tobbeos
+              persistentVolumeClaim:
+                claimName: tobbeos-pvc
+          containers:
+            - name: git-sync
+              image: alpine/git:latest
+              imagePullPolicy: IfNotPresent
+              volumeMounts:
+                - name: git-storage
+                  mountPath: /repo
+              env:
+                - name: GIT_REPO
+                  value: "https://github.com/TobbeBob123/TobbeOS_Website.git"
+                - name: GIT_BRANCH
+                  value: "master"
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  cd /repo
+                  if [ -d .git ]; then
+                    echo "Updating existing repository..."
+                    git fetch origin $GIT_BRANCH
+                    git reset --hard origin/$GIT_BRANCH
+                  else
+                    echo "Cloning repository..."
+                    rm -rf /repo/*
+                    git clone --branch $GIT_BRANCH $GIT_REPO /repo
+                  fi
