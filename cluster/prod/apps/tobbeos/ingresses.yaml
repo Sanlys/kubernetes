@@ -36,7 +36,7 @@ metadata:
   namespace: tobbeos
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-public
-    nginx.ingress.kubernetes.io/permanent-redirect: "https://tobbeos.lysakermoen.com/iso"
+    nginx.ingress.kubernetes.io/permanent-redirect: "https://tobbeos.lysakermoen.com"
 spec:
   ingressClassName: public
   tls:
