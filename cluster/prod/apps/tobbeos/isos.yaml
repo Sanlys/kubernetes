@@ -100,13 +100,12 @@ metadata:
   name: iso-sync
   namespace: tobbeos
 spec:
-  schedule: "0 * * * *" # every hour
+  schedule: "0 * * * *" # every hour; adjust as needed
   jobTemplate:
     spec:
       template:
         spec:
           restartPolicy: OnFailure
-          suspend: true
           containers:
             - name: iso-sync
               image: curlimages/curl:8.5.0
@@ -114,8 +113,8 @@ spec:
                 runAsUser: 0
                 runAsGroup: 0
               env:
-                - name: TOBBEOS_RSS_URL
-                  value: "https://sourceforge.net/projects/tobbeos/rss?path=/"
+                - name: GITHUB_RELEASE_API_URL
+                  value: "https://api.github.com/repos/TobbeBob123/TobbeOS_Website/releases/tags/iso"
                 - name: TOBBEOS_DEST_DIR
                   value: "/data"
               volumeMounts:
@@ -126,31 +125,32 @@ spec:
                 - |
                   set -eu
 
-                  RSS_URL="${TOBBEOS_RSS_URL:-https://sourceforge.net/projects/tobbeos/rss?path=/}"
+                  API_URL="${GITHUB_RELEASE_API_URL}"
                   DEST_DIR="${TOBBEOS_DEST_DIR:-/data}"
 
                   mkdir -p "$DEST_DIR"
 
                   tmp="$(mktemp)"
-                  if ! curl -fsSL "$RSS_URL" -o "$tmp"; then
-                    echo "Failed to fetch RSS from $RSS_URL" >&2
+                  if ! curl -fsSL "$API_URL" -o "$tmp"; then
+                    echo "Failed to fetch GitHub release from $API_URL" >&2
                     exit 1
                   fi
 
-                  # Extract all SourceForge file download links, deduplicate
-                  grep -o 'https://sourceforge.net/projects/tobbeos/files[^<]*/download' "$tmp" | sort -u | \
-                  while IFS= read -r url; do
-                    # Strip everything up to /files/ and the trailing /download
-                    path="${url#*"/files/"}"
-                    path="${path%"/download"}"
-                    rel_path="$path"
+                  # Extract all browser_download_url entries (release assets)
+                  urls=$(grep '"browser_download_url"' "$tmp" | cut -d '"' -f 4 | sort -u)
 
-                    dest="$DEST_DIR/$rel_path"
-                    base="$(basename "$dest")"
-                    lower_base=$(printf '%s' "$base" | tr 'A-Z' 'a-z')
+                  if [ -z "$urls" ]; then
+                    echo "No release assets (browser_download_url) found in release JSON"
+                    rm -f "$tmp"
+                    exit 0
+                  fi
 
-                    # Always re-download readme files
-                    case "$lower_base" in
+                  for url in $urls; do
+                    name="${url##*/}"
+                    dest="$DEST_DIR/$name"
+
+                    lower_name=$(printf '%s' "$name" | tr 'A-Z' 'a-z')
+                    case "$lower_name" in
                       *readme*) is_readme=1 ;;
                       *)        is_readme=0 ;;
                     esac
@@ -161,14 +161,11 @@ spec:
                     fi
 
                     echo "Downloading $url -> $dest"
-                    mkdir -p "$(dirname "$dest")"
-
                     if ! curl -fsSL "$url" -o "$dest.tmp"; then
                       echo "Failed to download $url" >&2
                       rm -f "$dest.tmp" || true
                       continue
                     fi
-
                     mv "$dest.tmp" "$dest"
                   done
 
