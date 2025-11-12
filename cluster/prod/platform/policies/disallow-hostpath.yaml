@@ -10,6 +10,11 @@ spec:
       match:
         resources:
           kinds: ["Pod"]
+          namespaceSelector:
+            matchExpressions:
+              - key: role
+                operator: NotIn
+                values: ["infra"]
       validate:
         message: "hostPath volumes are not allowed"
         pattern:
