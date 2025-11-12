@@ -13,9 +13,9 @@ expose:
       - hosts:
           - harbor.k8s.lysakermoen.com
         secretName: harbor-tls
-      - hosts:
-          - notary.k8s.lysakermoen.com
-        secretName: notary-tls
+      #- hosts:
+      #    - notary.k8s.lysakermoen.com
+      #  secretName: notary-tls
 
 externalURL: https://harbor.k8s.lysakermoen.com
 
