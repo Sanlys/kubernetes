@@ -8,13 +8,13 @@ expose:
   ingress:
     className: internal
     hosts:
-      core: harbor.k8s.lysakermoen.com
+      core: harbor-tmp.k8s.lysakermoen.com
       notary: notary.k8s.lysakermoen.com
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-internal
     tls:
       - hosts:
-          - harbor.k8s.lysakermoen.com
+          - harbor-tmp.k8s.lysakermoen.com
         secretName: harbor-tls
       #- hosts:
       #    - notary.k8s.lysakermoen.com
