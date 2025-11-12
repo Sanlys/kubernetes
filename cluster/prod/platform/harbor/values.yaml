@@ -4,7 +4,7 @@ expose:
     enabled: true
     certSource: secret
     secret:
-      secretName: harbor-tls
+      secretName: harbor-ingress
   ingress:
     className: internal
     hosts:
@@ -15,7 +15,7 @@ expose:
     tls:
       - hosts:
           - harbor.k8s.lysakermoen.com
-        secretName: harbor-tls
+        secretName: harbor-ingress
       #- hosts:
       #    - notary.k8s.lysakermoen.com
       #  secretName: notary-tls
