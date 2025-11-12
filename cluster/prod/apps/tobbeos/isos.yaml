@@ -101,7 +101,8 @@ metadata:
   namespace: tobbeos
 spec:
   schedule: "0 * * * *" # every hour; adjust as needed
-  concurrencyPolicy: Forbid 
+  concurrencyPolicy: Forbid
+  suspend: false
   jobTemplate:
     spec:
       template:
