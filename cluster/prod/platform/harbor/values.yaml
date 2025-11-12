@@ -27,7 +27,7 @@ notary:
 chartmuseum:
   enabled: true
 trivy:
-  enabled: false
+  enabled: true
 
 persistence:
   enabled: true
