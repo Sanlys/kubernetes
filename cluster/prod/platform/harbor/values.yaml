@@ -3,6 +3,8 @@ expose:
   tls:
     enabled: true
     certSource: secret
+    secret:
+      secretName: harbor-tls
   ingress:
     className: internal
     hosts:
