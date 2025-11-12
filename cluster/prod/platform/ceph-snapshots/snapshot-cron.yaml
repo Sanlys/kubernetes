@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: vaultwarden-snapshot
+  name: snapshot
   namespace: snapshots
 spec:
   schedule: "0 */6 * * *"
@@ -37,4 +37,11 @@ spec:
                       persistentVolumeClaimName: ${PVC}
                   EOF
                   done
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
           restartPolicy: OnFailure
