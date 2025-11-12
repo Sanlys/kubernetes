@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: vaultwarden
+  name: policies
   namespace: argocd
 spec:
   project: default
@@ -13,7 +13,7 @@ spec:
       exclude: "app.yaml"
   destination:
     server: https://kubernetes.default.svc
-    namespace: vaultwarden
+    namespace: policies
   syncPolicy:
     automated:
       prune: true
