@@ -37,6 +37,13 @@ spec:
               mountPath: /var/syncthing
             - name: data
               mountPath: /data
+          resources:
+            requests:
+              cpu: 150m
+              memory: 200Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
       volumes:
         - name: config
           persistentVolumeClaim:
