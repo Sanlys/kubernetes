@@ -20,7 +20,7 @@ expose:
       #    - notary.k8s.lysakermoen.com
       #  secretName: notary-tls
 
-externalURL: https://harbor.k8s.lysakermoen.com
+externalURL: https://harbor-tmp.k8s.lysakermoen.com
 
 notary:
   enabled: false
