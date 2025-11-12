@@ -2,6 +2,7 @@ expose:
   type: ingress
   tls:
     enabled: true
+    certSource: secret
   ingress:
     className: internal
     hosts:
