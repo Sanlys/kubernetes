@@ -37,3 +37,6 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideAppy=true
+    managedNamespaceMetadata:
+      labels:
+        role: infra
