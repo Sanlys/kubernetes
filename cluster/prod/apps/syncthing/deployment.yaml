@@ -44,6 +44,18 @@ spec:
             limits:
               cpu: 500m
               memory: 1Gi
+
+        - name: sftp
+          image: atmoz/sftp:alpine-3.7
+          args:
+            - user:password:1000:1000:upload
+          ports:
+            - name: sftp
+              containerPort: 22
+              protocol: TCP
+          volumeMounts:
+            - name: data
+              mountPath: /home/user/upload
       volumes:
         - name: config
           persistentVolumeClaim:
