@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: crontab
-  namespace: mirror
-data:
-  root: |
-    31 */6 * * * /mirror.sh /mirrors/archlinux /archlinux.lck rsync://mirror.neuf.no/archlinux https://mirror.neuf.no/archlinux/lastupdate >> /proc/1/fd/1 2>&1

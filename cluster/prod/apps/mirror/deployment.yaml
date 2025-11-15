@@ -38,39 +38,10 @@ spec:
           resources:
             requests: { cpu: "50m", memory: "64Mi" }
             limits:   { cpu: "500m", memory: "512Mi" }
-
-        - name: syncer
-          image: alpine:3.22.2
-          command: ["/bin/sh", "-c"]
-          args:
-            - >
-              set -e;
-              apk add --no-cache bash rsync curl util-linux ca-certificates;
-              echo "[syncer] starting cron";
-              crond -f -l 8
-          volumeMounts:
-            - name: archmirror
-              mountPath: /mirrors/archlinux
-            - name: sync-script
-              mountPath: /mirror.sh
-              subPath: mirror.sh
-            - name: crontab
-              mountPath: /etc/crontabs/root
-              subPath: root
-          resources:
-            requests: {cpu: "200m", memory: "128Mi"}
-            limits: {cpu: "500m", memory: "512Mi"}
       volumes:
         - name: archmirror
           persistentVolumeClaim:
             claimName: archmirror-pvc
-        - name: sync-script
-          configMap:
-            name: mirror-script
-            defaultMode: 0755
-        - name: crontab
-          configMap:
-            name: crontab
         - name: nginx-conf
           configMap:
             name: mirror-nginx

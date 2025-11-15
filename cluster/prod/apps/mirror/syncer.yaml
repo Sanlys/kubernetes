@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mirror-sync
+  namespace: mirror
+spec:
+  schedule: "31 */6 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          volumes:
+            - name: archmirror
+              persistentVolumeClaim:
+                claimName: archmirror-pvc
+            - name: mirror-script
+              configMap:
+                name: mirror-script
+                defaultMode: 0755
+          containers:
+            - name: mirror-sync
+              image: alpine:3.22.2
+              imagePullPolicy: IfNotPresent
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -e
+                  apk add --no-cache bash rsync curl util-linux ca-certificates
+                  echo "[mirror-sync] running mirror script"
+                  /mirror.sh /mirrors/archlinux /archlinux.lck rsync://mirror.neuf.no/archlinux https://mirror.neuf.no/archlinux/lastupdate
+              volumeMounts:
+                - name: archmirror
+                  mountPath: /mirrors/archlinux
+                - name: mirror-script
+                  mountPath: /mirror.sh
+                  subPath: mirror.sh
