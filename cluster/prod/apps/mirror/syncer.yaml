@@ -5,12 +5,12 @@ metadata:
   namespace: mirror
 spec:
   schedule: "31 */6 * * *"
+  concurrencyPolicy: forbid
   jobTemplate:
     spec:
       template:
         spec:
           restartPolicy: OnFailure
-          concurrencyPolicy: forbid
           volumes:
             - name: archmirror
               persistentVolumeClaim:
