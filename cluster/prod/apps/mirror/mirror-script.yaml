@@ -75,7 +75,7 @@ data:
             if stty &>/dev/null; then
                     cmd+=(-h -v --progress)
             else
-                    cmd+=(--quiet)
+                    cmd+=(-v)
             fi
 
             if ((bwlimit>0)); then
