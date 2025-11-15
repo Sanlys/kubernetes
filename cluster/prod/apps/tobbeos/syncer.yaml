@@ -10,13 +10,6 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
-          affinity:
-            podAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
-                    matchLabels:
-                      app: mirror
-                  topologyKey: kubernetes.io/hostname
           volumes:
             - name: tobbeos
               persistentVolumeClaim:
