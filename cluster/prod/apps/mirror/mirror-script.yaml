@@ -33,6 +33,8 @@ data:
     # is run every minute. Performing a simple check via HTTP first can thus save a
     # lot of traffic.
 
+    set -euo pipefail
+
     # Directory where the repo is stored locally. Example: /srv/repo
     target="$1"
 
