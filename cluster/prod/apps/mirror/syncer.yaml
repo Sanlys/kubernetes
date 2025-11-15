@@ -5,7 +5,7 @@ metadata:
   namespace: mirror
 spec:
   schedule: "31 */6 * * *"
-  concurrencyPolicy: forbid
+  concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       template:
