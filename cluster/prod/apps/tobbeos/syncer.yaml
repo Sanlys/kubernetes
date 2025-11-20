@@ -34,12 +34,13 @@ spec:
                   cd /repo
                   if [ -d .git ]; then
                     echo "Updating existing repository..."
-                    git fetch origin $GIT_BRANCH
+                    git fetch --depth=1 origin $GIT_BRANCH
                     git reset --hard origin/$GIT_BRANCH
+                    git clean -fdx
                   else
                     echo "Cloning repository..."
                     rm -rf /repo/*
-                    git clone --branch $GIT_BRANCH $GIT_REPO /repo
+                    git clone --depth=1 --branch $GIT_BRANCH $GIT_REPO /repo
                   fi
                   echo "done"
                   exit
