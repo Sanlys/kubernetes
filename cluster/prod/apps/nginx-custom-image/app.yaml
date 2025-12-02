@@ -10,7 +10,9 @@ spec:
     targetRevision: main
     path: cluster/prod/apps/nginx-custom-image
     directory:
-      exclude: "app.yaml"
+      exclude: 
+        - "app.yaml"
+        - "secret.enc.yaml"
   destination:
     server: https://kubernetes.default.svc
     namespace: nginx-custom-image
