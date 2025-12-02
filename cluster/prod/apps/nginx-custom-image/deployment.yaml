@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-from-harbor
+  namespace: nginx-custom-image
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-from-harbor
+  template:
+    metadata:
+      labels:
+        app: nginx-from-harbor
+    spec:
+      imagePullSecrets:
+         - name: harbor-pull
+      containers:
+        - name: nginx
+          image: harbor.k8s.lysakermoen.com/library/nginx:test-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits:   { cpu: "250m", memory: "256Mi" }
