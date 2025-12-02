@@ -17,7 +17,7 @@ spec:
          - name: harbor-pull
       containers:
         - name: nginx
-          image: harbor.k8s.lysakermoen.com/library/nginx:test-alpine-2
+          image: harbor.k8s.lysakermoen.com/library/nginx:test-alpine-2@sha256:97a145fb5809fd90ebdf66711f69b97e29ea99da5403c20310dcc425974a14f9
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
