@@ -25,6 +25,8 @@ spec:
             - name: tobbeos
               mountPath: /usr/share/nginx/html
               readOnly: true
+            - name: nginx-conf
+              mountPath: /etc/nginx
           readinessProbe:
             httpGet: { path: /, port: 80 }
             initialDelaySeconds: 5
@@ -40,5 +42,8 @@ spec:
         - name: tobbeos
           persistentVolumeClaim:
             claimName: tobbeos-pvc
+        - name: nginx-conf
+          configMap:
+            name: nginx-conf
       securityContext:
         runAsNonRoot: false 
