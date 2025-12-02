@@ -6,12 +6,12 @@ expose:
     secret:
       secretName: harbor-tls
   ingress:
-    className: internal
+    className: public
     hosts:
       core: harbor.k8s.lysakermoen.com
       notary: notary.k8s.lysakermoen.com
     annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-internal
+      cert-manager.io/cluster-issuer: letsencrypt-public
     tls:
       - hosts:
           - harbor.k8s.lysakermoen.com
