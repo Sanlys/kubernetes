@@ -9,6 +9,11 @@ pkgs.mkShell {
     age
     kubernetes-helm
     tmux
+    kustomize
+    ko
+    go
+    docker
+    rootlesskit
   ];
   shellHook = ''
     ./decrypt_talos.sh
