@@ -2,6 +2,7 @@ apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
   name: hello-goodbye
+  namespace: tekton
 spec:
   params:
   - name: username
