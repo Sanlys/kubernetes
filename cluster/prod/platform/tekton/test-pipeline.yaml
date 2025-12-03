@@ -1,15 +1,20 @@
 apiVersion: tekton.dev/v1
-kind: Task
+kind: Pipeline
 metadata:
-  name: goodbye
-  namespace: tekton
+  name: hello-goodbye
 spec:
   params:
   - name: username
     type: string
-  steps:
+  tasks:
+    - name: hello
+      taskRef:
+        name: hello
     - name: goodbye
-      image: ubuntu
-      script: |
-        #!/bin/bash
-        echo "Goodbye $(params.username)!"
+      runAfter:
+        - hello
+      taskRef:
+        name: goodbye
+      params:
+      - name: username
+        value: $(params.username)
