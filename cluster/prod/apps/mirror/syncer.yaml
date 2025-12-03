@@ -28,7 +28,7 @@ spec:
                 defaultMode: 0755
           containers:
             - name: mirror-sync
-              image: alpine:3.22.2
+              image: alpine:3.23.0
               imagePullPolicy: IfNotPresent
               command: ["/bin/sh", "-c"]
               args:
