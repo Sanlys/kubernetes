@@ -33,6 +33,13 @@ spec:
                   value: "https://github.com/TobbeBob123/TobbeOS_Website.git"
                 - name: GIT_BRANCH
                   value: "master"
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "128Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "256Mi"
               command:
                 - /bin/sh
                 - -c

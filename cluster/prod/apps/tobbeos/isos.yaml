@@ -129,6 +129,13 @@ spec:
               volumeMounts:
                 - name: iso-storage
                   mountPath: /data
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "128Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "512Mi"
               command: ["/bin/sh", "-c"]
               args:
                 - |
