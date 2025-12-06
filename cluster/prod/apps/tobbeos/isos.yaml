@@ -113,7 +113,7 @@ spec:
               requiredDuringSchedulingIgnoredDuringExecution:
                 - labelSelector:
                     matchLabels:
-                      app: tobbeos
+                      app: iso-nginx
                   topologyKey: kubernetes.io/hostname
           containers:
             - name: iso-sync
