@@ -108,6 +108,13 @@ spec:
       template:
         spec:
           restartPolicy: OnFailure
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app: tobbeos
+                  topologyKey: kubernetes.io/hostname
           containers:
             - name: iso-sync
               image: curlimages/curl:8.17.0
