@@ -13,9 +13,9 @@ spec:
       values: |
         cephClusterSpec:
           mon:
-            allowMultiplePerNode: true
+            allowMultiplePerNode: false
           mgr:
-            allowMultiplePerNode: true
+            allowMultiplePerNode: false
           crashCollector:
             disable: false
           storage:
