@@ -44,6 +44,6 @@ spec:
     server: https://kubernetes.default.svc
     namespace: rook-ceph
   syncPolicy:
-    automated: { prune: true, selfHeal: false }
+    automated: { prune: true, selfHeal: true }
     syncOptions: [ServerSideApply=true]
 
