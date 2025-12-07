@@ -14,6 +14,7 @@ pkgs.mkShell {
     go
     docker
     rootlesskit
+    mkcert
   ];
   shellHook = ''
     ./decrypt_talos.sh
