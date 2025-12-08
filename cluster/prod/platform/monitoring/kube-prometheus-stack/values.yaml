@@ -97,6 +97,9 @@ prometheus:
               storage: 20Gi
 
 grafana:
+  sidecar:
+    datasources:
+      watchMethod: "SLEEP"
   additionalDataSources:
     - name: Loki
       type: loki
