@@ -52,9 +52,9 @@ spec:
 
               # If level is changed, new world is generated. Seed is applied only when level is changed
             - name: LEVEL
-              value: "daur-stream-world-3"
+              value: "test-seed"
             - name: SEED
-              value: ""
+              value: "7226627000711902118"
 
             - name: ONLINE_MODE
               value: "TRUE"
