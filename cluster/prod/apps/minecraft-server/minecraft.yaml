@@ -61,6 +61,22 @@ spec:
               value: "true"
             - name: RCON_PASSWORD
               value: "supersecret"
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    # Warn players
+                    rcon-cli --password "$RCON_PASSWORD" "say Server is restarting, please rejoin"
+                    sleep 10
+                    rcon-cli --password "$RCON_PASSWORD" "say Restarting..."
+                    sleep 2
+                    # Kick everyone
+                    rcon-cli --password "$RCON_PASSWORD" "kick @a Server is restarting, please rejoin"
+
+                    sleep 3
           ports:
             - containerPort: 25565
               name: mc
