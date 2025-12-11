@@ -75,6 +75,23 @@ spec:
               port: mc
             initialDelaySeconds: 30
             periodSeconds: 10
+        - name: sftp
+          image: atmoz/sftp:latest
+          args: ["minecraft:minecraft:1000:1000"]
+          ports:
+            - containerPort: 22
+              name: sftp
+          volumeMounts:
+            # This will be the SFTP home directory
+            - name: mc-data
+              mountPath: /home/minecraft
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
       volumes:
         - name: mc-data
           persistentVolumeClaim:
@@ -100,4 +117,20 @@ spec:
     - name: mc
       port: 25565
       targetPort: 25565
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mc-paper-sftp
+  labels:
+    app: mc-paper
+spec:
+  type: LoadBalancer
+  selector:
+    app: mc-paper
+  ports:
+    - name: sftp
+      port: 22
+      targetPort: 22
       protocol: TCP
