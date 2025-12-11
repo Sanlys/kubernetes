@@ -19,6 +19,8 @@ metadata:
     app: mc-paper
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: mc-paper
