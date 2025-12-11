@@ -42,25 +42,37 @@ spec:
               value: "TRUE"
             - name: TYPE
               value: "PAPER"
-            # VERSION can be set to a specific version, e.g. "1.21.4"
             - name: VERSION
-              value: "LATEST"
-            # Adjust as you like, but leave RAM for Ceph + kubelet
+              value: "1.21.10"
+            - name: MOTD
+              value: "Daur's stream server"
+
             - name: MEMORY
               value: "6G"
-            # Optional: nicer world name
+
+              # If level is changed, new world is generated. Seed is applied only when level is changed
             - name: LEVEL
               value: "daur-stream-world-3"
-            # Optional: enable online-mode (true for real Mojang auth)
+            - name: SEED
+              value: ""
+
             - name: ONLINE_MODE
               value: "TRUE"
-            # Optional: Paper-specific opts
             - name: USE_AIKAR_FLAGS
               value: "true"
             - name: ENABLE_RCON
               value: "true"
             - name: RCON_PASSWORD
               value: "supersecret"
+            - name: OVERRIDE_SERVER_PROPERTIES
+              value: "true"
+
+            - name: MAX_PLAYERS
+              value: "100"
+            - name: WHITELIST
+              value: "FALSE"
+            - name: SPAWN_PROTECTION
+              value: "0"
           lifecycle:
             preStop:
               exec:
