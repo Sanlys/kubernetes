@@ -1,0 +1,103 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mc-paper-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: rook-ceph-block-ssd
+  resources:
+    requests:
+      storage: 40Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mc-paper
+  labels:
+    app: mc-paper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mc-paper
+  template:
+    metadata:
+      labels:
+        app: mc-paper
+    spec:
+      containers:
+        - name: minecraft
+          image: itzg/minecraft-server:java25-jdk@sha256:2180e3f66b94a69c4b2b96f300f00487de6d1a7aff0014445a4552c9fa50539c
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: EULA
+              value: "TRUE"
+            - name: TYPE
+              value: "PAPER"
+            # VERSION can be set to a specific version, e.g. "1.21.4"
+            - name: VERSION
+              value: "LATEST"
+            # Adjust as you like, but leave RAM for Ceph + kubelet
+            - name: MEMORY
+              value: "6G"
+            # Optional: nicer world name
+            - name: LEVEL
+              value: "daur-stream-world"
+            # Optional: enable online-mode (true for real Mojang auth)
+            - name: ONLINE_MODE
+              value: "TRUE"
+            # Optional: Paper-specific opts
+            - name: USE_AIKAR_FLAGS
+              value: "true"
+          ports:
+            - containerPort: 25565
+              name: mc
+          volumeMounts:
+            - name: mc-data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "6Gi"
+            limits:
+              cpu: "2"
+              memory: "8Gi"
+          # Simple liveness/readiness so kube doesn't flap it too eagerly
+          livenessProbe:
+            tcpSocket:
+              port: mc
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: mc
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: mc-data
+          persistentVolumeClaim:
+            claimName: mc-paper-data
+      # Helpful with Ceph RBD so it can chown the volume
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mc-paper
+  labels:
+    app: mc-paper
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.0.6.222
+  selector:
+    app: mc-paper
+  ports:
+    - name: mc
+      port: 25565
+      targetPort: 25565
+      protocol: TCP
