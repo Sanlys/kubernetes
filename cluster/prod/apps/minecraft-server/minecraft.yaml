@@ -53,6 +53,10 @@ spec:
             # Optional: Paper-specific opts
             - name: USE_AIKAR_FLAGS
               value: "true"
+            - name: ENABLE_RCON
+              value: "true"
+            - name: RCON_PASSWORD
+              value: "supersecret"
           ports:
             - containerPort: 25565
               name: mc
