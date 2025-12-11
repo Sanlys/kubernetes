@@ -69,8 +69,8 @@ spec:
 
             - name: MAX_PLAYERS
               value: "100"
-            - name: WHITELIST
-              value: "FALSE"
+            - name: ENABLE_WHITELIST
+              value: "false"
             - name: SPAWN_PROTECTION
               value: "0"
           lifecycle:
