@@ -87,9 +87,8 @@ spec:
             - containerPort: 22
               name: sftp
           volumeMounts:
-            # This will be the SFTP home directory
             - name: mc-data
-              mountPath: /home/minecraft
+              mountPath: /home/minecraft/upload
           resources:
             requests:
               cpu: "100m"
@@ -105,10 +104,6 @@ spec:
           persistentVolumeClaim:
             claimName: mc-paper-data
       # Helpful with Ceph RBD so it can chown the volume
-      securityContext:
-        fsGroup: 1000
-        runAsUser: 1000
-        runAsGroup: 1000
 ---
 apiVersion: v1
 kind: Service
