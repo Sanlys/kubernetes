@@ -27,6 +27,8 @@ spec:
       labels:
         app: mc-paper
     spec:
+      securityContext:
+        fsGroup: 1000
       containers:
         - name: minecraft
           image: itzg/minecraft-server:java25-jdk@sha256:2180e3f66b94a69c4b2b96f300f00487de6d1a7aff0014445a4552c9fa50539c
@@ -64,6 +66,9 @@ spec:
             limits:
               cpu: "2"
               memory: "8Gi"
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           # Simple liveness/readiness so kube doesn't flap it too eagerly
           livenessProbe:
             tcpSocket:
@@ -92,6 +97,9 @@ spec:
             limits:
               cpu: "500m"
               memory: "512Mi"
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
       volumes:
         - name: mc-data
           persistentVolumeClaim:
