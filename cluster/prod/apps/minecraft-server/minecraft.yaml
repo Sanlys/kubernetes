@@ -52,9 +52,9 @@ spec:
 
               # If level is changed, new world is generated. Seed is applied only when level is changed
             - name: LEVEL
-              value: "test-seed"
+              value: "2025-12-11_2022"
             - name: SEED
-              value: "7226627000711902118"
+              value: ""
 
             - name: ONLINE_MODE
               value: "TRUE"
