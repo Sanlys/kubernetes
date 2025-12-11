@@ -29,6 +29,8 @@ spec:
     spec:
       securityContext:
         fsGroup: 1000
+      nodeSelector:
+        kubernetes.io/hostname: talos-puf-79s # Fast node
       containers:
         - name: minecraft
           image: itzg/minecraft-server:java25-jdk@sha256:2180e3f66b94a69c4b2b96f300f00487de6d1a7aff0014445a4552c9fa50539c
