@@ -49,6 +49,8 @@ spec:
 
             - name: MEMORY
               value: "6G"
+            - name: VIEW_DISTANCE
+              value: "14"
 
               # If level is changed, new world is generated. Seed is applied only when level is changed
             - name: LEVEL
