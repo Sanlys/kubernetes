@@ -602,7 +602,7 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "avg(rate(ceph_osd_op_w_latency_sum[15m]) / rate(ceph_osd_op_w_latency_count[15m]) >= 0)",
+              "expr": "avg(rate(ceph_osd_op_w_latency_sum[1m]) / rate(ceph_osd_op_w_latency_count[1m]) >= 0)",
               "legendFormat": "__auto",
               "range": true,
               "refId": "A"
@@ -668,7 +668,7 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "avg(rate(ceph_osd_op_r_latency_sum[15m]) / rate(ceph_osd_op_r_latency_count[15m]) >= 0)",
+              "expr": "avg(rate(ceph_osd_op_r_latency_sum[1m]) / rate(ceph_osd_op_r_latency_count[1m]) >= 0)",
               "legendFormat": "__auto",
               "range": true,
               "refId": "A"
