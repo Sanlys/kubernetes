@@ -172,8 +172,8 @@ spec:
     app: mc-paper
   ports:
     - name: mc
-      port: 25565
-      targetPort: 25565
+      port: 80
+      targetPort: 8123
       protocol: TCP
 ---
 apiVersion: networking.k8s.io/v1
