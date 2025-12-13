@@ -41,9 +41,10 @@ persistence:
       storageClass: rook-ceph-block-ssd
       size: 5Gi
     jobservice:
-      storageClass: ceph-filesystem
-      accessMode: ReadWriteMany
-      size: 5Gi
+      jobLog:
+        storageClass: ceph-filesystem
+        accessMode: ReadWriteMany
+        size: 5Gi
     database:
       storageClass: rook-ceph-block-ssd
       size: 10Gi
