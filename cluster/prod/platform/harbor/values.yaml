@@ -52,5 +52,8 @@ persistence:
       storageClass: rook-ceph-block-ssd
       size: 10Gi
 
+updateStrategy:
+  type: Recreate
+
 metrics:
   enabled: true
