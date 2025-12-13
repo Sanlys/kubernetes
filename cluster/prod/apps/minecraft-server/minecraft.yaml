@@ -43,7 +43,9 @@ spec:
             - name: TYPE
               value: "PAPER"
             - name: VERSION
-              value: "1.21.10"
+              value: "1.21.11"
+            - name: PAPER_CHANNEL
+              value: "experimental"
             - name: MOTD
               value: "Daur's stream server"
 
