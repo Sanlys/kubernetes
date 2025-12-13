@@ -43,3 +43,9 @@ spec:
                 - name: mirror-script
                   mountPath: /mirror.sh
                   subPath: mirror.sh
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 5644Mi
+                limits:
+                  memory: 5644Mi

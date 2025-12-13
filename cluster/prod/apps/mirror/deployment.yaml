@@ -36,8 +36,8 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 20
           resources:
-            requests: { cpu: "50m", memory: "64Mi" }
-            limits:   { cpu: "500m", memory: "512Mi" }
+            requests: { cpu: "10m", memory: "588" }
+            limits:   { memory: "588Mi" }
       volumes:
         - name: archmirror
           persistentVolumeClaim:
