@@ -17,7 +17,7 @@ spec:
          - name: harbor-pull
       containers:
         - name: nginx
-          image: harbor.k8s.lysakermoen.com/library/nginx:v0.1.1@sha256:ed1a0ea6f6a78ba06e7f62819cc98281673d02447fd35bc2748ad79ada08bd34
+          image: harbor.k8s.lysakermoen.com/library/nginx:v0.1.1@sha256:4160c57fba9a89c4c4f78085497fa89e65aab80300302aabae62239c1b92856f
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
