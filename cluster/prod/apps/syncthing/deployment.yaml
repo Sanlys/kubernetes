@@ -42,9 +42,9 @@ spec:
           resources:
             requests:
               cpu: 150m
-              memory: 200Mi
+              memory: 512Mi
             limits:
-              memory: 1Gi
+              memory: 512Mi
 
         - name: sftp
           image: atmoz/sftp:alpine-3.7
@@ -60,9 +60,8 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 64Mi
+              memory: 256Mi
             limits:
-              cpu: 250m
               memory: 256Mi
 
       volumes:
