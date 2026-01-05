@@ -170,8 +170,6 @@ spec:
               echo "datapacks copied, ready to start"
               ls /data
 
-              rm "/data/${LEVEL_NAME}/session.lock"
-
           volumeMounts:
             - name: mc-data-temporary
               mountPath: /data
