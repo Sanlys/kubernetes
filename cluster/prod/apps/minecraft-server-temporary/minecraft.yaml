@@ -144,36 +144,32 @@ spec:
           - |
             set -eu
 
-            RUN_ID=$(date +%Y%m%d-%H%M%S)
-            LEVEL_NAME=run-${RUN_ID}
+            WORLD=/data/2026-05-01
 
-            echo "[prepare-run] LEVEL_NAME=${LEVEL_NAME}"
+            echo "[reset] wiping world contents in $WORLD"
 
-            # Set level-name for this boot
-            if grep -q '^level-name=' /data/server.properties; then
-              sed -i "s/^level-name=.*/level-name=${LEVEL_NAME}/" /data/server.properties
-            else
-              echo "level-name=${LEVEL_NAME}" >> /data/server.properties
-            fi
+            rm -rf \
+              $WORLD/region \
+              $WORLD/entities \
+              $WORLD/poi \
+              $WORLD/playerdata \
+              $WORLD/stats \
+              $WORLD/advancements \
+              $WORLD/data \
+              $WORLD/level.dat \
+              $WORLD/level.dat_old \
+              $WORLD/session.lock
 
-            # Ensure random seed
-            if grep -q '^level-seed=' /data/server.properties; then
-              sed -i "s/^level-seed=.*/level-seed=/" /data/server.properties
-            else
-              echo "level-seed=" >> /data/server.properties
-            fi
+            # Recreate required dirs
+            mkdir -p \
+              $WORLD/region \
+              $WORLD/entities \
+              $WORLD/poi \
+              $WORLD/playerdata \
+              $WORLD/stats \
+              $WORLD/advancements
 
-            # Create world and inject datapacks
-            mkdir -p /data/${LEVEL_NAME}/datapacks
-
-            if ls /data/datapacks-template/* >/dev/null 2>&1; then
-              cp -a /data/datapacks-template/* /data/${LEVEL_NAME}/datapacks/
-            fi
-
-            rm -f /data/${LEVEL_NAME}/session.lock || true
-            rm -f /data/${LEVEL_NAME}_nether/session.lock || true
-            rm -f /data/${LEVEL_NAME}_the_end/session.lock || true
-            ls /data/${LEVEL_NAME}
+            echo "[reset] world reset complete"
 
           volumeMounts:
             - name: mc-data-temporary
