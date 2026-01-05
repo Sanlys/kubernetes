@@ -67,7 +67,7 @@ spec:
             - name: RCON_PASSWORD
               value: "supersecret"
             - name: OVERRIDE_SERVER_PROPERTIES
-              value: "false"
+              value: "true"
 
             - name: MAX_PLAYERS
               value: "100"
