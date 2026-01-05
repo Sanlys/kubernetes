@@ -142,33 +142,31 @@ spec:
           - sh
           - -lc
           - |
-              set -eu
+            set -eu
 
-              LEVEL_NAME="$(grep -E '^level-name=' /data/server.properties | cut -d= -f2- || true)"
-              [ -n "$LEVEL_NAME" ] || LEVEL_NAME=world
+            RUN_ID=$(date +%Y%m%d-%H%M%S)
+            LEVEL_NAME=run-${RUN_ID}
+            echo \"[prepare-run] LEVEL_NAME=${LEVEL_NAME}\"
 
-              ls /data
+            # set level-name for this boot
+            if grep -q '^level-name=' /data/server.properties; then
+              sed -i \"s/^level-name=.*/level-name=${LEVEL_NAME}/\" /data/server.properties
+            else
+              echo \"level-name=${LEVEL_NAME}\" >> /data/server.properties
+            fi
 
-              echo "[prepare-world] level-name=$LEVEL_NAME"
+            # ensure random seed unless you explicitly set one
+            if grep -q '^level-seed=' /data/server.properties; then
+              sed -i 's/^level-seed=.*/level-seed=/' /data/server.properties
+            else
+              echo 'level-seed=' >> /data/server.properties
+            fi
 
-              # wipe worlds for a clean run
-              rm -rf "/data/$LEVEL_NAME" \
-                "/data/${LEVEL_NAME}_nether" \
-                "/data/${LEVEL_NAME}_the_end"
-              echo "wiped"
-
-              ls /data
-
-              # ensure datapacks exist in new world
-              mkdir -p "/data/$LEVEL_NAME/datapacks"
-
-              # copy datapacks from template if present
-              if ls /data/datapacks-template/* >/dev/null 2>&1; then
-                cp -a /data/datapacks-template/* "/data/$LEVEL_NAME/datapacks/"
-              fi
-
-              echo "datapacks copied, ready to start"
-              ls /data
+            # create world + copy datapacks
+            mkdir -p \"/data/${LEVEL_NAME}/datapacks\"
+            if ls /data/datapacks-template/* >/dev/null 2>&1; then
+              cp -a /data/datapacks-template/* \"/data/${LEVEL_NAME}/datapacks/\"
+            fi
 
           volumeMounts:
             - name: mc-data-temporary
