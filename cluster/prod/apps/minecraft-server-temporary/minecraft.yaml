@@ -157,9 +157,10 @@ spec:
                 "/data/${LEVEL_NAME}_the_end"
               echo "wiped"
 
+              ls /data
+
               # ensure datapacks exist in new world
               mkdir -p "/data/$LEVEL_NAME/datapacks"
-
 
               # copy datapacks from template if present
               if ls /data/datapacks-template/* >/dev/null 2>&1; then
@@ -167,6 +168,7 @@ spec:
               fi
 
               echo "datapacks copied, ready to start"
+              ls /data
 
           volumeMounts:
             - name: mc-data-temporary
