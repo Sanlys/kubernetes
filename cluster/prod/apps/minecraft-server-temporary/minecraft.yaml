@@ -170,6 +170,10 @@ spec:
               cp -a /data/datapacks-template/* /data/${LEVEL_NAME}/datapacks/
             fi
 
+            rm -f /data/${LEVEL_NAME}/session.lock || true
+            rm -f /data/${LEVEL_NAME}_nether/session.lock || true
+            rm -f /data/${LEVEL_NAME}_the_end/session.lock || true
+
           volumeMounts:
             - name: mc-data-temporary
               mountPath: /data
