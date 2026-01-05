@@ -143,33 +143,7 @@ spec:
           - -lc
           - |
             set -eu
-
-            WORLD=/data/2026-05-01
-
-            echo "[reset] wiping world contents in $WORLD"
-
-            rm -rf \
-              $WORLD/region \
-              $WORLD/entities \
-              $WORLD/poi \
-              $WORLD/playerdata \
-              $WORLD/stats \
-              $WORLD/advancements \
-              $WORLD/data \
-              $WORLD/level.dat \
-              $WORLD/level.dat_old \
-              $WORLD/session.lock
-
-            # Recreate required dirs
-            mkdir -p \
-              $WORLD/region \
-              $WORLD/entities \
-              $WORLD/poi \
-              $WORLD/playerdata \
-              $WORLD/stats \
-              $WORLD/advancements
-
-            echo "[reset] world reset complete"
+            echo "nop"
 
           volumeMounts:
             - name: mc-data-temporary
