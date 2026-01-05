@@ -163,7 +163,7 @@ spec:
               fi
 
           volumeMounts:
-          - name: mc-data-temporary
+            - name: mc-data-temporary
               mountPath: /data
       volumes:
         - name: mc-data-temporary
