@@ -111,12 +111,12 @@ spec:
             tcpSocket:
               port: mc
             initialDelaySeconds: 60
-            periodSeconds: 30
+            periodSeconds: 5
           readinessProbe:
             tcpSocket:
               port: mc
             initialDelaySeconds: 30
-            periodSeconds: 10
+            periodSeconds: 5
         - name: sftp
           image: atmoz/sftp:latest
           args: ["minecraft:minecraft:1000:1000"]
