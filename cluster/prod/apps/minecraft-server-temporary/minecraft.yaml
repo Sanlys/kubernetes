@@ -153,14 +153,18 @@ spec:
               rm -rf "/data/$LEVEL_NAME" \
                 "/data/${LEVEL_NAME}_nether" \
                 "/data/${LEVEL_NAME}_the_end"
+              echo "wiped"
 
               # ensure datapacks exist in new world
               mkdir -p "/data/$LEVEL_NAME/datapacks"
+
 
               # copy datapacks from template if present
               if ls /data/datapacks-template/* >/dev/null 2>&1; then
                 cp -a /data/datapacks-template/* "/data/$LEVEL_NAME/datapacks/"
               fi
+
+              echo "datapacks copied, ready to start"
 
           volumeMounts:
             - name: mc-data-temporary
