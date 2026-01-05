@@ -112,16 +112,27 @@ spec:
             runAsUser: 1000
             runAsGroup: 1000
           # Simple liveness/readiness so kube doesn't flap it too eagerly
-          livenessProbe:
+          startupProbe:
             tcpSocket:
               port: mc
-            initialDelaySeconds: 60
-            periodSeconds: 5
+            periodSeconds: 1
+            timeoutSeconds: 1
+            failureThreshold: 180
+
           readinessProbe:
             tcpSocket:
               port: mc
-            initialDelaySeconds: 30
-            periodSeconds: 5
+            periodSeconds: 1
+            timeoutSeconds: 1
+            failureThreshold: 1
+            successThreshold: 1
+
+          livenessProbe:
+            tcpSocket:
+              port: mc
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
         - name: sftp
           image: atmoz/sftp:latest
           args: ["minecraft:minecraft:1000:1000"]
