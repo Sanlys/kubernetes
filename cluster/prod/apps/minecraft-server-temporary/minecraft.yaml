@@ -173,6 +173,7 @@ spec:
             rm -f /data/${LEVEL_NAME}/session.lock || true
             rm -f /data/${LEVEL_NAME}_nether/session.lock || true
             rm -f /data/${LEVEL_NAME}_the_end/session.lock || true
+            ls /data/${LEVEL_NAME}
 
           volumeMounts:
             - name: mc-data-temporary
