@@ -67,7 +67,7 @@ spec:
             - name: RCON_PASSWORD
               value: "supersecret"
             - name: OVERRIDE_SERVER_PROPERTIES
-              value: "true"
+              value: "false"
 
             - name: MAX_PLAYERS
               value: "100"
@@ -138,12 +138,44 @@ spec:
       initContainers:
         - name: prepare-world
           image: busybox:1.36
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
           command:
           - sh
           - -lc
           - |
             set -eu
-            echo "nop"
+
+            # Unique world name each pod start (avoid collisions)
+            RUN_ID=$(date +%Y%m%d-%H%M%S)-$$
+            LEVEL_NAME=run-${RUN_ID}
+
+            echo "[prepare-run-world] LEVEL_NAME=${LEVEL_NAME}"
+
+            # Write server.properties so Paper loads this new world
+            if grep -q '^level-name=' /data/server.properties; then
+              sed -i "s/^level-name=.*/level-name=${LEVEL_NAME}/" /data/server.properties
+            else
+              echo "level-name=${LEVEL_NAME}" >> /data/server.properties
+            fi
+
+            # Ensure random seed each time (blank = random)
+            if grep -q '^level-seed=' /data/server.properties; then
+              sed -i "s/^level-seed=.*/level-seed=/" /data/server.properties
+            else
+              echo "level-seed=" >> /data/server.properties
+            fi
+
+            # Pre-create the world dir and inject datapacks
+            mkdir -p /data/${LEVEL_NAME}/datapacks
+
+            if ls /data/datapacks-template/* >/dev/null 2>&1; then
+              cp -a /data/datapacks-template/* /data/${LEVEL_NAME}/datapacks/
+            else
+              echo "[prepare-run-world] No datapacks found in /data/datapacks-template/"
+            fi
 
           volumeMounts:
             - name: mc-data-temporary
