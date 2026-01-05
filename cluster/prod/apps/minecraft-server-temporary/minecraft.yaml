@@ -146,26 +146,28 @@ spec:
 
             RUN_ID=$(date +%Y%m%d-%H%M%S)
             LEVEL_NAME=run-${RUN_ID}
-            echo \"[prepare-run] LEVEL_NAME=${LEVEL_NAME}\"
 
-            # set level-name for this boot
+            echo "[prepare-run] LEVEL_NAME=${LEVEL_NAME}"
+
+            # Set level-name for this boot
             if grep -q '^level-name=' /data/server.properties; then
-              sed -i \"s/^level-name=.*/level-name=${LEVEL_NAME}/\" /data/server.properties
+              sed -i "s/^level-name=.*/level-name=${LEVEL_NAME}/" /data/server.properties
             else
-              echo \"level-name=${LEVEL_NAME}\" >> /data/server.properties
+              echo "level-name=${LEVEL_NAME}" >> /data/server.properties
             fi
 
-            # ensure random seed unless you explicitly set one
+            # Ensure random seed
             if grep -q '^level-seed=' /data/server.properties; then
-              sed -i 's/^level-seed=.*/level-seed=/' /data/server.properties
+              sed -i "s/^level-seed=.*/level-seed=/" /data/server.properties
             else
-              echo 'level-seed=' >> /data/server.properties
+              echo "level-seed=" >> /data/server.properties
             fi
 
-            # create world + copy datapacks
-            mkdir -p \"/data/${LEVEL_NAME}/datapacks\"
+            # Create world and inject datapacks
+            mkdir -p /data/${LEVEL_NAME}/datapacks
+
             if ls /data/datapacks-template/* >/dev/null 2>&1; then
-              cp -a /data/datapacks-template/* \"/data/${LEVEL_NAME}/datapacks/\"
+              cp -a /data/datapacks-template/* /data/${LEVEL_NAME}/datapacks/
             fi
 
           volumeMounts:
