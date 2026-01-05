@@ -1,0 +1,175 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mc-paper-data-temporary
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: rook-ceph-block-ssd
+  resources:
+    requests:
+      storage: 40Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mc-paper-temporary
+  labels:
+    app: mc-paper-temporary
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mc-paper-temporary
+  template:
+    metadata:
+      labels:
+        app: mc-paper-temporary
+    spec:
+      securityContext:
+        fsGroup: 1000
+      nodeSelector:
+        kubernetes.io/hostname: talos-puf-79s # Fast node
+      containers:
+        - name: minecraft
+          image: itzg/minecraft-server:java25-jdk@sha256:b800bbe702e85fbca837316dce225aaf921f67ec8d383b6d82297048e39a2a91
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: EULA
+              value: "TRUE"
+            - name: TYPE
+              value: "PAPER"
+            - name: VERSION
+              value: "1.21.11"
+            - name: MOTD
+              value: "Temporary server for Slimeyteacup"
+
+            - name: MEMORY
+              value: "6G"
+            - name: VIEW_DISTANCE
+              value: "14"
+
+              # If level is changed, new world is generated. Seed is applied only when level is changed
+            - name: LEVEL
+              value: "2026-05-01"
+            - name: SEED
+              value: ""
+
+            - name: ONLINE_MODE
+              value: "TRUE"
+            - name: USE_AIKAR_FLAGS
+              value: "true"
+            - name: ENABLE_RCON
+              value: "true"
+            - name: RCON_PASSWORD
+              value: "supersecret"
+            - name: OVERRIDE_SERVER_PROPERTIES
+              value: "true"
+
+            - name: MAX_PLAYERS
+              value: "100"
+            - name: ENABLE_WHITELIST
+              value: "false"
+            - name: SPAWN_PROTECTION
+              value: "0"
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    # Warn players
+                    rcon-cli --password "$RCON_PASSWORD" "say Server will be restarting in 10 seconds!"
+                    sleep 10
+                    rcon-cli --password "$RCON_PASSWORD" "say Restarting..."
+                    sleep 2
+                    # Kick everyone
+                    rcon-cli --password "$RCON_PASSWORD" "kick @a Server is restarting, please rejoin"
+
+                    sleep 3
+          ports:
+            - containerPort: 25565
+              name: mc
+          volumeMounts:
+            - name: mc-data-temporary
+              mountPath: /data
+          resources:
+            requests:
+              cpu: "2000m"
+              memory: "8008Mi"
+            limits:
+              memory: "8008Mi"
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          # Simple liveness/readiness so kube doesn't flap it too eagerly
+          livenessProbe:
+            tcpSocket:
+              port: mc
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: mc
+            initialDelaySeconds: 30
+            periodSeconds: 10
+        - name: sftp
+          image: atmoz/sftp:latest
+          args: ["minecraft:minecraft:1000:1000"]
+          ports:
+            - containerPort: 22
+              name: sftp
+          volumeMounts:
+            - name: mc-data-temporary
+              mountPath: /home/minecraft/upload
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "100Mi"
+            limits:
+              memory: "100Mi"
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+      volumes:
+        - name: mc-data-temporary
+          persistentVolumeClaim:
+            claimName: mc-paper-data-temporary
+      # Helpful with Ceph RBD so it can chown the volume
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mc-paper-temporary
+  labels:
+    app: mc-paper-temporary
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.0.6.223
+  selector:
+    app: mc-paper-temporary
+  ports:
+    - name: mc
+      port: 25566
+      targetPort: 25565
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mc-paper-sftp
+  labels:
+    app: mc-paper-temporary
+spec:
+  type: LoadBalancer
+  selector:
+    app: mc-paper-temporary
+  ports:
+    - name: sftp
+      port: 22
+      targetPort: 22
+      protocol: TCP
