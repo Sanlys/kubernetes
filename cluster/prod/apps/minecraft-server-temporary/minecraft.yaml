@@ -147,6 +147,8 @@ spec:
               LEVEL_NAME="$(grep -E '^level-name=' /data/server.properties | cut -d= -f2- || true)"
               [ -n "$LEVEL_NAME" ] || LEVEL_NAME=world
 
+              ls /data
+
               echo "[prepare-world] level-name=$LEVEL_NAME"
 
               # wipe worlds for a clean run
