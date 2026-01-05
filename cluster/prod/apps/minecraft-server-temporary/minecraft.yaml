@@ -37,6 +37,9 @@ spec:
         - name: minecraft
           image: itzg/minecraft-server:java25-jdk@sha256:b800bbe702e85fbca837316dce225aaf921f67ec8d383b6d82297048e39a2a91
           imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - /entrypoint/entrypoint.sh
           env:
             - name: EULA
               value: "TRUE"
@@ -97,6 +100,8 @@ spec:
           volumeMounts:
             - name: mc-data-temporary
               mountPath: /data
+            - name: entrypoint
+              mountPath: /entrypoint
           resources:
             requests:
               cpu: "2000m"
@@ -135,56 +140,14 @@ spec:
           securityContext:
             runAsUser: 0
             runAsGroup: 0
-      initContainers:
-        - name: prepare-world
-          image: busybox:1.36
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-            allowPrivilegeEscalation: false
-          command:
-          - sh
-          - -lc
-          - |
-            set -eu
-
-            # Unique world name each pod start (avoid collisions)
-            RUN_ID=$(date +%Y%m%d-%H%M%S)-$$
-            LEVEL_NAME=run-${RUN_ID}
-
-            echo "[prepare-run-world] LEVEL_NAME=${LEVEL_NAME}"
-
-            # Write server.properties so Paper loads this new world
-            if grep -q '^level-name=' /data/server.properties; then
-              sed -i "s/^level-name=.*/level-name=${LEVEL_NAME}/" /data/server.properties
-            else
-              echo "level-name=${LEVEL_NAME}" >> /data/server.properties
-            fi
-
-            # Ensure random seed each time (blank = random)
-            if grep -q '^level-seed=' /data/server.properties; then
-              sed -i "s/^level-seed=.*/level-seed=/" /data/server.properties
-            else
-              echo "level-seed=" >> /data/server.properties
-            fi
-
-            # Pre-create the world dir and inject datapacks
-            mkdir -p /data/${LEVEL_NAME}/datapacks
-
-            if ls /data/datapacks-template/* >/dev/null 2>&1; then
-              cp -a /data/datapacks-template/* /data/${LEVEL_NAME}/datapacks/
-            else
-              echo "[prepare-run-world] No datapacks found in /data/datapacks-template/"
-            fi
-
-          volumeMounts:
-            - name: mc-data-temporary
-              mountPath: /data
       volumes:
         - name: mc-data-temporary
           persistentVolumeClaim:
             claimName: mc-paper-data-temporary
-      # Helpful with Ceph RBD so it can chown the volume
+        - name: entrypoint
+          configMap:
+            name: mc-run-entrypoint
+            defaultMode: 0755
 ---
 apiVersion: v1
 kind: Service
@@ -218,3 +181,44 @@ spec:
       port: 22
       targetPort: 22
       protocol: TCP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mc-run-entrypoint
+data:
+  entrypoint.sh: |
+    #!/bin/sh
+    set -eu
+
+    # Create a new world name each start (container restarts included)
+    RUN_ID=$(date +%Y%m%d-%H%M%S)-$$
+    LEVEL_NAME=run-${RUN_ID}
+
+    echo "[entrypoint] LEVEL_NAME=${LEVEL_NAME}"
+
+    # Ensure we manage server.properties ourselves
+    if grep -q '^level-name=' /data/server.properties; then
+      sed -i "s/^level-name=.*/level-name=${LEVEL_NAME}/" /data/server.properties
+    else
+      echo "level-name=${LEVEL_NAME}" >> /data/server.properties
+    fi
+
+    # Random seed each time
+    if grep -q '^level-seed=' /data/server.properties; then
+      sed -i "s/^level-seed=.*/level-seed=/" /data/server.properties
+    else
+      echo "level-seed=" >> /data/server.properties
+    fi
+
+    # Inject datapacks into the new world
+    mkdir -p /data/${LEVEL_NAME}/datapacks
+    if ls /data/datapacks-template/* >/dev/null 2>&1; then
+      cp -a /data/datapacks-template/* /data/${LEVEL_NAME}/datapacks/
+    fi
+
+    # Keep newest 10 runs
+    ls -1dt /data/run-* 2>/dev/null | tail -n +11 | xargs -r rm -rf
+
+    exec /start
+
