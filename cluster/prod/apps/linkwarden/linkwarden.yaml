@@ -56,12 +56,13 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: generate
-          image: bitnami/kubectl@sha256:2c26054c67c2f15412db3dc42c75891820770acecbad0c008e7e9778ba3f2f78
-          command:
-            - sh
-            - -c
+          image: alpine:3.20
+          command: ["/bin/sh","-c"]
+          args:
             - |
               set -euo pipefail
+
+              apk add --no-cache kubectl
 
               if kubectl -n linkwarden get secret linkwarden-secrets >/dev/null 2>&1; then
                 echo "Secret linkwarden-secrets already exists; exiting."
