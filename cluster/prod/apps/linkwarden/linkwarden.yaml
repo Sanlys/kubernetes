@@ -1,0 +1,320 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: linkwarden
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: linkwarden-env
+  namespace: linkwarden
+data:
+  # NEXTAUTH_URL: "https://links.example.com"
+  # MEILI_HOST: "http://meilisearch:7700"
+---
+# RBAC so the Job can create the Secret
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: secret-init
+  namespace: linkwarden
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: secret-init
+  namespace: linkwarden
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: secret-init
+  namespace: linkwarden
+subjects:
+  - kind: ServiceAccount
+    name: secret-init
+    namespace: linkwarden
+roleRef:
+  kind: Role
+  name: secret-init
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: linkwarden-secret-init
+  namespace: linkwarden
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      serviceAccountName: secret-init
+      restartPolicy: OnFailure
+      containers:
+        - name: generate
+          image: bitnami/kubectl:1.29
+          command:
+            - sh
+            - -c
+            - |
+              set -euo pipefail
+
+              if kubectl -n linkwarden get secret linkwarden-secrets >/dev/null 2>&1; then
+                echo "Secret linkwarden-secrets already exists; exiting."
+                exit 0
+              fi
+
+              POSTGRES_PASSWORD="$(head -c 32 /dev/urandom | base64 | tr -d '\n')"
+              NEXTAUTH_SECRET="$(head -c 32 /dev/urandom | base64 | tr -d '\n')"
+
+              kubectl -n linkwarden create secret generic linkwarden-secrets \
+                --from-literal=POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
+                --from-literal=NEXTAUTH_SECRET="$NEXTAUTH_SECRET"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: linkwarden
+spec:
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: linkwarden
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          envFrom:
+            - configMapRef:
+                name: linkwarden-env
+            - secretRef:
+                name: linkwarden-secrets
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_DB
+              value: postgres
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U postgres -d postgres -h 127.0.0.1 -p 5432"]
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+  volumeClaimTemplates:
+    - metadata:
+        name: pgdata
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: rook-ceph-block-ssd
+        resources:
+          requests:
+            storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: meilisearch
+  namespace: linkwarden
+spec:
+  selector:
+    app: meilisearch
+  ports:
+    - name: http
+      port: 7700
+      targetPort: 7700
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: meilisearch
+  namespace: linkwarden
+spec:
+  serviceName: meilisearch
+  replicas: 1
+  selector:
+    matchLabels:
+      app: meilisearch
+  template:
+    metadata:
+      labels:
+        app: meilisearch
+    spec:
+      containers:
+        - name: meilisearch
+          image: getmeili/meilisearch:v1.12.8
+          ports:
+            - containerPort: 7700
+              name: http
+          envFrom:
+            - configMapRef:
+                name: linkwarden-env
+          volumeMounts:
+            - name: meili-data
+              mountPath: /meili_data
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 7700
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 7700
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+  volumeClaimTemplates:
+    - metadata:
+        name: meili-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: rook-ceph-block-ssd
+        resources:
+          requests:
+            storage: 20Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: linkwarden
+  namespace: linkwarden
+spec:
+  selector:
+    app: linkwarden
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: linkwarden-data
+  namespace: linkwarden
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: rook-ceph-block-hdd
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linkwarden
+  namespace: linkwarden
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: linkwarden
+  template:
+    metadata:
+      labels:
+        app: linkwarden
+    spec:
+      containers:
+        - name: linkwarden
+          image: ghcr.io/linkwarden/linkwarden:latest
+          ports:
+            - containerPort: 3000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: linkwarden-env
+            - secretRef:
+                name: linkwarden-secrets
+          env:
+            - name: DATABASE_URL
+              value: "postgresql://postgres:$(POSTGRES_PASSWORD)@postgres:5432/postgres"
+          volumeMounts:
+            - name: linkwarden-data
+              mountPath: /data/data
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+      volumes:
+        - name: linkwarden-data
+          persistentVolumeClaim:
+            claimName: linkwarden-data
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: linkwarden
+  namespace: linkwarden
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - linkwarden.lysakermoen.com
+      secretName: linkwarden-tls
+  rules:
+    - host: linkwarden.lysakermoen.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: linkwarden
+                port:
+                  number: 3000
