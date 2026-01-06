@@ -302,10 +302,10 @@ metadata:
   name: linkwarden
   namespace: linkwarden
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
+    cert-manager.io/cluster-issuer: letsencrypt-public
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
 spec:
-  ingressClassName: nginx
+  ingressClassName: public
   tls:
     - hosts:
         - linkwarden.lysakermoen.com
