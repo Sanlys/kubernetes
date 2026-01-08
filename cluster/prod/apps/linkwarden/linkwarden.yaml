@@ -1,3 +1,4 @@
+# renovate:ignore-dependencies
 apiVersion: v1
 kind: Namespace
 metadata:
