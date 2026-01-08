@@ -56,7 +56,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: generate
-          image: alpine:3.20
+          image: alpine:3.23
           command: ["/bin/sh","-c"]
           args:
             - |
