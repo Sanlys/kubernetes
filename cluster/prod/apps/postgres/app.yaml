@@ -58,11 +58,11 @@ spec:
             instances: 3
             monitoring:
               enabled: true
-            podMonitor:
-              enabled: true
-              relabelings:
-                - targetLabel: type
-                  replacement: ro
+              podMonitor:
+                enabled: true
+                relabelings:
+                  - targetLabel: type
+                    replacement: ro
 
   syncPolicy:
     automated:
