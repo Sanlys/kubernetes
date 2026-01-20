@@ -47,13 +47,13 @@ spec:
               value: cnpg-local
             - op: replace
               path: /reclaimPolicy
-              value: Retain
+              value: Delete
             - op: add
               path: /volumeBindingMode
               value: WaitForFirstConsumer
             - op: add
               path: /allowVolumeExpansion
-              value: false
+              value: true
 
         ###########################################################
         # 3) Run provisioner only on cnpg-storage=true nodes
@@ -78,6 +78,7 @@ spec:
               path: /metadata/labels
               value: 
                 pod-security.kubernetes.io/enforce: privileged
+
   syncPolicy:
     automated:
       prune: true
