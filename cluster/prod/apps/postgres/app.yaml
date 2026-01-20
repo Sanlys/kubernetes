@@ -18,6 +18,8 @@ spec:
       values: |
         type: postgresql
         mode: standalone
+        backups:
+          enabled: false
 
         cluster:
           instances: 3
