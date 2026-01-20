@@ -14,7 +14,7 @@ spec:
         metadata:
           name: cnpg-local-provisioner
         resources:
-          - https://raw.githubusercontent.com/rancher/local-path-provisioner/master/deploy/local-path-storage.yaml
+          - github.com/rancher/local-path-provisioner/deploy?ref=v0.0.34
 
         patches:
           ###########################################################
