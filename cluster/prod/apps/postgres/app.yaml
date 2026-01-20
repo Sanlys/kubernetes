@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cnpg-central
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  destination:
+    namespace: database
+    server: https://kubernetes.default.svc
+  source:
+    repoURL: https://cloudnative-pg.github.io/charts
+    chart: cluster
+    targetRevision: 0.5.0
+    helm:
+      values: |
+        database: postgres
+        owner: postgres
+
+        cluster:
+          name: cnpg-postgres
+          instances: 3
+
+          nodeSelector:
+            cnpg-storage: "true"
+
+          storage:
+            size: 20Gi
+            storageClass: cnpg-local
+
+        monitoring:
+          podMonitor:
+            enabled: true
+          prometheusRule:
+            enabled: true
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+
