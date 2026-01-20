@@ -47,7 +47,7 @@ spec:
               value: cnpg-local
             - op: replace
               path: /reclaimPolicy
-              value: Delete
+              value: Retain
             - op: add
               path: /volumeBindingMode
               value: WaitForFirstConsumer
