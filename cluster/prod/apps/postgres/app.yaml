@@ -16,8 +16,15 @@ spec:
     targetRevision: 0.5.0
     helm:
       values: |
+        type: postgresql
+        mode: standalone
+
         cluster:
           instances: 3
+          monitoring:
+            enabled: true
+            podMonitor:
+              enabled: true
 
           nodeSelector:
             cnpg-storage: "true"
@@ -35,15 +42,27 @@ spec:
               memory: 8Gi
               cpu: 2000m
 
-          initdb:
-            database: postgres
-            owner: postgres
-
-        monitoring:
-          podMonitor:
-            enabled: true
-          prometheusRule:
-            enabled: true
+        poolers:
+          - name: rw
+            type: rw
+            instances: 1
+            monitoring:
+              enabled: true
+              podMonitor:
+                enabled: true
+                relabelings:
+                  - targetLabel: type
+                    replacement: rw
+          - name: ro
+            type: ro
+            instances: 3
+            monitoring:
+              enabled: true
+            podMonitor:
+              enabled: true
+              relabelings:
+                - targetLabel: type
+                  replacement: ro
 
   syncPolicy:
     automated:
