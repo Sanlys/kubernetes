@@ -11,8 +11,8 @@ spec:
     namespace: local-path-storage
     server: https://kubernetes.default.svc
   source:
-    repoURL: github.com/rancher/local-path-provisioner/deploy?ref=v0.0.34
-    targetRevision: master          # or a tag like v0.0.34 if you prefer
+    repoURL: https://github.com/rancher/local-path-provisioner.git
+    targetRevision: 0.0.34          # or a tag like v0.0.34 if you prefer
     path: deploy                    # contains local-path-storage.yaml
     kustomize:
       patches:
