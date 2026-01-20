@@ -16,11 +16,7 @@ spec:
     targetRevision: 0.5.0
     helm:
       values: |
-        database: postgres
-        owner: postgres
-
         cluster:
-          name: cnpg-postgres
           instances: 3
 
           nodeSelector:
@@ -29,6 +25,19 @@ spec:
           storage:
             size: 20Gi
             storageClass: cnpg-local
+          walStorage:
+            size: 1Gi
+            storageClass: cnpg-local
+          resources:
+            limits:
+              memory: 8Gi
+            requests:
+              memory: 8Gi
+              cpu: 2000m
+
+          initdb:
+            database: postgres
+            owner: postgres
 
         monitoring:
           podMonitor:
