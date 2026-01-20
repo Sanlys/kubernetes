@@ -21,6 +21,11 @@ spec:
         backups:
           enabled: false
 
+        databases:
+          - name: database
+            ensure: present
+            owner: postgres
+
         cluster:
           instances: 3
           monitoring:
