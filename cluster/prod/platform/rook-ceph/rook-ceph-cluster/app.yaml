@@ -11,6 +11,8 @@ spec:
     targetRevision: v1.19.0
     helm:
       values: |
+        cephImage:
+          imagePullPolicy: IfNotPresent
         cephClusterSpec:
           mon:
             allowMultiplePerNode: false
