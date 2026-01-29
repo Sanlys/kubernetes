@@ -10,7 +10,7 @@ spec:
     targetRevision: main
     path: cluster/prod/platform/frpc
     directory:
-      exclude: "app.yaml"
+      exclude: "{app.yaml,secret.enc.yaml}"
   destination:
     server: https://kubernetes.default.svc
     namespace: snapshots
