@@ -15,7 +15,6 @@ spec:
       containers:
         - name: frpc
           image: snowdreamtech/frpc:nightly-alpine3.22
-          args: ["-c", "/etc/frp/frpc.ini"]
           volumeMounts:
             - name: config
               mountPath: /etc/frp
