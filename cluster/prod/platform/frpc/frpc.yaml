@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frpc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frpc
+  template:
+    metadata:
+      labels:
+        app: frpc
+    spec:
+      containers:
+        - name: frpc
+          image: snowdreamtech/frpc:nightly-alpine3.22
+          args: ["-c", "/etc/frp/frpc.ini"]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/frp
+              readOnly: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: config
+          secret:
+            secretName: frpc-config
+            items:
+              - key: frpc.ini
+                path: frpc.ini
