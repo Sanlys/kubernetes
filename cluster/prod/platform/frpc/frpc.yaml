@@ -28,5 +28,5 @@ spec:
           secret:
             secretName: frpc-config
             items:
-              - key: frpc.ini
-                path: frpc.ini
+              - key: frpc.toml
+                path: frpc.toml
