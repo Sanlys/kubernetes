@@ -30,17 +30,9 @@ spec:
           instances: 3
 
           affinity:
-            podAntiAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
-                    matchExpressions:
-                      - key: cnpg.io/cluster
-                        operator: In
-                        values: [cnpg-central-cluster]
-                      - key: cnpg.io/podRole
-                        operator: In
-                        values: [instance]
-                  topologyKey: kubernetes.io/hostname
+            enablePodAntiAffinity: true
+            topologyKey: kubernetes.io/hostname
+            podAntiAffinityType: required
 
           monitoring:
             enabled: true
