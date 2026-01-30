@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cnpg-central-cluster-pooler-rw
+spec:
+  type: LoadBalancer
+  ports:
+    - name: pgbouncer
+      port: 5432
+      targetPort: pgbouncer
+      protocol: TCP
+  selector:
+    cnpg.io/poolerName: cnpg-central-cluster-pooler-rw
