@@ -28,6 +28,10 @@ spec:
 
         cluster:
           instances: 3
+          
+          affinity:
+            topologyKey: kubernetes.io/hostname
+
           monitoring:
             enabled: true
             podMonitor:
