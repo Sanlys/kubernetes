@@ -57,7 +57,7 @@ spec:
               memory: 8Gi
             requests:
               memory: 8Gi
-              cpu: 2000m
+              cpu: 2
 
         poolers:
           - name: rw
