@@ -16,14 +16,28 @@ spec:
                 operator: NotIn
                 values: ["infra"]
       validate:
-        message: "CPU and memory requests/limits are recommended"
-        pattern:
-          spec:
-            containers:
-              - resources:
-                  requests:
-                    memory: "?*"
-                    cpu: "?*"
-                  limits:
-                    memory: "?*"
-                    cpu: "?*"
+        message: "Require memory requests+limits (equal), require cpu requests, forbid cpu limits"
+        foreach:
+          - list: "request.object.spec.containers"
+            deny:
+              conditions:
+                any:
+                  # memory request must exist
+                  - key: "{{ element.resources.requests.memory || '' }}"
+                    operator: Equals
+                    value: ""
+                  - key: "{{ element.resources.limits.memory || '' }}"
+                    operator: Equals
+                    value: ""
+                  # memory limit must equal memory request
+                  - key: "{{ element.resources.limits.memory || '' }}"
+                    operator: NotEquals
+                    value: "{{ element.resources.requests.memory || '' }}"
+                  # cpu request must exist
+                  - key: "{{ element.resources.requests.cpu || '' }}"
+                    operator: Equals
+                    value: ""
+                  # cpu limit must NOT exist
+                  - key: "{{ element.resources.limits.cpu || '' }}"
+                    operator: NotEquals
+                    value: ""
