@@ -5,12 +5,12 @@ metadata:
   namespace: snapshots
 spec:
   schedule: "0 */6 * * *"
+  suspend: true
   jobTemplate:
     spec:
       template:
         spec:
           serviceAccountName: snapshotter
-          suspend: true
           containers:
             - name: snapshot
               image: bitnami/kubectl
