@@ -10,6 +10,7 @@ spec:
       template:
         spec:
           serviceAccountName: snapshotter
+          suspend: true
           containers:
             - name: snapshot
               image: bitnami/kubectl
