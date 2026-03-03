@@ -23,7 +23,7 @@ singleBinary:
   persistence:
     enabled: true
     storageClass: rook-ceph-block-ssd
-    size: 20Gi
+    size: 40Gi
 retention_period: 168h # 7 days
 
 # Zero out replica counts of other deployment modes
