@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: restic-backup
+  namespace: syncthing
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: restic
+            image: restic/restic:0.18.0@sha256:4cf4a61ef9786f4de53e9de8c8f5c040f33830eb0a10bf3d614410ee2fcb6120
+            args:
+            - backup
+            - /data
+            envFrom:
+            - secretRef:
+                name: restic-credentials
+            volumeMounts:
+            - name: syncthing-data
+              mountPath: /data
+              readOnly: true
+          volumes:
+          - name: syncthing-data
+            persistentVolumeClaim:
+              claimName: syncthing-pvc
+          restartPolicy: OnFailure
