@@ -10,6 +10,7 @@ spec:
   tls:
     - hosts:
         - s3.k8s.lysakermoen.com
+      secretName: s3-tls
   rules:
     - host: s3.k8s.lysakermoen.com
       http:
