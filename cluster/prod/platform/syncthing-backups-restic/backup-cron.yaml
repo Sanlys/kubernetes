@@ -18,6 +18,8 @@ spec:
             - /data
             - --cache-dir
             - /cache
+            - --host
+            - syncthing
             envFrom:
             - secretRef:
                 name: restic-credentials
