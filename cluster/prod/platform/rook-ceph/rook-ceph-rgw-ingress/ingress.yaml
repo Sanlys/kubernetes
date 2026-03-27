@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rook-ceph-rgw
+  namespace: rook-ceph
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-internal
+spec:
+  ingressClassName: internal
+  tls:
+    - hosts:
+        - s3.k8s.lysakermoen.com
+  rules:
+    - host: s3.k8s.lysakermoen.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rook-ceph-rgw-ceph-objectstore
+                port:
+                  number: 80
