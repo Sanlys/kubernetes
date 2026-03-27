@@ -16,6 +16,7 @@ spec:
             args:
             - backup
             - /data
+            - --cache-dir=/cache
             envFrom:
             - secretRef:
                 name: restic-credentials
@@ -23,8 +24,13 @@ spec:
             - name: syncthing-data
               mountPath: /data
               readOnly: true
+            - name: cache
+              mountPath: /cache
           volumes:
           - name: syncthing-data
             persistentVolumeClaim:
               claimName: syncthing-pvc
+          - name: cache
+            persistentVolumeClaim:
+              claimName: restic-cache
           restartPolicy: OnFailure
