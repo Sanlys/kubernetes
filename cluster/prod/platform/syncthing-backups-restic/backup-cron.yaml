@@ -16,7 +16,8 @@ spec:
             args:
             - backup
             - /data
-            - --cache-dir /cache
+            - --cache-dir
+            - /cache
             envFrom:
             - secretRef:
                 name: restic-credentials
