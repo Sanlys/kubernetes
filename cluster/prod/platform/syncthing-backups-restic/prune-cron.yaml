@@ -19,7 +19,7 @@ spec:
             - --keep-daily=7
             - --keep-weekly=4
             - --keep-monthly=12
-            - --keep-yearly='unlimited'
+            - --keep-yearly=unlimited
             - --prune
             envFrom:
             - secretRef:
