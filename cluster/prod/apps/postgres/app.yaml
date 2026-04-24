@@ -77,6 +77,12 @@ spec:
                   - targetLabel: type
                     replacement: ro
 
+  ignoreDifferences:
+    - group: postgresql.cnpg.io
+      kind: Pooler
+      jsonPointers:
+        - /spec/pgbouncer/paused
+
   syncPolicy:
     automated:
       prune: true
