@@ -80,8 +80,8 @@ spec:
   ignoreDifferences:
     - group: postgresql.cnpg.io
       kind: Pooler
-      jsonPointers:
-        - /spec/pgbouncer/paused
+      managedFieldsManagers:
+        - manager
 
   syncPolicy:
     automated:
