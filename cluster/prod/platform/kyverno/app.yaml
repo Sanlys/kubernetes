@@ -36,7 +36,7 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - ServerSideAppy=true
+      - ServerSideApply=true
     managedNamespaceMetadata:
       labels:
         role: infra
