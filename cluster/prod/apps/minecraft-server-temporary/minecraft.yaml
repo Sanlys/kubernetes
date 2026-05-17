@@ -203,7 +203,8 @@ data:
     set -eu
 
     # Create a new world name each start (container restarts included)
-    RUN_ID=$(date +%Y%m%d-%H%M%S)-$$
+    #RUN_ID=$(date +%Y%m%d-%H%M%S)-$$
+    RUN_ID=20260424-091706-1
     LEVEL_NAME=run-${RUN_ID}
 
     echo "[entrypoint] LEVEL_NAME=${LEVEL_NAME}"
