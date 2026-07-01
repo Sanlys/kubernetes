@@ -6,7 +6,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate   # sqlite file lock — never do RollingUpdate here
+    type: Recreate
   selector:
     matchLabels:
       app: actual
@@ -28,8 +28,8 @@ spec:
               mountPath: /data
           resources:
             requests:
-              cpu: 50m
-              memory: 128Mi
+              cpu: 100m
+              memory: 256Mi
             limits:
               memory: 256Mi
           readinessProbe:
