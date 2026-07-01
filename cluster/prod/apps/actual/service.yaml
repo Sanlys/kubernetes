@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: actual
+  namespace: actual
+spec:
+  selector:
+    app: actual
+  ports:
+    - port: 5006
+      targetPort: 5006
