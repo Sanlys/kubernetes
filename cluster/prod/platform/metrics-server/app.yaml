@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: metrics-server
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://kubernetes-sigs.github.io/metrics-server/
+    chart: metrics-server
+    targetRevision: 3.13.1
+    helm:
+      values: |
+        args:
+          - --kubelet-preferred-address-types=InternalIP
+        metrics:
+          enabled: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 100Mi
+          limits:
+            memory: 200Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
