@@ -13,6 +13,7 @@ spec:
       values: |
         args:
           - --kubelet-preferred-address-types=InternalIP
+          - --kubelet-insecure-tls
         metrics:
           enabled: true
         resources:
