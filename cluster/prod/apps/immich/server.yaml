@@ -117,6 +117,17 @@ spec:
                   - -c
                   - |
                     set -e
+                    # rclone's mount library shells out to fusermount3 to
+                    # actually perform the FUSE mount; it isn't in this
+                    # (Debian-based) image, and the fusermount3 binary from
+                    # the rclone/rclone image can't just be copied over since
+                    # it's dynamically linked against musl/libfuse3, not
+                    # glibc. Install the real Debian package instead - the
+                    # rclone binary itself is a static Go build, so it alone
+                    # is fine copied cross-distro (see copy-rclone-binary).
+                    export DEBIAN_FRONTEND=noninteractive
+                    apt-get update -qq
+                    apt-get install -y -qq --no-install-recommends fuse3
                     # credentials for syncthing's Ceph user, which actually
                     # owns the bucket and its objects (see fetch-bucket-creds
                     # init container and bucket-reader-rbac.yaml)
