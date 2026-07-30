@@ -31,6 +31,11 @@ metadata:
   namespace: immich
 spec:
   replicas: 1
+  # RollingUpdate's default maxSurge would schedule a second pod (possibly on
+  # another node) before killing the old one - fatal for the RWO immich-upload
+  # PVC (Multi-Attach error).
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: immich-server

@@ -115,6 +115,7 @@ spec:
           args:
             - |
               set -e
+              trap 'exit 0' TERM INT
               while true; do
                 # one-way: /data/Bilder -> bucket only, rclone sync never
                 # writes back to the (read-only mounted) source
@@ -122,7 +123,10 @@ spec:
                   --create-empty-src-dirs \
                   --fast-list \
                   --log-level INFO
-                sleep 300
+                # backgrounded + waited so the trap fires immediately on
+                # SIGTERM instead of waiting out the full sleep
+                sleep 300 &
+                wait $!
               done
           volumeMounts:
             - name: data
