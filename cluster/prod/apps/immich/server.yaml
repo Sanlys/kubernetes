@@ -141,12 +141,14 @@ spec:
               set -e
               mkdir -p /mnt/library
               echo "user_allow_other" >> /etc/fuse.conf
+              # a prior instance of this container may have died without
+              # unmounting (preStop only runs on graceful termination)
+              fusermount -u /mnt/library 2>/dev/null || true
               exec rclone mount "cephbucket:$(BUCKET_NAME)" /mnt/library \
                 --allow-other \
                 --read-only \
                 --vfs-cache-mode minimal \
                 --dir-cache-time 1h \
-                --poll-interval 15s \
                 --uid 1000 --gid 1000 --umask 022 \
                 --log-level INFO
           volumeMounts:
