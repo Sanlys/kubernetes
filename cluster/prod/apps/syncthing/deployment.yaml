@@ -117,11 +117,16 @@ spec:
               set -e
               trap 'exit 0' TERM INT
               while true; do
-                # one-way: /data/Bilder -> bucket only, rclone sync never
-                # writes back to the (read-only mounted) source
-                rclone sync /data/Bilder "cephbucket:$(BUCKET_NAME)" \
+                # one-way: /data/Bilder -> bucket only. rclone copy (not
+                # sync) never deletes destination objects, so a listing
+                # hiccup or a Syncthing file still mid-transfer can never
+                # cause data loss in the bucket - worst case a file just
+                # gets picked up on a later pass. --fast-list dropped too:
+                # it does bulk/aggressive listing that's shown inconsistent
+                # results against this Ceph RGW, which was the direct cause
+                # of files disappearing from the bucket.
+                rclone copy /data/Bilder "cephbucket:$(BUCKET_NAME)" \
                   --create-empty-src-dirs \
-                  --fast-list \
                   --log-level INFO
                 # backgrounded + waited so the trap fires immediately on
                 # SIGTERM instead of waiting out the full sleep
