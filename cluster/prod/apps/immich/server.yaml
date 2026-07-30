@@ -142,8 +142,10 @@ spec:
               mkdir -p /mnt/library
               echo "user_allow_other" >> /etc/fuse.conf
               # a prior instance of this container may have died without
-              # unmounting (preStop only runs on graceful termination)
-              fusermount -u /mnt/library 2>/dev/null || true
+              # unmounting (preStop only runs on graceful termination).
+              # umount (busybox) works regardless of whether this image's
+              # fuse tools are named fusermount or fusermount3.
+              umount -l /mnt/library 2>/dev/null || true
               exec rclone mount "cephbucket:$(BUCKET_NAME)" /mnt/library \
                 --allow-other \
                 --read-only \
@@ -160,7 +162,7 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["fusermount", "-u", "/mnt/library"]
+                command: ["umount", "-l", "/mnt/library"]
 
       volumes:
         - name: upload
