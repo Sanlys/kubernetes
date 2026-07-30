@@ -44,6 +44,26 @@ spec:
       labels:
         app: immich-server
     spec:
+      serviceAccountName: bucket-reader
+      initContainers:
+        - name: fetch-bucket-creds
+          image: alpine:3.20
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -euo pipefail
+              apk add --no-cache kubectl
+              {
+                echo "AWS_ACCESS_KEY_ID=$(kubectl -n syncthing get secret syncthing-images-bucket -o jsonpath='{.data.AWS_ACCESS_KEY_ID}' | base64 -d)"
+                echo "AWS_SECRET_ACCESS_KEY=$(kubectl -n syncthing get secret syncthing-images-bucket -o jsonpath='{.data.AWS_SECRET_ACCESS_KEY}' | base64 -d)"
+                echo "BUCKET_NAME=$(kubectl -n syncthing get configmap syncthing-images-bucket -o jsonpath='{.data.BUCKET_NAME}')"
+                echo "BUCKET_HOST=$(kubectl -n syncthing get configmap syncthing-images-bucket -o jsonpath='{.data.BUCKET_HOST}')"
+                echo "BUCKET_PORT=$(kubectl -n syncthing get configmap syncthing-images-bucket -o jsonpath='{.data.BUCKET_PORT}')"
+                echo "BUCKET_REGION=$(kubectl -n syncthing get configmap syncthing-images-bucket -o jsonpath='{.data.BUCKET_REGION}')"
+              } > /shared/bucket.env
+          volumeMounts:
+            - name: bucket-creds
+              mountPath: /shared
       containers:
         - name: immich-server
           image: ghcr.io/immich-app/immich-server:v3.1.0
@@ -95,55 +115,21 @@ spec:
           # the immich-server container) is only permitted on privileged containers.
           securityContext:
             privileged: true
-          env:
-            - name: BUCKET_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: immich-external-library
-                  key: BUCKET_HOST
-            - name: BUCKET_PORT
-              valueFrom:
-                configMapKeyRef:
-                  name: immich-external-library
-                  key: BUCKET_PORT
-            - name: BUCKET_NAME
-              valueFrom:
-                configMapKeyRef:
-                  name: immich-external-library
-                  key: BUCKET_NAME
-            - name: BUCKET_REGION
-              valueFrom:
-                configMapKeyRef:
-                  name: immich-external-library
-                  key: BUCKET_REGION
-            - name: AWS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: immich-external-library
-                  key: AWS_ACCESS_KEY_ID
-            - name: AWS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: immich-external-library
-                  key: AWS_SECRET_ACCESS_KEY
-            - name: RCLONE_CONFIG_CEPHBUCKET_TYPE
-              value: "s3"
-            - name: RCLONE_CONFIG_CEPHBUCKET_PROVIDER
-              value: "Ceph"
-            - name: RCLONE_CONFIG_CEPHBUCKET_ENV_AUTH
-              value: "false"
-            - name: RCLONE_CONFIG_CEPHBUCKET_ACCESS_KEY_ID
-              value: "$(AWS_ACCESS_KEY_ID)"
-            - name: RCLONE_CONFIG_CEPHBUCKET_SECRET_ACCESS_KEY
-              value: "$(AWS_SECRET_ACCESS_KEY)"
-            - name: RCLONE_CONFIG_CEPHBUCKET_ENDPOINT
-              value: "http://$(BUCKET_HOST):$(BUCKET_PORT)"
-            - name: RCLONE_CONFIG_CEPHBUCKET_REGION
-              value: "$(BUCKET_REGION)"
           command: ["sh", "-c"]
           args:
             - |
               set -e
+              # credentials for syncthing's Ceph user, which actually owns
+              # the bucket and its objects (see fetch-bucket-creds init
+              # container and bucket-reader-rbac.yaml)
+              . /shared/bucket.env
+              export RCLONE_CONFIG_CEPHBUCKET_TYPE=s3
+              export RCLONE_CONFIG_CEPHBUCKET_PROVIDER=Ceph
+              export RCLONE_CONFIG_CEPHBUCKET_ENV_AUTH=false
+              export RCLONE_CONFIG_CEPHBUCKET_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
+              export RCLONE_CONFIG_CEPHBUCKET_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
+              export RCLONE_CONFIG_CEPHBUCKET_ENDPOINT="http://$BUCKET_HOST:$BUCKET_PORT"
+              export RCLONE_CONFIG_CEPHBUCKET_REGION="$BUCKET_REGION"
               mkdir -p /mnt/library
               echo "user_allow_other" >> /etc/fuse.conf
               # a prior instance of this container may have died without
@@ -151,7 +137,7 @@ spec:
               # umount (busybox) works regardless of whether this image's
               # fuse tools are named fusermount or fusermount3.
               umount -l /mnt/library 2>/dev/null || true
-              exec rclone mount "cephbucket:$(BUCKET_NAME)" /mnt/library \
+              exec rclone mount "cephbucket:$BUCKET_NAME" /mnt/library \
                 --allow-other \
                 --read-only \
                 --vfs-cache-mode minimal \
@@ -164,6 +150,9 @@ spec:
               mountPropagation: Bidirectional
             - name: fuse-device
               mountPath: /dev/fuse
+            - name: bucket-creds
+              mountPath: /shared
+              readOnly: true
           lifecycle:
             preStop:
               exec:
@@ -179,3 +168,5 @@ spec:
           hostPath:
             path: /dev/fuse
             type: CharDevice
+        - name: bucket-creds
+          emptyDir: {}
