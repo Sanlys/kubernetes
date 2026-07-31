@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bazarr-config
+  namespace: media
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: rook-ceph-block-ssd
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bazarr
+  namespace: media
+spec:
+  selector:
+    app: bazarr
+  ports:
+    - name: http
+      port: 6767
+      targetPort: 6767
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bazarr
+  namespace: media
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: bazarr
+  template:
+    metadata:
+      labels:
+        app: bazarr
+    spec:
+      initContainers:
+        - name: copy-rclone-binary
+          image: rclone/rclone:1.68
+          command: ["sh", "-c", "cp \"$(command -v rclone)\" /shared-bin/rclone && chmod +x /shared-bin/rclone"]
+          volumeMounts:
+            - name: rclone-bin
+              mountPath: /shared-bin
+      containers:
+        - name: bazarr
+          image: lscr.io/linuxserver/bazarr:1.4.5
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Europe/Oslo"
+          envFrom:
+            - secretRef:
+                name: media-library-bucket
+            - configMapRef:
+                name: media-library-bucket
+          ports:
+            - containerPort: 6767
+              name: http
+          # Read-write mount: Bazarr writes .srt subtitle files alongside
+          # the video files sonarr/radarr already track. That's always a
+          # new object, never touching the video file itself, so it doesn't
+          # disturb qbittorrent's seeding. vfs-cache-mode writes (same as
+          # qbittorrent) - subtitles are tiny, so no dedicated cache PVC,
+          # just the container's own ephemeral storage.
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: fuse-device
+              mountPath: /dev/fuse
+            - name: rclone-bin
+              mountPath: /opt/rclone-bin
+              readOnly: true
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - |
+                    set -e
+                    export DEBIAN_FRONTEND=noninteractive
+                    apt-get update -qq
+                    apt-get install -y -qq --no-install-recommends fuse3
+                    export RCLONE_CONFIG_CEPHBUCKET_TYPE=s3
+                    export RCLONE_CONFIG_CEPHBUCKET_PROVIDER=Ceph
+                    export RCLONE_CONFIG_CEPHBUCKET_ENV_AUTH=false
+                    export RCLONE_CONFIG_CEPHBUCKET_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
+                    export RCLONE_CONFIG_CEPHBUCKET_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
+                    export RCLONE_CONFIG_CEPHBUCKET_ENDPOINT="http://$BUCKET_HOST:$BUCKET_PORT"
+                    export RCLONE_CONFIG_CEPHBUCKET_REGION="$BUCKET_REGION"
+                    mkdir -p /media
+                    echo "user_allow_other" >> /etc/fuse.conf 2>/dev/null || true
+                    umount -l /media 2>/dev/null || true
+                    setsid /opt/rclone-bin/rclone mount "cephbucket:$BUCKET_NAME" /media \
+                      --allow-other \
+                      --vfs-cache-mode writes \
+                      --dir-cache-time 1h \
+                      --uid 1000 --gid 1000 --umask 022 \
+                      --log-level INFO \
+                      > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
+            preStop:
+              exec:
+                command: ["umount", "-l", "/media"]
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 6767
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 6767
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+          resources:
+            requests: { cpu: "100m", memory: "256Mi" }
+            limits: { cpu: "1", memory: "512Mi" }
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: bazarr-config
+        - name: fuse-device
+          hostPath:
+            path: /dev/fuse
+            type: CharDevice
+        - name: rclone-bin
+          emptyDir: {}
