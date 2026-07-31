@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: trilium
+  namespace: trilium
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-public
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+  ingressClassName: public
+  tls:
+    - hosts: [ "trilium.lysakermoen.com" ]
+      secretName: trilium-tls
+  rules:
+    - host: trilium.lysakermoen.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: trilium
+                port:
+                  number: 8080
