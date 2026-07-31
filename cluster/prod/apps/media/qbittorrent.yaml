@@ -232,14 +232,14 @@ spec:
                     export RCLONE_CONFIG_CEPHBUCKET_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
                     export RCLONE_CONFIG_CEPHBUCKET_ENDPOINT="http://$BUCKET_HOST:$BUCKET_PORT"
                     export RCLONE_CONFIG_CEPHBUCKET_REGION="$BUCKET_REGION"
-                    mkdir -p /media
+                    mkdir -p /mnt/media
                     echo "user_allow_other" >> /etc/fuse.conf 2>/dev/null || true
-                    umount -l /media 2>/dev/null || true
+                    umount -l /mnt/media 2>/dev/null || true
                     # vfs-cache-mode writes: only files actively being
                     # written (i.e. mid-download) are cached on the local
                     # PVC - reads of already-uploaded, untouched files skip
                     # the cache entirely.
-                    setsid /opt/rclone-bin/rclone mount "cephbucket:$BUCKET_NAME" /media \
+                    setsid /opt/rclone-bin/rclone mount "cephbucket:$BUCKET_NAME" /mnt/media \
                       --allow-other \
                       --vfs-cache-mode writes \
                       --cache-dir /rclone-cache \
@@ -249,7 +249,7 @@ spec:
                       > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
             preStop:
               exec:
-                command: ["umount", "-l", "/media"]
+                command: ["umount", "-l", "/mnt/media"]
           readinessProbe:
             httpGet:
               path: /
