@@ -36,6 +36,27 @@ spec:
       targetPort: 8080
   type: ClusterIP
 ---
+# gluetun's built-in HTTP proxy, so sonarr/radarr/prowlarr/bazarr (each
+# their own pod, not sharing this pod's network namespace) can still send
+# their outbound HTTPS traffic (indexers, trackers, subtitle providers)
+# through the VPN tunnel, by pointing their own Settings -> proxy config
+# at gluetun-proxy:8888. Sufficient for those apps since none of them
+# speak raw torrent protocol - only qbittorrent needs full network-layer
+# tunneling, which is why it's in this pod directly instead.
+apiVersion: v1
+kind: Service
+metadata:
+  name: gluetun-proxy
+  namespace: media
+spec:
+  selector:
+    app: qbittorrent
+  ports:
+    - name: http-proxy
+      port: 8888
+      targetPort: 8888
+  type: ClusterIP
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -89,6 +110,9 @@ spec:
         # exact server Mullvad put in the downloaded config.
         - name: gluetun
           image: qmcgaw/gluetun:v3.40.0
+          ports:
+            - containerPort: 8888
+              name: http-proxy
           securityContext:
             capabilities:
               add: ["NET_ADMIN"]
@@ -151,6 +175,11 @@ spec:
             # names via whatever CoreDNS forwards upstream through the
             # tunnel.
             - name: DNS_KEEP_NAMESERVER
+              value: "on"
+            # HTTP proxy for sonarr/radarr/prowlarr/bazarr - see the
+            # gluetun-proxy Service above. Only reachable from inside the
+            # cluster (ClusterIP), so no auth needed here.
+            - name: HTTPPROXY
               value: "on"
             - name: TZ
               value: "Europe/Oslo"
