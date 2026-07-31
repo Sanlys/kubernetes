@@ -75,10 +75,10 @@ spec:
         # to qbittorrent's WebUI over the normal cluster network; they
         # aren't tunneled.
         #
-        # Needs a Secret named "vpn-wireguard-config" (not included here -
-        # add it yourself as an sops-encrypted secret.enc.yaml file in this
-        # directory, same pattern as platform/frpc/secret.enc.yaml) with the
-        # values from Mullvad's downloaded WireGuard config file:
+        # Needs a Secret named "vpn-wireguard-config" - see
+        # vpn-secret.enc.yaml (sops-encrypted, same pattern as
+        # platform/frpc/secret.enc.yaml) for the values from Mullvad's
+        # downloaded WireGuard config file:
         #   WIREGUARD_PRIVATE_KEY   - [Interface] PrivateKey
         #   WIREGUARD_ADDRESSES     - [Interface] Address
         #   WIREGUARD_PUBLIC_KEY    - [Peer] PublicKey
@@ -138,8 +138,8 @@ spec:
             - name: tun-device
               mountPath: /dev/net/tun
           resources:
-            requests: { cpu: "50m", memory: "64Mi" }
-            limits: { memory: "64Mi" }
+            requests: { cpu: "50m", memory: "128Mi" }
+            limits: { memory: "128Mi" }
         - name: qbittorrent
           image: lscr.io/linuxserver/qbittorrent:5.0.4
           env:
@@ -226,8 +226,8 @@ spec:
             periodSeconds: 10
             failureThreshold: 6
           resources:
-            requests: { cpu: "200m", memory: "512Mi" }
-            limits: { memory: "512Mi" }
+            requests: { cpu: "200m", memory: "1Gi" }
+            limits: { memory: "1Gi" }
       volumes:
         - name: config
           persistentVolumeClaim:

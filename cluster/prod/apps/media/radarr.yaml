@@ -126,8 +126,8 @@ spec:
             periodSeconds: 10
             failureThreshold: 6
           resources:
-            requests: { cpu: "100m", memory: "256Mi" }
-            limits: { memory: "256Mi" }
+            requests: { cpu: "100m", memory: "512Mi" }
+            limits: { memory: "512Mi" }
       volumes:
         - name: config
           persistentVolumeClaim:

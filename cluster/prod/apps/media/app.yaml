@@ -10,7 +10,7 @@ spec:
     targetRevision: main
     path: cluster/prod/apps/media
     directory:
-      exclude: "app.yaml"
+      exclude: "{app.yaml,vpn-secret.enc.yaml}"
   destination:
     server: https://kubernetes.default.svc
     namespace: media
