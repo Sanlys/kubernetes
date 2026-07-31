@@ -1,0 +1,247 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qbittorrent-config
+  namespace: media
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: rook-ceph-block-ssd
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qbittorrent-vfs-cache
+  namespace: media
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: rook-ceph-block-ssd
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qbittorrent
+  namespace: media
+spec:
+  selector:
+    app: qbittorrent
+  ports:
+    - name: webui
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbittorrent
+  namespace: media
+spec:
+  replicas: 1
+  # RollingUpdate would schedule a second pod before killing the old one -
+  # fatal for the RWO qbittorrent-config/qbittorrent-vfs-cache PVCs
+  # (Multi-Attach error), same reasoning as immich-server.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: qbittorrent
+  template:
+    metadata:
+      labels:
+        app: qbittorrent
+    spec:
+      initContainers:
+        # rclone binary is a static Go build, portable across distros - only
+        # the fusermount3 package (installed at postStart below) needs to
+        # come from the container's own distro. Same technique as
+        # immich-server; see cluster/prod/apps/immich/server.yaml.
+        - name: copy-rclone-binary
+          image: rclone/rclone:1.68
+          command: ["sh", "-c", "cp \"$(command -v rclone)\" /shared-bin/rclone && chmod +x /shared-bin/rclone"]
+          volumeMounts:
+            - name: rclone-bin
+              mountPath: /shared-bin
+      containers:
+        # Tunnels only this pod's network namespace. qbittorrent (below)
+        # shares it automatically - containers in a pod always share one
+        # network namespace - so its torrent traffic is routed through the
+        # VPN and firewalled off if the tunnel drops. Sonarr/Radarr/etc talk
+        # to qbittorrent's WebUI over the normal cluster network; they
+        # aren't tunneled.
+        #
+        # Needs a Secret named "vpn-wireguard-config" (not included here -
+        # add it yourself as an sops-encrypted secret.enc.yaml file in this
+        # directory, same pattern as platform/frpc/secret.enc.yaml) with the
+        # values from Mullvad's downloaded WireGuard config file:
+        #   WIREGUARD_PRIVATE_KEY   - [Interface] PrivateKey
+        #   WIREGUARD_ADDRESSES     - [Interface] Address
+        #   WIREGUARD_PUBLIC_KEY    - [Peer] PublicKey
+        #   WIREGUARD_ENDPOINT_IP   - host part of [Peer] Endpoint
+        #   WIREGUARD_ENDPOINT_PORT - port part of [Peer] Endpoint
+        # Using "custom" (rather than gluetun's built-in "mullvad" provider,
+        # which picks a server itself from SERVER_COUNTRIES/etc) pins the
+        # exact server Mullvad put in the downloaded config.
+        - name: gluetun
+          image: qmcgaw/gluetun:v3.40.0
+          securityContext:
+            capabilities:
+              add: ["NET_ADMIN"]
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: "custom"
+            - name: VPN_TYPE
+              value: "wireguard"
+            - name: WIREGUARD_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vpn-wireguard-config
+                  key: WIREGUARD_PRIVATE_KEY
+            - name: WIREGUARD_ADDRESSES
+              valueFrom:
+                secretKeyRef:
+                  name: vpn-wireguard-config
+                  key: WIREGUARD_ADDRESSES
+            - name: WIREGUARD_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vpn-wireguard-config
+                  key: WIREGUARD_PUBLIC_KEY
+            - name: WIREGUARD_ENDPOINT_IP
+              valueFrom:
+                secretKeyRef:
+                  name: vpn-wireguard-config
+                  key: WIREGUARD_ENDPOINT_IP
+            - name: WIREGUARD_ENDPOINT_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: vpn-wireguard-config
+                  key: WIREGUARD_ENDPOINT_PORT
+            # Allows the ingress-nginx -> pod path to qbittorrent's WebUI to
+            # bypass the VPN kill-switch firewall (inbound only - torrent
+            # traffic itself still only goes out through the tunnel). Double
+            # check this var name against gluetun's current docs if it
+            # doesn't work - it has been renamed between major versions.
+            - name: FIREWALL_INPUT_PORTS
+              value: "8080"
+            - name: TZ
+              value: "Europe/Oslo"
+          volumeMounts:
+            # Kernel WireGuard is used when available (Talos's kernel
+            # supports it); this is only a fallback for gluetun's userspace
+            # implementation, same as it was for OpenVPN's tun interface.
+            - name: tun-device
+              mountPath: /dev/net/tun
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits: { memory: "64Mi" }
+        - name: qbittorrent
+          image: lscr.io/linuxserver/qbittorrent:5.0.4
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Europe/Oslo"
+            - name: WEBUI_PORT
+              value: "8080"
+          envFrom:
+            - secretRef:
+                name: media-library-bucket
+            - configMapRef:
+                name: media-library-bucket
+          ports:
+            - containerPort: 8080
+              name: webui
+          # FUSE mount needs CAP_SYS_ADMIN and /dev/fuse; runs in-process
+          # (postStart) rather than a sidecar, since cross-container mount
+          # propagation doesn't work on this cluster's Talos nodes. Same
+          # technique as immich-server.
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: fuse-device
+              mountPath: /dev/fuse
+            - name: rclone-bin
+              mountPath: /opt/rclone-bin
+              readOnly: true
+            - name: vfs-cache
+              mountPath: /rclone-cache
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - |
+                    set -e
+                    export DEBIAN_FRONTEND=noninteractive
+                    apt-get update -qq
+                    apt-get install -y -qq --no-install-recommends fuse3
+                    export RCLONE_CONFIG_CEPHBUCKET_TYPE=s3
+                    export RCLONE_CONFIG_CEPHBUCKET_PROVIDER=Ceph
+                    export RCLONE_CONFIG_CEPHBUCKET_ENV_AUTH=false
+                    export RCLONE_CONFIG_CEPHBUCKET_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
+                    export RCLONE_CONFIG_CEPHBUCKET_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
+                    export RCLONE_CONFIG_CEPHBUCKET_ENDPOINT="http://$BUCKET_HOST:$BUCKET_PORT"
+                    export RCLONE_CONFIG_CEPHBUCKET_REGION="$BUCKET_REGION"
+                    mkdir -p /media
+                    echo "user_allow_other" >> /etc/fuse.conf 2>/dev/null || true
+                    umount -l /media 2>/dev/null || true
+                    # vfs-cache-mode writes: only files actively being
+                    # written (i.e. mid-download) are cached on the local
+                    # PVC - reads of already-uploaded, untouched files skip
+                    # the cache entirely.
+                    setsid /opt/rclone-bin/rclone mount "cephbucket:$BUCKET_NAME" /media \
+                      --allow-other \
+                      --vfs-cache-mode writes \
+                      --cache-dir /rclone-cache \
+                      --dir-cache-time 1h \
+                      --uid 1000 --gid 1000 --umask 022 \
+                      --log-level INFO \
+                      > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
+            preStop:
+              exec:
+                command: ["umount", "-l", "/media"]
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+          resources:
+            requests: { cpu: "200m", memory: "512Mi" }
+            limits: { memory: "512Mi" }
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: qbittorrent-config
+        - name: vfs-cache
+          persistentVolumeClaim:
+            claimName: qbittorrent-vfs-cache
+        - name: fuse-device
+          hostPath:
+            path: /dev/fuse
+            type: CharDevice
+        - name: tun-device
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+        - name: rclone-bin
+          emptyDir: {}

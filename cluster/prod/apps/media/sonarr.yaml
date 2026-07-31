@@ -1,0 +1,143 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sonarr-config
+  namespace: media
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: rook-ceph-block-ssd
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sonarr
+  namespace: media
+spec:
+  selector:
+    app: sonarr
+  ports:
+    - name: http
+      port: 8989
+      targetPort: 8989
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarr
+  namespace: media
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sonarr
+  template:
+    metadata:
+      labels:
+        app: sonarr
+    spec:
+      initContainers:
+        - name: copy-rclone-binary
+          image: rclone/rclone:1.68
+          command: ["sh", "-c", "cp \"$(command -v rclone)\" /shared-bin/rclone && chmod +x /shared-bin/rclone"]
+          volumeMounts:
+            - name: rclone-bin
+              mountPath: /shared-bin
+      containers:
+        - name: sonarr
+          image: lscr.io/linuxserver/sonarr:4.0.9
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Europe/Oslo"
+          envFrom:
+            - secretRef:
+                name: media-library-bucket
+            - configMapRef:
+                name: media-library-bucket
+          ports:
+            - containerPort: 8989
+              name: http
+          # Read-only rclone mount: Sonarr only needs to see what's under
+          # /media/tv to track have/missing episodes. "Rename Episodes"
+          # stays off in Sonarr's Media Management settings and it never
+          # imports/moves files, so it never writes here - qbittorrent's
+          # seeding reference to the file (written directly by qbittorrent's
+          # own mount, same bucket) is never disturbed.
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: fuse-device
+              mountPath: /dev/fuse
+            - name: rclone-bin
+              mountPath: /opt/rclone-bin
+              readOnly: true
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - |
+                    set -e
+                    export DEBIAN_FRONTEND=noninteractive
+                    apt-get update -qq
+                    apt-get install -y -qq --no-install-recommends fuse3
+                    export RCLONE_CONFIG_CEPHBUCKET_TYPE=s3
+                    export RCLONE_CONFIG_CEPHBUCKET_PROVIDER=Ceph
+                    export RCLONE_CONFIG_CEPHBUCKET_ENV_AUTH=false
+                    export RCLONE_CONFIG_CEPHBUCKET_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
+                    export RCLONE_CONFIG_CEPHBUCKET_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
+                    export RCLONE_CONFIG_CEPHBUCKET_ENDPOINT="http://$BUCKET_HOST:$BUCKET_PORT"
+                    export RCLONE_CONFIG_CEPHBUCKET_REGION="$BUCKET_REGION"
+                    mkdir -p /media
+                    echo "user_allow_other" >> /etc/fuse.conf 2>/dev/null || true
+                    umount -l /media 2>/dev/null || true
+                    setsid /opt/rclone-bin/rclone mount "cephbucket:$BUCKET_NAME" /media \
+                      --allow-other \
+                      --read-only \
+                      --vfs-cache-mode minimal \
+                      --dir-cache-time 1h \
+                      --uid 1000 --gid 1000 --umask 022 \
+                      --log-level INFO \
+                      > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
+            preStop:
+              exec:
+                command: ["umount", "-l", "/media"]
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8989
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8989
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6
+          resources:
+            requests: { cpu: "100m", memory: "256Mi" }
+            limits: { memory: "256Mi" }
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: sonarr-config
+        - name: fuse-device
+          hostPath:
+            path: /dev/fuse
+            type: CharDevice
+        - name: rclone-bin
+          emptyDir: {}

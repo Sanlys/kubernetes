@@ -1,0 +1,32 @@
+# Grants immich's rclone-mount sidecar (via its bucket-reader ServiceAccount
+# in the immich namespace, cluster/prod/apps/immich/bucket-reader-rbac.yaml)
+# read access to this bucket's connection Secret/ConfigMap, so it can read
+# as the same Ceph user that owns the bucket and uploads to it.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: read-images-bucket-creds
+  namespace: syncthing
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["syncthing-images-bucket"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["syncthing-images-bucket"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-images-bucket-creds
+  namespace: syncthing
+subjects:
+  - kind: ServiceAccount
+    name: bucket-reader
+    namespace: immich
+roleRef:
+  kind: Role
+  name: read-images-bucket-creds
+  apiGroup: rbac.authorization.k8s.io

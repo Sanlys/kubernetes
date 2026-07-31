@@ -1,0 +1,14 @@
+# Lets the rclone-mount sidecar fetch the syncthing-images-bucket credentials
+# (cluster/prod/apps/syncthing/bucket.yaml) at pod startup - see the matching
+# Role/RoleBinding in cluster/prod/apps/syncthing/rbac-immich-bucket-reader.yaml.
+# We deliberately don't run our own ObjectBucketClaim for this bucket: every
+# object in it is uploaded (and thus owned, at the S3 ACL level) by
+# syncthing's Ceph user, so a separate immich-owned user only ever gets
+# ListBucket/GetObject access to files that user explicitly grants it -
+# reading as the same user that actually owns the objects avoids that
+# per-object ACL problem entirely.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bucket-reader
+  namespace: immich

@@ -1,0 +1,18 @@
+# renovate:ignore-dependencies
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: media
+  labels:
+    # qbittorrent/sonarr/radarr/bazarr/jellyfin each run their own in-process
+    # rclone FUSE mount of the shared media bucket - cross-container mount
+    # propagation doesn't work on this cluster's Talos nodes, so the mount
+    # happens in the app container itself and needs privileged + /dev/fuse.
+    # Same reasoning as the immich namespace.
+    pod-security.kubernetes.io/enforce: "privileged"
+    pod-security.kubernetes.io/enforce-version: "latest"
+    pod-security.kubernetes.io/warn: "baseline"
+    pod-security.kubernetes.io/audit: "baseline"
+    # excludes this namespace from the disallow-privileged/disallow-hostpath
+    # Kyverno ClusterPolicies (same escape hatch immich and rook-ceph use)
+    role: infra

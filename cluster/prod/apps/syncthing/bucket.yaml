@@ -1,0 +1,11 @@
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: syncthing-images-bucket
+  namespace: syncthing
+spec:
+  # Same bucket the immich app's ObjectBucketClaim uses - rook grants this
+  # claim its own separate credentials scoped to the existing bucket rather
+  # than trying (and failing) to create a second bucket with that name.
+  bucketName: immich-external-library
+  storageClassName: rook-ceph-bucket
