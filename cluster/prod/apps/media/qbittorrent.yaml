@@ -117,6 +117,8 @@ spec:
             capabilities:
               add: ["NET_ADMIN"]
           env:
+            - name: HTTPPROXY_LOG
+              value: "on"
             - name: VPN_SERVICE_PROVIDER
               value: "custom"
             - name: VPN_TYPE
