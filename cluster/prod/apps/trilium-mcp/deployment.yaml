@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trilium-mcp
+  namespace: trilium-mcp
+  labels: { app: trilium-mcp }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: trilium-mcp }
+  template:
+    metadata:
+      labels: { app: trilium-mcp }
+    spec:
+      containers:
+        - name: trilium-mcp
+          image: harbor.k8s.lysakermoen.com/library/trilium-mcp@sha256:04ca859f4753930b2394aa01d9a5189d8e412c23838a157f096bb93ed85aff4e
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: TRILIUM_URL
+              value: "http://trilium.trilium.svc.cluster.local:8080/etapi"
+            - name: OAUTH_ISSUER
+              value: "https://trilium-mcp.lysakermoen.com"
+            # Needs a Secret named "trilium-mcp-secrets" - sops-encrypt it
+            # yourself (age keys aren't available here), same pattern as
+            # platform/frpc/secret.enc.yaml. Keys:
+            #   TRILIUM_TOKEN       - Trilium ETAPI token (Trilium UI:
+            #                         Options -> ETAPI -> Create new token)
+            #   OAUTH_CLIENT_ID     - static client id, entered manually in
+            #                         Claude.ai's Advanced connector settings
+            #   OAUTH_CLIENT_SECRET - static client secret, same place
+            - name: TRILIUM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: trilium-mcp-secrets
+                  key: TRILIUM_TOKEN
+            - name: OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: trilium-mcp-secrets
+                  key: OAUTH_CLIENT_ID
+            - name: OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: trilium-mcp-secrets
+                  key: OAUTH_CLIENT_SECRET
+          resources:
+            requests: { cpu: "50m", memory: "128Mi" }
+            limits: { memory: "128Mi" }
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
