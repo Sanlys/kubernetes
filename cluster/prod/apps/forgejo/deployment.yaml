@@ -33,11 +33,12 @@ spec:
             # Locked immediately so the public install wizard can never be
             # completed by a random visitor; all config comes from env vars
             # below instead. The initial admin user must be created manually
-            # post-deploy via (note -u 1000: kubectl exec defaults to root,
-            # but Forgejo refuses to run its CLI as root - the app itself
-            # runs as USER_UID=1000 above):
-            #   kubectl -n forgejo exec -u 1000 deploy/forgejo -- forgejo admin user create \
-            #     --username <name> --password <pw> --email <email> --admin
+            # post-deploy via (kubectl exec has no docker-exec-style --user
+            # flag, and kubectl exec drops you in as root by default while
+            # Forgejo's CLI refuses to run as root - so su into the "git"
+            # user, uid 1000 per USER_UID above, from inside the container):
+            #   kubectl -n forgejo exec deploy/forgejo -- su git -c \
+            #     "forgejo admin user create --username <name> --password <pw> --email <email> --admin"
             - name: GITEA__security__INSTALL_LOCK
               value: "true"
             - name: GITEA__database__DB_TYPE
