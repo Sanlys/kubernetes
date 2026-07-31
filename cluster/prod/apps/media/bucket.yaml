@@ -1,0 +1,13 @@
+# Unlike immich (which reads syncthing's bucket cross-namespace via RBAC +
+# a kubectl init container), this bucket is owned directly by apps in this
+# namespace, so the generated Secret/ConfigMap (both named
+# "media-library-bucket") can just be wired up with envFrom/secretRef -
+# no cross-namespace RBAC dance needed.
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: media-library-bucket
+  namespace: media
+spec:
+  bucketName: media-library
+  storageClassName: rook-ceph-bucket
