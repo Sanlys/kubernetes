@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forgejo
+  namespace: forgejo
+  labels: { app: forgejo }
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: { app: forgejo }
+  template:
+    metadata:
+      labels: { app: forgejo }
+    spec:
+      containers:
+        - name: forgejo
+          # Standard (non-rootless) image: entrypoint starts as root to chown
+          # /data to USER_UID/USER_GID, then re-execs as that user - same
+          # pattern as trilium/vaultwarden, and avoids needing an fsGroup or
+          # initContainer to fix up ownership of the Ceph RBD volume.
+          # Not digest-pinned: the proxy in this environment blocks
+          # codeberg.org's registry, so the digest couldn't be resolved here.
+          image: codeberg.org/forgejo/forgejo:16.0.1
+          env:
+            - name: USER_UID
+              value: "1000"
+            - name: USER_GID
+              value: "1000"
+            - name: TZ
+              value: "Europe/Oslo"
+            # Locked immediately so the public install wizard can never be
+            # completed by a random visitor; all config comes from env vars
+            # below instead. The initial admin user must be created manually
+            # post-deploy via:
+            #   kubectl -n forgejo exec deploy/forgejo -- forgejo admin user create \
+            #     --username <name> --password <pw> --email <email> --admin
+            - name: GITEA__security__INSTALL_LOCK
+              value: "true"
+            - name: GITEA__database__DB_TYPE
+              value: "postgres"
+            - name: GITEA__database__HOST
+              value: "postgres:5432"
+            - name: GITEA__database__NAME
+              value: "forgejo"
+            - name: GITEA__database__USER
+              value: "forgejo"
+            - name: GITEA__database__PASSWD
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-secrets
+                  key: DB_PASSWORD
+            - name: GITEA__server__DOMAIN
+              value: "git.lysakermoen.com"
+            - name: GITEA__server__ROOT_URL
+              value: "https://git.lysakermoen.com/"
+            - name: GITEA__server__HTTP_PORT
+              value: "3000"
+            # HTTPS-only: no git+ssh access, so the embedded SSH server stays off.
+            - name: GITEA__server__DISABLE_SSH
+              value: "true"
+            # Public instance: don't let anonymous visitors self-register.
+            # Create additional users manually (see forgejo admin user create above).
+            - name: GITEA__service__DISABLE_REGISTRATION
+              value: "true"
+          ports:
+            - name: http
+              containerPort: 3000
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet: { path: /api/healthz, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            httpGet: { path: /api/healthz, port: http }
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          resources:
+            requests: { cpu: "200m", memory: "512Mi" }
+            limits: { memory: "512Mi" }
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: forgejo-data
+      securityContext:
+        runAsNonRoot: false
