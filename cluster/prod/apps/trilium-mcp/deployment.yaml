@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: trilium-mcp
-          image: harbor.k8s.lysakermoen.com/library/trilium-mcp@sha256:04ca859f4753930b2394aa01d9a5189d8e412c23838a157f096bb93ed85aff4e
+          image: harbor.k8s.lysakermoen.com/library/trilium-mcp@sha256:82700ccd98513a66fcd4b4f4f69619d15d7be87994fbd27cfca5a63b156834cd
           ports:
             - name: http
               containerPort: 8080
