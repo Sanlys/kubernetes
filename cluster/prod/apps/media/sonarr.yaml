@@ -67,7 +67,7 @@ spec:
             - containerPort: 8989
               name: http
           # Read-only rclone mount: Sonarr only needs to see what's under
-          # /media/tv to track have/missing episodes. "Rename Episodes"
+          # /mnt/media/tv to track have/missing episodes. "Rename Episodes"
           # stays off in Sonarr's Media Management settings and it never
           # imports/moves files, so it never writes here - qbittorrent's
           # seeding reference to the file (written directly by qbittorrent's
@@ -109,10 +109,10 @@ spec:
                     export RCLONE_CONFIG_CEPHBUCKET_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
                     export RCLONE_CONFIG_CEPHBUCKET_ENDPOINT="http://$BUCKET_HOST:$BUCKET_PORT"
                     export RCLONE_CONFIG_CEPHBUCKET_REGION="$BUCKET_REGION"
-                    mkdir -p /media
+                    mkdir -p /mnt/media
                     echo "user_allow_other" >> /etc/fuse.conf 2>/dev/null || true
-                    umount -l /media 2>/dev/null || true
-                    setsid /opt/rclone-bin/rclone mount "cephbucket:$BUCKET_NAME" /media \
+                    umount -l /mnt/media 2>/dev/null || true
+                    setsid /opt/rclone-bin/rclone mount "cephbucket:$BUCKET_NAME" /mnt/media \
                       --allow-other \
                       --read-only \
                       --vfs-cache-mode minimal \
@@ -122,7 +122,7 @@ spec:
                       > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
             preStop:
               exec:
-                command: ["umount", "-l", "/media"]
+                command: ["umount", "-l", "/mnt/media"]
           readinessProbe:
             httpGet:
               path: /
