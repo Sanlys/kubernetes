@@ -123,7 +123,7 @@ spec:
               readOnly: true
           resources:
             requests: { cpu: "50m", memory: "64Mi" }
-            limits: { cpu: "500m", memory: "256Mi" }
+            limits: { memory: "64Mi" }
         - name: qbittorrent
           image: lscr.io/linuxserver/qbittorrent:5.0.4
           env:
@@ -211,7 +211,7 @@ spec:
             failureThreshold: 6
           resources:
             requests: { cpu: "200m", memory: "512Mi" }
-            limits: { cpu: "2", memory: "2Gi" }
+            limits: { memory: "512Mi" }
       volumes:
         - name: config
           persistentVolumeClaim:
