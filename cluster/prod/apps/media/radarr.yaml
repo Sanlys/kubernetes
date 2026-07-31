@@ -66,9 +66,12 @@ spec:
           ports:
             - containerPort: 7878
               name: http
-          # Read-only rclone mount: same reasoning as sonarr.yaml, but
-          # tracking /mnt/media/movies. "Rename Movies" stays off so Radarr
-          # never writes here and qbittorrent's seeding stays intact.
+          # Not --read-only: same reasoning as sonarr.yaml - Radarr
+          # validates that its root folder is writable even though it
+          # never actually writes to it in practice, tracking
+          # /mnt/media/movies. "Rename Movies" and Completed Download
+          # Handling both stay off, so Radarr never actually writes here
+          # and qbittorrent's seeding stays intact.
           securityContext:
             privileged: true
           volumeMounts:
@@ -111,8 +114,7 @@ spec:
                     umount -l /mnt/media 2>/dev/null || true
                     setsid /opt/rclone-bin/rclone mount "cephbucket:$BUCKET_NAME" /mnt/media \
                       --allow-other \
-                      --read-only \
-                      --vfs-cache-mode minimal \
+                      --vfs-cache-mode writes \
                       --dir-cache-time 1h \
                       --uid 1000 --gid 1000 --umask 022 \
                       --log-level INFO \
