@@ -75,15 +75,18 @@ spec:
         # to qbittorrent's WebUI over the normal cluster network; they
         # aren't tunneled.
         #
-        # Needs a Secret named "vpn-openvpn-config" (not included here - add
-        # it yourself as an sops-encrypted secret.enc.yaml file in this
-        # directory, same pattern as platform/frpc/secret.enc.yaml) with:
-        #   config.ovpn      - full OpenVPN client config for your VPS
-        #                       (remote host/port/proto, CA cert, and an
-        #                       `auth-user-pass` line since login is by
-        #                       username/password)
-        #   OPENVPN_USER     - VPN username
-        #   OPENVPN_PASSWORD - VPN password
+        # Needs a Secret named "vpn-wireguard-config" (not included here -
+        # add it yourself as an sops-encrypted secret.enc.yaml file in this
+        # directory, same pattern as platform/frpc/secret.enc.yaml) with the
+        # values from Mullvad's downloaded WireGuard config file:
+        #   WIREGUARD_PRIVATE_KEY   - [Interface] PrivateKey
+        #   WIREGUARD_ADDRESSES     - [Interface] Address
+        #   WIREGUARD_PUBLIC_KEY    - [Peer] PublicKey
+        #   WIREGUARD_ENDPOINT_IP   - host part of [Peer] Endpoint
+        #   WIREGUARD_ENDPOINT_PORT - port part of [Peer] Endpoint
+        # Using "custom" (rather than gluetun's built-in "mullvad" provider,
+        # which picks a server itself from SERVER_COUNTRIES/etc) pins the
+        # exact server Mullvad put in the downloaded config.
         - name: gluetun
           image: qmcgaw/gluetun:v3.40.0
           securityContext:
@@ -93,19 +96,32 @@ spec:
             - name: VPN_SERVICE_PROVIDER
               value: "custom"
             - name: VPN_TYPE
-              value: "openvpn"
-            - name: OPENVPN_CUSTOM_CONFIG
-              value: "/gluetun/custom.ovpn"
-            - name: OPENVPN_USER
+              value: "wireguard"
+            - name: WIREGUARD_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
-                  name: vpn-openvpn-config
-                  key: OPENVPN_USER
-            - name: OPENVPN_PASSWORD
+                  name: vpn-wireguard-config
+                  key: WIREGUARD_PRIVATE_KEY
+            - name: WIREGUARD_ADDRESSES
               valueFrom:
                 secretKeyRef:
-                  name: vpn-openvpn-config
-                  key: OPENVPN_PASSWORD
+                  name: vpn-wireguard-config
+                  key: WIREGUARD_ADDRESSES
+            - name: WIREGUARD_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vpn-wireguard-config
+                  key: WIREGUARD_PUBLIC_KEY
+            - name: WIREGUARD_ENDPOINT_IP
+              valueFrom:
+                secretKeyRef:
+                  name: vpn-wireguard-config
+                  key: WIREGUARD_ENDPOINT_IP
+            - name: WIREGUARD_ENDPOINT_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: vpn-wireguard-config
+                  key: WIREGUARD_ENDPOINT_PORT
             # Allows the ingress-nginx -> pod path to qbittorrent's WebUI to
             # bypass the VPN kill-switch firewall (inbound only - torrent
             # traffic itself still only goes out through the tunnel). Double
@@ -116,11 +132,11 @@ spec:
             - name: TZ
               value: "Europe/Oslo"
           volumeMounts:
+            # Kernel WireGuard is used when available (Talos's kernel
+            # supports it); this is only a fallback for gluetun's userspace
+            # implementation, same as it was for OpenVPN's tun interface.
             - name: tun-device
               mountPath: /dev/net/tun
-            - name: vpn-config
-              mountPath: /gluetun
-              readOnly: true
           resources:
             requests: { cpu: "50m", memory: "64Mi" }
             limits: { memory: "64Mi" }
@@ -229,9 +245,3 @@ spec:
             type: CharDevice
         - name: rclone-bin
           emptyDir: {}
-        - name: vpn-config
-          secret:
-            secretName: vpn-openvpn-config
-            items:
-              - key: config.ovpn
-                path: custom.ovpn
