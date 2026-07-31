@@ -184,8 +184,23 @@ spec:
                   - |
                     set -e
                     export DEBIAN_FRONTEND=noninteractive
-                    apt-get update -qq
-                    apt-get install -y -qq --no-install-recommends fuse3
+                    # gluetun (sharing this pod's network namespace) can
+                    # take a few seconds to bring the WireGuard tunnel up
+                    # and apply its kill-switch firewall - until then, all
+                    # outbound traffic including this apt-get is blackholed.
+                    # A failed postStart hook makes kubelet kill the
+                    # container outright, so retry instead of failing on
+                    # the first attempt.
+                    for i in $(seq 1 30); do
+                      if apt-get update -qq && apt-get install -y -qq --no-install-recommends fuse3; then
+                        break
+                      fi
+                      if [ "$i" -eq 30 ]; then
+                        echo "fuse3 install failed after retries" >&2
+                        exit 1
+                      fi
+                      sleep 2
+                    done
                     export RCLONE_CONFIG_CEPHBUCKET_TYPE=s3
                     export RCLONE_CONFIG_CEPHBUCKET_PROVIDER=Ceph
                     export RCLONE_CONFIG_CEPHBUCKET_ENV_AUTH=false
