@@ -133,11 +133,14 @@ spec:
             # mount's outbound traffic to the internal Ceph RGW bucket
             # endpoint (BUCKET_HOST) - that's cluster-internal, not
             # internet traffic, so it should never go through the tunnel
-            # anyway. This is the cluster's pod CIDR (--cluster-cidr);
-            # if BUCKET_HOST is a Service ClusterIP living in a separate
-            # service CIDR range, that range needs to be added here too.
+            # anyway. This only decides which destinations skip the
+            # tunnel, not whether internet-bound traffic can leak, so
+            # covering all of RFC1918 10.0.0.0/8 instead of pinning the
+            # exact pod/service CIDR split is fine and one less thing to
+            # get wrong (pod CIDR is 10.244.0.0/16, but the service CIDR
+            # BUCKET_HOST's ClusterIP actually falls in wasn't 10.96/12).
             - name: FIREWALL_OUTBOUND_SUBNETS
-              value: "10.244.0.0/16"
+              value: "10.0.0.0/8"
             - name: TZ
               value: "Europe/Oslo"
           volumeMounts:
