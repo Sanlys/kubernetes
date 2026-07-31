@@ -43,3 +43,7 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: trilium-data
+      # Container starts as root to fix up ownership of the mounted data
+      # volume, then re-execs the node process as uid/gid 1000:1000 itself.
+      securityContext:
+        runAsNonRoot: false
