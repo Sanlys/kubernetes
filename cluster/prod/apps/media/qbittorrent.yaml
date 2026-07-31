@@ -141,6 +141,17 @@ spec:
             # BUCKET_HOST's ClusterIP actually falls in wasn't 10.96/12).
             - name: FIREWALL_OUTBOUND_SUBNETS
               value: "10.0.0.0/8"
+            # gluetun otherwise hijacks DNS for the whole shared network
+            # namespace, pointing /etc/resolv.conf at its own resolver
+            # (127.0.0.1, DNS-over-TLS to a public upstream) - which has
+            # no idea how to resolve cluster-internal names like the Ceph
+            # RGW service (BUCKET_HOST). Keeping the original nameserver
+            # (cluster CoreDNS, injected by kubelet) lets both resolve:
+            # internal cluster names via CoreDNS as normal, and public
+            # names via whatever CoreDNS forwards upstream through the
+            # tunnel.
+            - name: DNS_KEEP_NAMESERVER
+              value: "on"
             - name: TZ
               value: "Europe/Oslo"
           volumeMounts:
