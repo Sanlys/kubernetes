@@ -117,8 +117,6 @@ spec:
             capabilities:
               add: ["NET_ADMIN"]
           env:
-            - name: HTTPPROXY_LOG
-              value: "on"
             - name: VPN_SERVICE_PROVIDER
               value: "custom"
             - name: VPN_TYPE
@@ -148,13 +146,18 @@ spec:
                 secretKeyRef:
                   name: vpn-wireguard-config
                   key: WIREGUARD_ENDPOINT_PORT
-            # Allows the ingress-nginx -> pod path to qbittorrent's WebUI to
+            # Allows the ingress-nginx -> pod path to qbittorrent's WebUI
+            # (8080) and other pods reaching gluetun's HTTP proxy (8888) to
             # bypass the VPN kill-switch firewall (inbound only - torrent
-            # traffic itself still only goes out through the tunnel). Double
-            # check this var name against gluetun's current docs if it
-            # doesn't work - it has been renamed between major versions.
+            # traffic itself still only goes out through the tunnel). A
+            # port missing here means connections to it just hang (dropped,
+            # not refused) rather than failing fast - 8888 was missing this
+            # whole time gluetun-proxy looked otherwise correctly wired up
+            # (valid Service, valid endpoint, gluetun listening internally).
+            # Double check this var name against gluetun's current docs if
+            # it doesn't work - it has been renamed between major versions.
             - name: FIREWALL_INPUT_PORTS
-              value: "8080"
+              value: "8080,8888"
             # Otherwise the kill-switch firewall also blocks the rclone
             # mount's outbound traffic to the internal Ceph RGW bucket
             # endpoint (BUCKET_HOST) - that's cluster-internal, not
