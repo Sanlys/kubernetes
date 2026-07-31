@@ -66,12 +66,15 @@ spec:
           ports:
             - containerPort: 8989
               name: http
-          # Read-only rclone mount: Sonarr only needs to see what's under
-          # /mnt/media/tv to track have/missing episodes. "Rename Episodes"
-          # stays off in Sonarr's Media Management settings and it never
-          # imports/moves files, so it never writes here - qbittorrent's
-          # seeding reference to the file (written directly by qbittorrent's
-          # own mount, same bucket) is never disturbed.
+          # Sonarr refuses to accept a root folder that isn't writable (it
+          # validates this even though it never actually writes here) - so
+          # this can't be --read-only despite Sonarr only needing to see
+          # what's under /mnt/media/tv to track have/missing episodes.
+          # "Rename Episodes" stays off in Sonarr's Media Management
+          # settings and Completed Download Handling stays off too, so it
+          # never actually imports/moves/renames files in practice -
+          # qbittorrent's seeding reference to the file (written directly
+          # by qbittorrent's own mount, same bucket) is never disturbed.
           securityContext:
             privileged: true
           volumeMounts:
@@ -114,8 +117,7 @@ spec:
                     umount -l /mnt/media 2>/dev/null || true
                     setsid /opt/rclone-bin/rclone mount "cephbucket:$BUCKET_NAME" /mnt/media \
                       --allow-other \
-                      --read-only \
-                      --vfs-cache-mode minimal \
+                      --vfs-cache-mode writes \
                       --dir-cache-time 1h \
                       --uid 1000 --gid 1000 --umask 022 \
                       --log-level INFO \
