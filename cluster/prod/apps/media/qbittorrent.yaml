@@ -20,7 +20,7 @@ spec:
   storageClassName: rook-ceph-block-ssd
   resources:
     requests:
-      storage: 50Gi
+      storage: 100Gi
 ---
 apiVersion: v1
 kind: Service
