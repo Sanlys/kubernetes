@@ -176,10 +176,25 @@ spec:
             # tunnel.
             - name: DNS_KEEP_NAMESERVER
               value: "on"
+            # DNS_KEEP_NAMESERVER only stops gluetun from overwriting
+            # /etc/resolv.conf - it doesn't necessarily stop gluetun's own
+            # internal components (like the HTTP proxy below) from still
+            # resolving through its built-in DoT resolver instead of the
+            # system resolver. Turning DoT off entirely unifies everything
+            # in this container onto the one resolver path (system
+            # resolv.conf -> cluster CoreDNS), which is the likely fix for
+            # the arr-stack's indexer requests failing to resolve through
+            # the proxy.
+            - name: DOT
+              value: "off"
             # HTTP proxy for sonarr/radarr/prowlarr/bazarr - see the
             # gluetun-proxy Service above. Only reachable from inside the
-            # cluster (ClusterIP), so no auth needed here.
+            # cluster (ClusterIP), so no auth needed here. Logging enabled
+            # so a real error is visible in this container's logs if
+            # requests are still failing to resolve/connect.
             - name: HTTPPROXY
+              value: "on"
+            - name: HTTPPROXY_LOG
               value: "on"
             - name: TZ
               value: "Europe/Oslo"
