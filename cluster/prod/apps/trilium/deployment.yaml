@@ -14,6 +14,12 @@ spec:
     metadata:
       labels: { app: trilium }
     spec:
+      # The Service is named "trilium", which makes Kubernetes inject a
+      # TRILIUM_PORT=tcp://<clusterIP>:8080 env var into the pod. Trilium
+      # itself reads TRILIUM_PORT as its listen-port config and expects a
+      # plain integer, so it fails to start unless service-link env
+      # injection is disabled.
+      enableServiceLinks: false
       containers:
         - name: trilium
           # triliumnext/notes:v0.95.0 (== latest/stable at time of writing)
