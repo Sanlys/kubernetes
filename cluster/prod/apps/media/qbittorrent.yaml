@@ -22,14 +22,29 @@ spec:
     requests:
       storage: 100Gi
 ---
-# RWX (CephFS, not RBD block) - sonarr/radarr each run as their own
-# separate pod and need to see this same real filesystem qbittorrent
-# downloads into, not just the bucket they get copied/served to. See
-# platform/rook-ceph/rook-ceph-fs for the backing CephFilesystem.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: qbittorrent-downloads
+  namespace: media
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: rook-ceph-block-hdd
+  resources:
+    requests:
+      storage: 300Gi
+---
+# RWX (CephFS, not RBD block) - sonarr/radarr each run as their own
+# separate pod and need to see this same real filesystem qbittorrent
+# downloads into, not just the bucket they get copied/served to. Kept
+# separate from qbittorrent-downloads (RWO, existing data already on it)
+# rather than migrating it - PVCs can't switch StorageClass/access mode
+# in place anyway. See platform/rook-ceph/rook-ceph-fs for the backing
+# CephFilesystem.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qbittorrent-dl
   namespace: media
 spec:
   accessModes: ["ReadWriteMany"]
@@ -265,6 +280,8 @@ spec:
               mountPath: /rclone-cache
             - name: downloads
               mountPath: /downloads
+            - name: dl
+              mountPath: /dl
           lifecycle:
             postStart:
               exec:
@@ -355,6 +372,9 @@ spec:
         - name: downloads
           persistentVolumeClaim:
             claimName: qbittorrent-downloads
+        - name: dl
+          persistentVolumeClaim:
+            claimName: qbittorrent-dl
         - name: fuse-device
           hostPath:
             path: /dev/fuse

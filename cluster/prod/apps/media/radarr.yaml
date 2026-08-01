@@ -82,8 +82,8 @@ spec:
             - name: rclone-bin
               mountPath: /opt/rclone-bin
               readOnly: true
-            - name: downloads
-              mountPath: /downloads
+            - name: dl
+              mountPath: /dl
           lifecycle:
             postStart:
               exec:
@@ -151,6 +151,6 @@ spec:
             type: CharDevice
         - name: rclone-bin
           emptyDir: {}
-        - name: downloads
+        - name: dl
           persistentVolumeClaim:
-            claimName: qbittorrent-downloads
+            claimName: qbittorrent-dl
