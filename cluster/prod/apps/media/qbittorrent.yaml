@@ -22,14 +22,18 @@ spec:
     requests:
       storage: 100Gi
 ---
+# RWX (CephFS, not RBD block) - sonarr/radarr each run as their own
+# separate pod and need to see this same real filesystem qbittorrent
+# downloads into, not just the bucket they get copied/served to. See
+# platform/rook-ceph/rook-ceph-fs for the backing CephFilesystem.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: qbittorrent-downloads
   namespace: media
 spec:
-  accessModes: ["ReadWriteOnce"]
-  storageClassName: rook-ceph-block-hdd
+  accessModes: ["ReadWriteMany"]
+  storageClassName: rook-cephfs
   resources:
     requests:
       storage: 300Gi
