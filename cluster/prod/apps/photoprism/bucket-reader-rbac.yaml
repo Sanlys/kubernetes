@@ -1,0 +1,13 @@
+# Lets the rclone-mount sidecar fetch the syncthing-images-bucket credentials
+# (cluster/prod/apps/syncthing/bucket.yaml) at pod startup - see the matching
+# Role/RoleBinding in cluster/prod/apps/syncthing/rbac-photoprism-bucket-reader.yaml.
+# Same pattern as immich (cluster/prod/apps/immich/bucket-reader-rbac.yaml):
+# we read as the same Ceph user that owns the bucket and its objects rather
+# than owning a separate ObjectBucketClaim, since every object is uploaded by
+# syncthing's Ceph user and a separate photoprism-owned user would only get
+# access to files explicitly granted to it at the per-object ACL level.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bucket-reader
+  namespace: photoprism

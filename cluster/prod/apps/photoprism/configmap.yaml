@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: photoprism-env
+  namespace: photoprism
+data:
+  TZ: "Europe/Oslo"
+  PHOTOPRISM_DATABASE_DRIVER: "mysql"
+  PHOTOPRISM_DATABASE_SERVER: "mariadb:3306"
+  PHOTOPRISM_DATABASE_NAME: "photoprism"
+  PHOTOPRISM_DATABASE_USER: "photoprism"
+  PHOTOPRISM_ADMIN_USER: "admin"
+  PHOTOPRISM_SITE_URL: "https://photoprism.lysakermoen.com/"
+  PHOTOPRISM_DISABLE_TLS: "true"
+  PHOTOPRISM_HTTP_PORT: "2342"
+  # Shares immich's external library (synced by syncthing) read-only rather
+  # than photoprism's own upload/import flow - see deployment.yaml's
+  # rclone-mount postStart hook. Disables all write operations against
+  # originals (moving/deleting/editing), matching immich's own read-only
+  # mount of the same bucket.
+  PHOTOPRISM_READONLY: "true"
+  PHOTOPRISM_ORIGINALS_PATH: "/photoprism/originals"
+  PHOTOPRISM_STORAGE_PATH: "/photoprism/storage"
