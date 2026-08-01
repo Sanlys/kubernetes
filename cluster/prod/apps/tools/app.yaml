@@ -1,0 +1,33 @@
+# App-of-apps root for the internal tools platform (github.com/Sanlys/tools).
+# Sourced from that repo's deploy/ directory rather than this one -- unlike
+# every other app.yaml here, the manifests this manages (Helm charts, not
+# plain YAML) live in the tools repo, not alongside this file. This
+# Application just recurses that repo's deploy/ tree the same way the
+# top-level cluster/prod/app.yaml recurses this one, picking up each
+# individual tool's own app.yaml (e.g. deploy/hello/app.yaml,
+# deploy/portal/app.yaml) and syncing the Application resources they
+# define -- which in turn deploy that tool's Helm chart into its own
+# tools-<name> namespace.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tools
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Sanlys/tools.git
+    targetRevision: main
+    path: deploy
+    directory:
+      recurse: true
+      include: "**/app.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
