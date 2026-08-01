@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: mariadb
-          image: mariadb:12.3
+          image: mariadb:12.3-ubi10
           # Flags recommended by PhotoPrism's own docker-compose example
           # (https://dl.photoprism.app/docker/compose.yaml).
           args:

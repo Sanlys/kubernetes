@@ -78,7 +78,7 @@ spec:
               mountPath: /shared-bin
       containers:
         - name: photoprism
-          image: photoprism/photoprism:260523
+          image: photoprism/photoprism:260728
           ports:
             - containerPort: 2342
               name: http
