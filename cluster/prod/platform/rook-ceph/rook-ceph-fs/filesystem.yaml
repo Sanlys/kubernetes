@@ -1,0 +1,26 @@
+# RWX filesystem storage - unlike the RBD block pools (rook-ceph-rbd),
+# CephFS can be mounted by multiple pods/nodes at once. Needed for
+# apps/media's /downloads PVC, shared between qbittorrent (writing) and
+# sonarr/radarr (reading, from their own separate pods).
+apiVersion: ceph.rook.io/v1
+kind: CephFilesystem
+metadata:
+  name: media-fs
+  namespace: rook-ceph
+spec:
+  # Metadata ops are frequent and small - keep them on the ssd-pool device
+  # class (same pool tier rook-ceph-block-ssd uses) even though the actual
+  # file data below sits on hdd.
+  metadataPool:
+    deviceClass: ssd
+    replicated:
+      size: 3
+  dataPools:
+    - name: data0
+      deviceClass: hdd
+      replicated:
+        size: 3
+  preserveFilesystemOnDelete: true
+  metadataServer:
+    activeCount: 1
+    activeStandby: true
