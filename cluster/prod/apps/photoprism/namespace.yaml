@@ -1,0 +1,14 @@
+# renovate:ignore-dependencies
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: photoprism
+  labels:
+    # rclone-mount sidecar needs a privileged, hostPath-mounted FUSE device
+    pod-security.kubernetes.io/enforce: "privileged"
+    pod-security.kubernetes.io/enforce-version: "latest"
+    pod-security.kubernetes.io/warn: "baseline"
+    pod-security.kubernetes.io/audit: "baseline"
+    # excludes this namespace from the disallow-privileged/disallow-hostpath
+    # Kyverno ClusterPolicies (same escape hatch rook-ceph's own namespace uses)
+    role: infra

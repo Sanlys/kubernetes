@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: photoprism
+  namespace: photoprism
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-public
+spec:
+  ingressClassName: public
+  tls:
+    - hosts:
+        - photoprism.lysakermoen.com
+      secretName: photoprism-tls
+  rules:
+    - host: photoprism.lysakermoen.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: photoprism
+                port:
+                  number: 2342

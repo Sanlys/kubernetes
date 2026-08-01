@@ -1,0 +1,20 @@
+# Grants photoprism's rclone-mount sidecar (via its bucket-reader
+# ServiceAccount in the photoprism namespace,
+# cluster/prod/apps/photoprism/bucket-reader-rbac.yaml) read access to this
+# bucket's connection Secret/ConfigMap, so it can mount the same external
+# library immich reads - as the same Ceph user that owns the bucket and
+# uploads to it. Reuses the Role already defined for immich in
+# rbac-immich-bucket-reader.yaml; only a new RoleBinding is needed.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-images-bucket-creds-photoprism
+  namespace: syncthing
+subjects:
+  - kind: ServiceAccount
+    name: bucket-reader
+    namespace: photoprism
+roleRef:
+  kind: Role
+  name: read-images-bucket-creds
+  apiGroup: rbac.authorization.k8s.io
