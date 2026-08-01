@@ -23,6 +23,18 @@ spec:
       storage: 100Gi
 ---
 apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qbittorrent-downloads
+  namespace: media
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: rook-ceph-block-hdd
+  resources:
+    requests:
+      storage: 300Gi
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: qbittorrent
@@ -247,6 +259,8 @@ spec:
               readOnly: true
             - name: vfs-cache
               mountPath: /rclone-cache
+            - name: downloads
+              mountPath: /downloads
           lifecycle:
             postStart:
               exec:
@@ -334,6 +348,9 @@ spec:
         - name: vfs-cache
           persistentVolumeClaim:
             claimName: qbittorrent-vfs-cache
+        - name: downloads
+          persistentVolumeClaim:
+            claimName: qbittorrent-downloads
         - name: fuse-device
           hostPath:
             path: /dev/fuse
