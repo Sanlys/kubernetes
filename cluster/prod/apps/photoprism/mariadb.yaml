@@ -27,6 +27,12 @@ spec:
       labels:
         app: mariadb
     spec:
+      # The ubi10 image's Dockerfile creates and runs as a fixed mysql
+      # UID/GID 999 (not root, not an arbitrary uid) - without this the
+      # freshly-provisioned Ceph RBD PVC is root-owned and mariadb can't
+      # write to /var/lib/mysql.
+      securityContext:
+        fsGroup: 999
       containers:
         - name: mariadb
           image: mariadb:12.3-ubi10
