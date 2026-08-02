@@ -11,18 +11,6 @@ spec:
       storage: 20Gi
 ---
 apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: jellyfin-vfs-cache
-  namespace: media
-spec:
-  accessModes: ["ReadWriteOnce"]
-  storageClassName: rook-ceph-block-ssd
-  resources:
-    requests:
-      storage: 100Gi
----
-apiVersion: v1
 kind: Service
 metadata:
   name: jellyfin
@@ -129,7 +117,7 @@ spec:
                       --read-only \
                       --vfs-cache-mode full \
                       --cache-dir /rclone-cache \
-                      --vfs-cache-max-size 90G \
+                      --vfs-cache-max-size 15G \
                       --vfs-cache-max-age 24h \
                       --vfs-read-chunk-size 32M \
                       --vfs-read-chunk-size-limit 1G \
@@ -162,9 +150,13 @@ spec:
         - name: config
           persistentVolumeClaim:
             claimName: jellyfin-config
+        # Node-local scratch, not a PVC: purely disposable rclone chunk
+        # cache, no reason for it to survive a pod restart/reschedule.
+        # sizeLimit is a hard backstop behind rclone's own
+        # --vfs-cache-max-size.
         - name: vfs-cache
-          persistentVolumeClaim:
-            claimName: jellyfin-vfs-cache
+          emptyDir:
+            sizeLimit: 20Gi
         - name: fuse-device
           hostPath:
             path: /dev/fuse
