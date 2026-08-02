@@ -62,11 +62,13 @@ spec:
           ports:
             - containerPort: 8096
               name: http
-          # Same read-only rclone mount pattern as immich-server's external
-          # library mount (see cluster/prod/apps/immich/server.yaml). If
-          # seeking/transcoding performance ends up too choppy, bumping
-          # vfs-cache-mode to "full" with a dedicated cache PVC is the next
-          # tuning step.
+          # vfs-cache-mode full (not immich-server's "minimal") -
+          # "minimal" doesn't retain file data at all, so every read (even
+          # of something just played) re-fetches from the bucket with no
+          # local reuse. "full" engages rclone's chunked/read-ahead
+          # fetcher for all reads, cached or not, which is what actually
+          # fixes cold-start latency - a smaller vfs-read-chunk-size below
+          # helps further by shrinking the first (probe) fetch.
           securityContext:
             privileged: true
           volumeMounts:
@@ -77,6 +79,8 @@ spec:
             - name: rclone-bin
               mountPath: /opt/rclone-bin
               readOnly: true
+            - name: vfs-cache
+              mountPath: /rclone-cache
           lifecycle:
             postStart:
               exec:
@@ -111,7 +115,13 @@ spec:
                     setsid /opt/rclone-bin/rclone mount "cephbucket:$BUCKET_NAME" /mnt/media \
                       --allow-other \
                       --read-only \
-                      --vfs-cache-mode minimal \
+                      --vfs-cache-mode full \
+                      --cache-dir /rclone-cache \
+                      --vfs-cache-max-size 15G \
+                      --vfs-cache-max-age 24h \
+                      --vfs-read-chunk-size 32M \
+                      --vfs-read-chunk-size-limit 1G \
+                      --buffer-size 32M \
                       --dir-cache-time 1h \
                       --uid 1000 --gid 1000 --umask 022 \
                       --log-level INFO \
@@ -140,6 +150,13 @@ spec:
         - name: config
           persistentVolumeClaim:
             claimName: jellyfin-config
+        # Node-local scratch, not a PVC: purely disposable rclone chunk
+        # cache, no reason for it to survive a pod restart/reschedule.
+        # sizeLimit is a hard backstop behind rclone's own
+        # --vfs-cache-max-size.
+        - name: vfs-cache
+          emptyDir:
+            sizeLimit: 20Gi
         - name: fuse-device
           hostPath:
             path: /dev/fuse
