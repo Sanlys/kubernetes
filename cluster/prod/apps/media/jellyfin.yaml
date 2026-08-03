@@ -69,6 +69,11 @@ spec:
           # fetcher for all reads, cached or not, which is what actually
           # fixes cold-start latency - a smaller vfs-read-chunk-size below
           # helps further by shrinking the first (probe) fetch.
+          # vfs-fast-fingerprint skips a hash/modtime freshness check
+          # against the bucket on every open - every playback spawns a
+          # fresh ffmpeg process re-opening the file, so that check would
+          # otherwise cost an extra round-trip on every single playback
+          # start, not just the first.
           securityContext:
             privileged: true
           volumeMounts:
@@ -118,9 +123,11 @@ spec:
                       --vfs-cache-mode full \
                       --cache-dir /rclone-cache \
                       --vfs-cache-max-size 15G \
+                      --vfs-cache-min-free-space 1G \
                       --vfs-cache-max-age 24h \
                       --vfs-read-chunk-size 32M \
                       --vfs-read-chunk-size-limit 1G \
+                      --vfs-fast-fingerprint \
                       --buffer-size 32M \
                       --dir-cache-time 1h \
                       --uid 1000 --gid 1000 --umask 022 \
