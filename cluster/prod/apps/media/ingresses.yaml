@@ -6,6 +6,19 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-public
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    # nginx buffers the *entire* upstream response before forwarding
+    # anything downstream by default - for an HLS segment/playlist Jellyfin
+    # is still writing, that can mean the client gets nothing until the
+    # response is complete (or a buffer threshold trips), regardless of how
+    # fast ffmpeg/Jellyfin actually produced it. Disabling buffering here
+    # makes nginx forward bytes to the client as they arrive instead.
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+    # HLS sessions are long-lived relative to nginx's normal defaults;
+    # bumped so a slow-to-start or long-running stream doesn't get cut off
+    # mid-response.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
 spec:
   ingressClassName: public
   tls:
