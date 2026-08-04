@@ -15,9 +15,11 @@ data:
   PHOTOPRISM_HTTP_PORT: "2342"
   # Shares immich's external library (synced by syncthing) read-only rather
   # than photoprism's own upload/import flow - see deployment.yaml's
-  # rclone-mount postStart hook. Disables all write operations against
-  # originals (moving/deleting/editing), matching immich's own read-only
-  # mount of the same bucket.
+  # rclone-mount postStart hook, which mounts the bucket at
+  # /photoprism/originals/media (a subfolder of ORIGINALS_PATH, not
+  # ORIGINALS_PATH itself - see the comment there). Disables all write
+  # operations against originals (moving/deleting/editing), matching
+  # immich's own read-only mount of the same bucket.
   PHOTOPRISM_READONLY: "true"
   PHOTOPRISM_ORIGINALS_PATH: "/photoprism/originals"
   PHOTOPRISM_STORAGE_PATH: "/photoprism/storage"
