@@ -23,7 +23,7 @@ spec:
       containers:
         - name: trilium
           # triliumnext/notes:v0.95.0 (== latest/stable at time of writing)
-          image: triliumnext/notes@sha256:611a430016585d35b170eb9a0fa300ce76318f04a8ec0067549c4c52561b0c36
+          image: triliumnext/trilium:v0.104.1
           ports:
             - name: http
               containerPort: 8080
