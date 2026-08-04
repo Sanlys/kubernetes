@@ -183,8 +183,8 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 6
           resources:
-            requests: { cpu: "500m", memory: "2Gi" }
-            limits: { memory: "2Gi" }
+            requests: { cpu: "500m", memory: "4Gi" }
+            limits: { memory: "4Gi" }
       volumes:
         - name: storage
           persistentVolumeClaim:
