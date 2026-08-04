@@ -144,10 +144,18 @@ spec:
                     export RCLONE_CONFIG_CEPHBUCKET_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
                     export RCLONE_CONFIG_CEPHBUCKET_ENDPOINT="http://$BUCKET_HOST:$BUCKET_PORT"
                     export RCLONE_CONFIG_CEPHBUCKET_REGION="$BUCKET_REGION"
-                    mkdir -p /photoprism/originals
+                    # Mounted as a subfolder of /photoprism/originals rather
+                    # than at /photoprism/originals itself - PhotoPrism
+                    # expects different sources to be separate subdirectories
+                    # (see https://www.photoprism.app/pro/kb/volumes/, e.g.
+                    # "./originals:/photoprism/originals" +
+                    # "/mnt/photos:/photoprism/originals/media"); mounting
+                    # the FUSE filesystem directly onto the originals root
+                    # left some files unindexed.
+                    mkdir -p /photoprism/originals/media
                     echo "user_allow_other" >> /etc/fuse.conf 2>/dev/null || true
-                    umount -l /photoprism/originals 2>/dev/null || true
-                    setsid /opt/rclone-bin/rclone mount "cephbucket:$BUCKET_NAME" /photoprism/originals \
+                    umount -l /photoprism/originals/media 2>/dev/null || true
+                    setsid /opt/rclone-bin/rclone mount "cephbucket:$BUCKET_NAME" /photoprism/originals/media \
                       --allow-other \
                       --read-only \
                       --vfs-cache-mode minimal \
@@ -157,7 +165,7 @@ spec:
                       > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
             preStop:
               exec:
-                command: ["umount", "-l", "/photoprism/originals"]
+                command: ["umount", "-l", "/photoprism/originals/media"]
           readinessProbe:
             httpGet:
               path: /api/v1/status
