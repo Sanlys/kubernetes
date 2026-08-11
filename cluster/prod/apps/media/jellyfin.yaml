@@ -125,20 +125,9 @@ spec:
                     export RCLONE_CONFIG_CEPHBUCKET_REGION="$BUCKET_REGION"
                     mkdir -p /mnt/media
                     umount -l /mnt/media 2>/dev/null || true
-                    # rpcbind's own package install can't start its daemon
-                    # inside a container (policy-rc.d denies it), but the
-                    # kernel NFS client still wants it reachable locally to
-                    # register for lock-manager (NLM) callbacks on mount -
-                    # start it explicitly. nolock on the mount itself skips
-                    # NLM registration entirely, which is fine for a
-                    # read-only media mount and removes the dependency on
-                    # rpcbind actually working, but starting it too is cheap
-                    # insurance.
-                    rpcbind 2>/dev/null || true
                     # Loopback only (127.0.0.1) - never reachable off-pod.
                     # Fixed port on both the NFS and mountd side avoids
-                    # needing rpcbind/portmapper for the MOUNT protocol
-                    # itself.
+                    # needing rpcbind/portmapper for the MOUNT protocol.
                     setsid /opt/rclone-bin/rclone serve nfs "cephbucket:$BUCKET_NAME" \
                       --addr 127.0.0.1:2049 \
                       --vfs-cache-mode full \
@@ -156,17 +145,13 @@ spec:
                       > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
                     mounted=0
                     for i in $(seq 1 30); do
-                      if mount -t nfs -o vers=3,tcp,nolock,port=2049,mountport=2049,soft,ro 127.0.0.1:/ /mnt/media 2>/tmp/mount.err; then
+                      if mount -t nfs -o vers=3,tcp,port=2049,mountport=2049,soft,ro 127.0.0.1:/ /mnt/media 2>/dev/null; then
                         mounted=1
                         break
                       fi
                       sleep 1
                     done
-                    if [ "$mounted" -ne 1 ]; then
-                      echo "failed to mount rclone NFS export after 30s, last error:" >&2
-                      cat /tmp/mount.err >&2
-                      exit 1
-                    fi
+                    [ "$mounted" -eq 1 ] || { echo "failed to mount rclone NFS export after 30s" >&2; exit 1; }
             preStop:
               exec:
                 command: ["umount", "-l", "/mnt/media"]
