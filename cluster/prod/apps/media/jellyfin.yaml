@@ -74,6 +74,18 @@ spec:
           # fresh ffmpeg process re-opening the file, so that check would
           # otherwise cost an extra round-trip on every single playback
           # start, not just the first.
+          #
+          # This mount is FUSE (rclone mount), even though direct A/B
+          # testing traced the slow-playback-start problem specifically to
+          # FUSE itself (open() blocking tens of seconds on large files,
+          # independent of vfs-cache-mode and network path - rclone serve
+          # nfs and plain `rclone cat` against the same backend did not
+          # reproduce it). The fix would be a loopback NFS mount instead,
+          # but this cluster's Talos nodes don't have NFS client kernel
+          # support (mount fails with "Protocol not supported") and adding
+          # it requires a Talos system extension + node image change,
+          # which is out of scope for this repo - infra, not app config.
+          # Don't re-attempt the NFS-loopback approach without that.
           securityContext:
             privileged: true
           volumeMounts:
@@ -131,7 +143,7 @@ spec:
                       --buffer-size 32M \
                       --dir-cache-time 1h \
                       --uid 1000 --gid 1000 --umask 022 \
-                      --log-level DEBUG \
+                      --log-level INFO \
                       > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
             preStop:
               exec:
