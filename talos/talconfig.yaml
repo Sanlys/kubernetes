@@ -8,6 +8,9 @@ schematic:
     systemExtensions:
       officialExtensions:
         - siderolabs/fuse3
+        - siderolabs/nfs-utils
+        - siderolabs/nfsd
+        - siderolabs/nfsrahead
 
 nodes:
   - hostname: talos-3gd-ovr
