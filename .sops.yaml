@@ -16,3 +16,6 @@ creation_rules:
   - path_regex: secret.enc.yaml$
     age: *my_age_keys
 
+  - path_regex: ^talos/talsecret.sops.yaml$
+    age: *my_age_keys
+

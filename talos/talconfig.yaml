@@ -1,0 +1,75 @@
+clusterName: kubernetes
+talosVersion: v1.13.2
+kubernetesVersion: v1.36.1
+endpoint: https://10.0.6.69:6443
+
+schematic:
+  customization:
+    systemExtensions:
+      officialExtensions:
+        - siderolabs/fuse3
+
+nodes:
+  - hostname: talos-3gd-ovr
+    ipAddress: 10.0.6.126
+    controlPlane: true
+    installDiskSelector:
+      wwid: naa.500080d80032f1c7
+
+  - hostname: talos-6l0-2ma
+    ipAddress: 10.0.6.102
+    controlPlane: true
+    installDiskSelector:
+      wwid: naa.50026b7684a45b05
+
+  - hostname: talos-hjv-x6c
+    ipAddress: 10.0.6.69
+    controlPlane: true
+    installDiskSelector:
+      wwid: naa.5ace42e07529a993
+
+  - hostname: talos-hfy-gns
+    ipAddress: 10.0.6.109
+    controlPlane: false
+    installDiskSelector:
+      wwid: nvme.1987-3139343438323338303030313238383833353739-466f726365204d50353130-00000001
+    patches:
+      - "@patches/storage-patch.yaml"
+
+  - hostname: talos-jcx-enc
+    ipAddress: 10.0.6.191
+    controlPlane: false
+    installDiskSelector:
+      wwid: naa.50025385503ea663
+    patches:
+      - "@patches/storage-patch.yaml"
+
+  - hostname: talos-jwk-gs2
+    ipAddress: 10.0.6.101
+    controlPlane: false
+    installDiskSelector:
+      wwid: eui.e8238fa6bf530001001b448b489c1c89
+    patches:
+      - "@patches/storage-patch.yaml"
+
+  - hostname: talos-ly6-852
+    ipAddress: 10.0.6.67
+    controlPlane: false
+    installDiskSelector:
+      wwid: naa.50026b723700d6dd
+
+  - hostname: talos-puf-79s
+    ipAddress: 10.0.6.136
+    controlPlane: false
+    installDiskSelector:
+      wwid: eui.00000000000000000026b73832683425
+    patches:
+      - "@patches/storage-patch.yaml"
+
+  - hostname: talos-zr9-r2s
+    ipAddress: 10.0.6.112
+    controlPlane: false
+    installDiskSelector:
+      wwid: eui.00000000000000000026b72835545fa5
+    patches:
+      - "@patches/storage-patch.yaml"
