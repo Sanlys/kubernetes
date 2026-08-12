@@ -1,16 +1,17 @@
 clusterName: kubernetes
-talosVersion: v1.13.2
+talosVersion: v1.13.8
 kubernetesVersion: v1.36.1
 endpoint: https://10.0.6.69:6443
 
-schematic:
-  customization:
-    systemExtensions:
-      officialExtensions:
-        - siderolabs/fuse3
-        - siderolabs/nfs-utils
-        - siderolabs/nfsd
-        - siderolabs/nfsrahead
+worker:
+  schematic:
+    customization:
+      systemExtensions:
+        officialExtensions:
+          - siderolabs/fuse3
+          - siderolabs/nfs-utils
+          - siderolabs/nfsd
+          - siderolabs/nfsrahead
 
 nodes:
   - hostname: talos-3gd-ovr
