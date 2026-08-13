@@ -111,10 +111,24 @@ spec:
                     elif command -v apt-get >/dev/null 2>&1; then
                       export DEBIAN_FRONTEND=noninteractive
                       apt-get update -qq
-                      apt-get install -y -qq --no-install-recommends nfs-common
+                      # netbase provides /etc/protocols and /etc/rpc, which
+                      # --no-install-recommends drops as merely recommended
+                      # (not required) deps of nfs-common. Without them,
+                      # mount.nfs can't resolve "tcp" as a protocol name and
+                      # fails instantly with the misleading error "Protocol
+                      # not supported" - before it even attempts the actual
+                      # mount(2) syscall, let alone talks to the network.
+                      apt-get install -y -qq --no-install-recommends nfs-common netbase
                     else
                       echo "no supported package manager (apk/apt-get) found" >&2
                       exit 1
+                    fi
+                    # Belt-and-suspenders on top of netbase above: guarantee
+                    # /etc/protocols exists regardless of distro/package
+                    # availability (no equivalent to netbase was findable on
+                    # Alpine - see radarr.yaml et al).
+                    if [ ! -s /etc/protocols ]; then
+                      printf 'ip\t0\tIP\nicmp\t1\tICMP\ntcp\t6\tTCP\nudp\t17\tUDP\n' > /etc/protocols
                     fi
                     export RCLONE_CONFIG_CEPHBUCKET_TYPE=s3
                     export RCLONE_CONFIG_CEPHBUCKET_PROVIDER=Ceph
