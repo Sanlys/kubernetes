@@ -1,1 +1,0 @@
-Files are from: [moby/buildkit github](https://github.com/moby/buildkit/tree/master/examples/kubernetes)
