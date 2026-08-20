@@ -20,6 +20,11 @@ spec:
             allowMultiplePerNode: false
           crashCollector:
             disable: false
+          security:
+            cephx:
+              daemon:
+                keyRotationPolicy: KeyGeneration
+                keyGeneration: 2
           storage:
             useAllNodes: true
             useAllDevices: true
