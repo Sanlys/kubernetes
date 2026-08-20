@@ -45,7 +45,7 @@ spec:
       # no filesystem/bucket access needed.
       containers:
         - name: jellyseerr
-          image: fallenbagel/jellyseerr:2.1.0
+          image: fallenbagel/jellyseerr:2.7.3
           env:
             - name: TZ
               value: "Europe/Oslo"
