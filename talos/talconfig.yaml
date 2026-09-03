@@ -3,6 +3,10 @@ talosVersion: v1.13.8
 kubernetesVersion: v1.36.1
 endpoint: https://10.0.6.69:6443
 
+controlPlane:
+  patches:
+    - "@patches/controlplane-metrics-bind.yaml"
+
 worker:
   schematic:
     customization:
