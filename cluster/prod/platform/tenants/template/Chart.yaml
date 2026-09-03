@@ -1,0 +1,4 @@
+apiVersion: v2
+name: tenant-template
+description: "Per-tenant namespace, quotas, isolation etc"
+version: 0.1.0

@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tenants
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: alice
+            cpuLimit: "2"
+            memoryLimit: "4Gi"
+          - name: bob
+            cpuLimit: "1"
+            memoryLimit: "2Gi"
+  template:
+    metadata:
+      name: 'tenant-{{name}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/Sanlys/kubernetes.git
+        targetRevision: main
+        path: cluster/prod/platform/tenants/template
+        helm:
+          parameters:
+            - name: tenantName
+              value: '{{name}}'
+            - name: oidcSubject
+              value: '{{oidcSubject}}'
+            - name: quota.cpu
+              value: '{{cpuLimit}}'
+            - name: quota.memory
+              value: '{{memoryLimit}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'tenant-{{name}}'
+      syncPolicy:
+        automated: { prune: true, selfHeal: true }
