@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: tenant-quota
+  namespace: tenant-{{ .Values.tenantName }}
+spec:
+  hard:
+    requests.cpu: "{{ .Values.quota.cpu }}"
+    requests.memory: "{{ .Values.quota.memory }}"
+    limits.cpu: "{{ .Values.quota.cpu }}"
+    limits.memory: "{{ .Values.quota.memory }}"
+    pods: "{{ .Values.quota.pods }}"
