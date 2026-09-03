@@ -22,7 +22,7 @@ spec:
           # initContainer to fix up ownership of the Ceph RBD volume.
           # Not digest-pinned: the proxy in this environment blocks
           # codeberg.org's registry, so the digest couldn't be resolved here.
-          image: codeberg.org/forgejo/forgejo:16.0.1
+          image: codeberg.org/forgejo/forgejo:16.0.2
           env:
             - name: USER_UID
               value: "1000"
