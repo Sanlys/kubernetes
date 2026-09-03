@@ -26,8 +26,6 @@ spec:
           parameters:
             - name: tenantName
               value: '{{name}}'
-            - name: oidcSubject
-              value: '{{oidcSubject}}'
             - name: quota.cpu
               value: '{{cpuLimit}}'
             - name: quota.memory
