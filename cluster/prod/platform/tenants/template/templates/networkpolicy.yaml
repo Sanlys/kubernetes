@@ -1,25 +1,54 @@
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
 metadata:
   name: default-deny
   namespace: tenant-{{ .Values.tenantName }}
 spec:
-  podSelector: {}
-  policyTypes: ["Ingress", "Egress"]
+  endpointSelector: {}
+  ingressDeny:
+    - {}
+  egressDeny:
+    - {}
 ---
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-intra-namespace
+  namespace: tenant-{{ .Values.tenantName }}
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - {}
+  egress:
+    - toEndpoints:
+        - {}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
 metadata:
   name: allow-dns
   namespace: tenant-{{ .Values.tenantName }}
 spec:
-  podSelector: {}
-  policyTypes: ["Egress"]
+  endpointSelector: {}
   egress:
-    - to:
-        - namespaceSelector: {}
-      ports:
-        - protocol: UDP
-          port: 53
-        - protocol: TCP
-          port: 53
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-internet-egress
+  namespace: tenant-{{ .Values.tenantName }}
+spec:
+  endpointSelector: {}
+  egress:
+    - toEntities:
+        - world
