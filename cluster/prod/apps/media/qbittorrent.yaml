@@ -1,4 +1,41 @@
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qbittorrent-custom-init
+  namespace: media
+data:
+  # Runs via the linuxserver.io image's own custom-cont-init.d mechanism
+  # (see "[custom-init] No custom files found, skipping..." in the
+  # container's logs - this is what fills that in), which is guaranteed
+  # by the image's own s6 init sequence to complete before
+  # qbittorrent-nox starts. That ordering guarantee is the whole point:
+  # our postStart hook runs concurrently with the container's entrypoint
+  # with no such guarantee against qbittorrent-nox already having
+  # started first.
+  #
+  # qbittorrent-nox treats a pre-existing IPC socket file at
+  # /config/qBittorrent/ipc-socket as "another instance is already
+  # running" and quits immediately and silently (clean exit, no error
+  # logged) rather than checking whether anything is actually listening
+  # on it. Unlike the PID-based lockfile (which the kernel effectively
+  # invalidates once the owning process is gone), the socket is just a
+  # file that survives on the /config PVC across restarts regardless of
+  # how the previous process ended - an unclean shutdown (hard OOM, node
+  # eviction, force-delete) leaves it behind and every subsequent start
+  # bails out instantly against it.
+  #
+  # Unconditionally clearing both on every start is safe specifically
+  # because this Deployment is replicas:1 with strategy:Recreate - the
+  # previous pod is fully terminated (process gone, container gone)
+  # before a new one is ever created, so there is structurally no
+  # possibility of a live instance still holding either file when this
+  # runs. Don't copy this pattern into a multi-replica or
+  # RollingUpdate-strategy deployment without rethinking it.
+  10-clear-stale-ipc.sh: |
+    #!/usr/bin/with-contenv bash
+    rm -f /config/qBittorrent/lockfile /config/qBittorrent/ipc-socket
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: qbittorrent-config
@@ -319,6 +356,12 @@ spec:
             - name: nfs-bin
               mountPath: /opt/nfs-root
               readOnly: true
+            # See the qbittorrent-custom-init ConfigMap above for what
+            # this does and why - clears the stale IPC socket/lockfile
+            # that qbittorrent-nox otherwise mistakes for a live instance
+            # after an unclean shutdown.
+            - name: custom-init
+              mountPath: /custom-cont-init.d
             - name: vfs-cache
               mountPath: /rclone-cache
             - name: dl
@@ -467,3 +510,7 @@ spec:
           emptyDir: {}
         - name: nfs-bin
           emptyDir: {}
+        - name: custom-init
+          configMap:
+            name: qbittorrent-custom-init
+            defaultMode: 0755
