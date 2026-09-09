@@ -466,7 +466,8 @@ spec:
                     # has to cover qbittorrent itself (~50-100MB
                     # observed) and page cache for the CephFS read side,
                     # the RBD cache-dir writes, and the NFS client.
-                    export GOMEMLIMIT=1GiB
+                    export GOMEMLIMIT=1600MiB
+                    export GODEBUG=gctrace=1
                     setsid /opt/rclone-bin/rclone serve nfs "cephbucket:$BUCKET_NAME" \
                       --addr 127.0.0.1:2049 \
                       --vfs-cache-mode writes \
@@ -527,26 +528,42 @@ spec:
           # checks below, which should stay tight for catching a real hang
           # once the app is actually up. Re-tighten this number once you
           # know the real startup time for your library size.
+          # readinessProbe only - no livenessProbe on purpose.
+          #
+          # qbittorrent-nox is supervised by s6 inside this container
+          # already (see the stale-lockfile history: s6 respawned it
+          # every ~2s on its own), so a liveness probe adds no recovery
+          # capability - it only escalates "the WebUI did not answer" to
+          # "SIGKILL the whole container", which also kills the
+          # backgrounded rclone process, tears down the /mnt/media NFS
+          # mount, and discards all in-progress VFS cache staging. With
+          # a 150GiB+ file taking hours to stage and upload, any
+          # transient stall under I/O load turned into a restart loop
+          # that re-materialised the object from the bucket and started
+          # over. The old probe made that near-certain: timeoutSeconds
+          # defaulted to 1s, i.e. the WebUI had one second to respond
+          # while the same container was saturating its I/O.
+          #
+          # readiness is kept - it pulls the pod out of the qbittorrent
+          # Service endpoints when the WebUI is genuinely unresponsive,
+          # which is the useful half - with a 5s timeout so it does not
+          # flap on every I/O spike. startupProbe still covers the slow
+          # first boot (resume-data verification against /mnt/media).
           startupProbe:
             httpGet:
               path: /
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
             failureThreshold: 90
           readinessProbe:
             httpGet:
               path: /
               port: 8080
             initialDelaySeconds: 5
-            periodSeconds: 5
-            failureThreshold: 6
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 8080
-            initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
             failureThreshold: 6
           resources:
             requests: { cpu: "200m", memory: "1Gi" }
@@ -563,7 +580,7 @@ spec:
             # the RSS of every task at kill time, which distinguishes an
             # rclone heap blowup from a page-cache/reclaim failure
             # instead of guessing between them.
-            limits: { memory: "2Gi" }
+            limits: { memory: "3Gi" }
       volumes:
         - name: config
           persistentVolumeClaim:
