@@ -425,20 +425,35 @@ spec:
                     # unbounded clean page cache from the read side with
                     # no cap upstream).
                     #
-                    # --vfs-cache-max-size is the actual fix: once the
-                    # local cache hits this size, rclone applies real
-                    # backpressure and blocks/slows the writer instead of
-                    # accepting data unbounded and leaving the OS to
-                    # absorb the mismatch via page cache reclaim under a
-                    # hard wall. --vfs-write-back flushes buffered writes
-                    # to the upload queue promptly rather than let them
-                    # linger. Cap chosen to sit comfortably under this
-                    # container's memory limit below, leaving room for
-                    # qbittorrent's own footprint and ordinary CephFS read
-                    # cache on the /dl side (which this flag doesn't
-                    # bound, but which behaves as ordinary reclaimable
-                    # cache once it isn't competing with an unbounded
-                    # write-side backlog for the same headroom).
+                    # Do NOT add --vfs-cache-max-size here without making
+                    # it larger than the largest single file that will be
+                    # written. With --vfs-cache-mode writes the whole
+                    # in-flight file is staged in --cache-dir, so a cap
+                    # below the file size cannot be satisfied by eviction
+                    # (the file is in use and not evictable) and shows up
+                    # as an I/O error to the writer instead. It also
+                    # bounds on-disk cache, not page cache, so it does
+                    # nothing for the OOM in any case. The qbittorrent-
+                    # vfs-cache PVC is 150Gi, which is itself the real
+                    # ceiling on single-file size through this path.
+                    #
+                    # GOMEMLIMIT is the actual memory fix. Go's GC is not
+                    # cgroup-aware: by default it sizes the heap against
+                    # what it believes is available system memory and lets
+                    # the heap roughly double over the live set before
+                    # collecting, so rclone will happily expand into this
+                    # container's memory.max and get OOM-killed. Raising
+                    # resources.limits.memory does not help - it just
+                    # gives the runtime more room to expand into before
+                    # GC pressure kicks in, which is why 2Gi and 4Gi
+                    # failed identically. This is a soft limit: the GC
+                    # gets more aggressive as it is approached rather
+                    # than failing allocations. Keep it well under
+                    # resources.limits.memory below, since the limit also
+                    # has to cover qbittorrent itself (~50-100MB
+                    # observed) and page cache for the CephFS read side,
+                    # the RBD cache-dir writes, and the NFS client.
+                    export GOMEMLIMIT=1GiB
                     setsid /opt/rclone-bin/rclone serve nfs "cephbucket:$BUCKET_NAME" \
                       --addr 127.0.0.1:2049 \
                       --vfs-cache-mode writes \
@@ -449,12 +464,29 @@ spec:
                       --s3-chunk-size 16M \
                       --s3-upload-concurrency 2 \
                       --transfers 1 \
-                      --vfs-cache-max-size 1500M \
+                      --buffer-size 16M \
                       --vfs-write-back 5s \
                       > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
                     mounted=0
                     for i in $(seq 1 30); do
-                      if mount -t nfs -o vers=3,tcp,nolock,port=2049,mountport=2049,soft 127.0.0.1:/ /mnt/media 2>/tmp/mount.err; then
+                      # rsize/wsize default to 1M here, and the kernel
+                      # NFS client issues many of those in parallel. Each
+                      # in-flight RPC is a buffer the userspace server
+                      # (rclone/go-nfs, in this same cgroup) has to hold,
+                      # so 1M x parallel writes is a multi-hundred-MB
+                      # amplifier on top of rclone's own heap. 256K cuts
+                      # that ~4x at negligible throughput cost for
+                      # sequential large-file writes, which are already
+                      # bounded by the S3 upload rate, not RPC size.
+                      #
+                      # timeo is in tenths of a second: 600 = 60s per
+                      # attempt, retrans=2. On a soft mount that means
+                      # the writer gets EIO rather than hanging if rclone
+                      # stalls - which is what produced
+                      # "cp: cannot stat ...: I/O error" rather than a
+                      # clean failure. Widened to give a throttled upload
+                      # room to finish an RPC.
+                      if mount -t nfs -o vers=3,tcp,nolock,port=2049,mountport=2049,soft,rsize=262144,wsize=262144,timeo=1800,retrans=3 127.0.0.1:/ /mnt/media 2>/tmp/mount.err; then
                         mounted=1
                         break
                       fi
@@ -505,15 +537,20 @@ spec:
             failureThreshold: 6
           resources:
             requests: { cpu: "200m", memory: "1Gi" }
-            # 1500M --vfs-cache-max-size (above) is now the real bound on
-            # write-side buffering - this limit just needs headroom above
-            # that plus qbittorrent's own footprint (~50-100MB observed)
-            # and ordinary CephFS read-side page cache, which behaves
-            # normally once it isn't absorbing an unbounded backlog. Not
-            # a guess this time: re-measure with the same cgroup
-            # memory.stat watch during a large transfer and tighten if
-            # this proves generous.
-            limits: { memory: "2.5Gi" }
+            # Back to 2Gi deliberately. Raising this was tested at 2Gi
+            # and 4Gi and failed identically, which is the signature of
+            # an allocator that expands to fill whatever it is given
+            # rather than a workload that needs more room - see the
+            # GOMEMLIMIT comment on the rclone invocation above. The
+            # bound now lives in GOMEMLIMIT (rclone's heap) and the NFS
+            # rsize/wsize (per-RPC buffering); this limit only needs to
+            # cover those plus qbittorrent itself and reclaimable page
+            # cache. If it still OOMs, get the kernel's own OOM report
+            # (talosctl dmesg, "memory cgroup out of memory") - it lists
+            # the RSS of every task at kill time, which distinguishes an
+            # rclone heap blowup from a page-cache/reclaim failure
+            # instead of guessing between them.
+            limits: { memory: "2Gi" }
       volumes:
         - name: config
           persistentVolumeClaim:
