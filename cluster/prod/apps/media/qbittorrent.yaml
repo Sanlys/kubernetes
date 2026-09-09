@@ -411,11 +411,34 @@ spec:
                     # reachable off-pod.
                     #
                     # --s3-chunk-size/--s3-upload-concurrency/--transfers
-                    # cap worst-case multipart upload buffering to a known
-                    # small size instead of letting it scale with the size
-                    # of whatever file is being uploaded - was OOM-killing
-                    # this container (shared 1Gi limit with qbittorrent
-                    # itself) on large file moves from /dl.
+                    # cap worst-case multipart upload buffering per chunk.
+                    # On their own, though, they don't stop a fast writer
+                    # (cp, qbittorrent, sonarr/radarr) from pushing data
+                    # into the VFS cache far faster than the throttled
+                    # upload can drain it - nothing was pushing back on
+                    # the writer, so the mismatch just piled up as page
+                    # cache until it hit this container's memory limit and
+                    # got OOM-killed (confirmed live: anon stayed flat
+                    # ~50MB and file_dirty stayed near zero during a
+                    # crash-inducing transfer - it was never the
+                    # multipart buffer or a writeback backlog, it was
+                    # unbounded clean page cache from the read side with
+                    # no cap upstream).
+                    #
+                    # --vfs-cache-max-size is the actual fix: once the
+                    # local cache hits this size, rclone applies real
+                    # backpressure and blocks/slows the writer instead of
+                    # accepting data unbounded and leaving the OS to
+                    # absorb the mismatch via page cache reclaim under a
+                    # hard wall. --vfs-write-back flushes buffered writes
+                    # to the upload queue promptly rather than let them
+                    # linger. Cap chosen to sit comfortably under this
+                    # container's memory limit below, leaving room for
+                    # qbittorrent's own footprint and ordinary CephFS read
+                    # cache on the /dl side (which this flag doesn't
+                    # bound, but which behaves as ordinary reclaimable
+                    # cache once it isn't competing with an unbounded
+                    # write-side backlog for the same headroom).
                     setsid /opt/rclone-bin/rclone serve nfs "cephbucket:$BUCKET_NAME" \
                       --addr 127.0.0.1:2049 \
                       --vfs-cache-mode writes \
@@ -426,6 +449,8 @@ spec:
                       --s3-chunk-size 16M \
                       --s3-upload-concurrency 2 \
                       --transfers 1 \
+                      --vfs-cache-max-size 1500M \
+                      --vfs-write-back 5s \
                       > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
                     mounted=0
                     for i in $(seq 1 30); do
@@ -480,22 +505,15 @@ spec:
             failureThreshold: 6
           resources:
             requests: { cpu: "200m", memory: "1Gi" }
-            # Raised from 2Gi after actually watching this live: anon
-            # (rclone/qbittorrent's own working memory) stays flat around
-            # 50MB during a large transfer, and file_dirty stays near
-            # zero - so this was never the multipart upload buffer or a
-            # writeback backlog. It's clean page cache from cp reading a
-            # huge file off the CephFS /dl mount, which has no reason to
-            # slow down just because uploads to the bucket are
-            # deliberately throttled (--transfers 1 etc, see rclone flags
-            # above) - so cache built up right against whatever the limit
-            # was, leaving reclaim zero slack. 2Gi measured pegged at
-            # ~2.05-2.09GB steady-state with no burst room at all; 4Gi
-            # gives real headroom instead of running flush against the
-            # wall. Re-measure with the same cgroup memory.stat watch
-            # (anon/file/file_dirty) after a large transfer and adjust
-            # down if this proves generous.
-            limits: { memory: "4Gi" }
+            # 1500M --vfs-cache-max-size (above) is now the real bound on
+            # write-side buffering - this limit just needs headroom above
+            # that plus qbittorrent's own footprint (~50-100MB observed)
+            # and ordinary CephFS read-side page cache, which behaves
+            # normally once it isn't absorbing an unbounded backlog. Not
+            # a guess this time: re-measure with the same cgroup
+            # memory.stat watch during a large transfer and tighten if
+            # this proves generous.
+            limits: { memory: "2.5Gi" }
       volumes:
         - name: config
           persistentVolumeClaim:
