@@ -480,18 +480,22 @@ spec:
             failureThreshold: 6
           resources:
             requests: { cpu: "200m", memory: "1Gi" }
-            # Bumped from 1Gi: this limit covers both qbittorrent itself
-            # and the backgrounded rclone process together (rclone runs
-            # inside this same container via postStart, not as a
-            # separate sidecar - see the securityContext.privileged
-            # comment above for why). The --s3-* flags above cap rclone's
-            # multipart upload buffer to a known small size, but this
-            # still leaves no headroom for qbittorrent's own memory use
-            # plus rclone's VFS cache bookkeeping and any dirty-page
-            # writeback backlog if uploads to the bucket lag behind
-            # writes. Re-check actual usage after a large-file move and
-            # adjust - this is a starting guess, not a measured number.
-            limits: { memory: "2Gi" }
+            # Raised from 2Gi after actually watching this live: anon
+            # (rclone/qbittorrent's own working memory) stays flat around
+            # 50MB during a large transfer, and file_dirty stays near
+            # zero - so this was never the multipart upload buffer or a
+            # writeback backlog. It's clean page cache from cp reading a
+            # huge file off the CephFS /dl mount, which has no reason to
+            # slow down just because uploads to the bucket are
+            # deliberately throttled (--transfers 1 etc, see rclone flags
+            # above) - so cache built up right against whatever the limit
+            # was, leaving reclaim zero slack. 2Gi measured pegged at
+            # ~2.05-2.09GB steady-state with no burst room at all; 4Gi
+            # gives real headroom instead of running flush against the
+            # wall. Re-measure with the same cgroup memory.stat watch
+            # (anon/file/file_dirty) after a large transfer and adjust
+            # down if this proves generous.
+            limits: { memory: "4Gi" }
       volumes:
         - name: config
           persistentVolumeClaim:
