@@ -335,6 +335,9 @@ spec:
                       --dir-cache-time 1h \
                       --uid 1000 --gid 1000 --umask 022 \
                       --log-level INFO \
+                      --s3-chunk-size 16M \
+                      --s3-upload-concurrency 2 \
+                      --transfers 1
                       > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
                     mounted=0
                     for i in $(seq 1 30); do
