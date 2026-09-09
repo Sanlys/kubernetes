@@ -400,27 +400,41 @@ spec:
             preStop:
               exec:
                 command: ["umount", "-l", "/mnt/media"]
+          # qbittorrent-nox does resume-data verification against every
+          # torrent's referenced files on startup, and /mnt/media only
+          # recently started actually mounting successfully - every
+          # earlier attempt bailed out early on a stale lock file before
+          # ever reaching this step. --vfs-cache-mode writes only caches
+          # files actively being written, so this verification's reads go
+          # straight through rclone to the S3 bucket uncached every time,
+          # and took long enough to blow through even a widened 180s
+          # liveness budget (measured ~200s and climbing). A startupProbe
+          # gives it its own generous one-time allowance for this instead
+          # of permanently loosening the steady-state liveness/readiness
+          # checks below, which should stay tight for catching a real hang
+          # once the app is actually up. Re-tighten this number once you
+          # know the real startup time for your library size.
+          startupProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 90
           readinessProbe:
             httpGet:
               path: /
               port: 8080
-            initialDelaySeconds: 20
+            initialDelaySeconds: 5
             periodSeconds: 5
-            failureThreshold: 24
+            failureThreshold: 6
           livenessProbe:
             httpGet:
               path: /
               port: 8080
-            # Widened from 30s/6 failures (90s total budget): postStart
-            # now does a real rpcbind + NFS mount + initial bucket
-            # listing before the container is even considered "Started"
-            # (liveness's initialDelaySeconds only starts counting after
-            # that), which can itself take a nontrivial chunk of wall
-            # clock time - the old budget was fine when the mount was
-            # failing fast, not once it started actually succeeding.
-            initialDelaySeconds: 60
+            initialDelaySeconds: 10
             periodSeconds: 10
-            failureThreshold: 12
+            failureThreshold: 6
           resources:
             requests: { cpu: "200m", memory: "1Gi" }
             # Bumped from 1Gi: this limit covers both qbittorrent itself
