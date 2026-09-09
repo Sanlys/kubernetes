@@ -47,6 +47,19 @@ spec:
     requests:
       storage: 5Gi
 ---
+# Sizing note: with --vfs-cache-mode writes (required behind an NFS
+# mount - the kernel NFS client issues WRITE RPCs at arbitrary offsets
+# via writeback, so the streaming --vfs-cache-mode off path is not
+# usable here), rclone stages a file IN FULL on this PVC before any of
+# it is uploaded to the bucket. So this size is a hard ceiling on the
+# largest single file that can be written through /mnt/media, and
+# --transfers above means several can be staging at once.
+#
+# 150Gi was under that ceiling: qbittorrent moved a ~154GiB file into
+# the bucket path, which claimed the whole PVC as it materialised,
+# blocked every other transfer behind it, and would have hit ENOSPC a
+# few GiB from the end. Keep this comfortably above the largest media
+# file that will pass through, not just above the current one.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -57,7 +70,7 @@ spec:
   storageClassName: rook-ceph-block-ssd
   resources:
     requests:
-      storage: 150Gi
+      storage: 400Gi
 ---
 # RWX (CephFS, not RBD block) - sonarr/radarr each run as their own
 # separate pod and need to see this same real filesystem qbittorrent
@@ -463,7 +476,7 @@ spec:
                       --log-level INFO \
                       --s3-chunk-size 16M \
                       --s3-upload-concurrency 2 \
-                      --transfers 1 \
+                      --transfers 4 \
                       --buffer-size 16M \
                       --vfs-write-back 5s \
                       > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
