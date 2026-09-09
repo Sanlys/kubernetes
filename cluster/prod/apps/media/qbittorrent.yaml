@@ -134,15 +134,21 @@ spec:
             - -c
             - |
               set -e
+              # --initdb builds a bare root with no trusted signing keys
+              # under /nfs-root/etc/apk/keys, so apk rejects every
+              # package it fetches as UNTRUSTED and reports it as "no
+              # such package" - copying this image's own already-trusted
+              # keys into the new root first fixes that.
+              mkdir -p /nfs-root/etc/apk/keys
+              cp /etc/apk/keys/* /nfs-root/etc/apk/keys/
               # --initdb only creates a fresh package database under
               # /nfs-root - it does NOT carry over /etc/apk/repositories,
-              # so apk has no index to resolve nfs-utils against and
-              # fails with "no such package". Passing --repository
-              # explicitly (twice, since main and community are separate
-              # repos) tells it where to fetch from without needing that
-              # file to exist under the new root. Version pinned to match
-              # this image's own alpine:3.20 tag above - keep them in
-              # sync if that tag changes.
+              # so apk has no index to resolve nfs-utils against unless
+              # told explicitly. Passing --repository (twice, since main
+              # and community are separate repos) does that without
+              # needing that file to exist under the new root. Version
+              # pinned to match this image's own alpine:3.20 tag above -
+              # keep them in sync if that tag changes.
               apk add --no-cache --root /nfs-root --initdb \
                 --repository http://dl-cdn.alpinelinux.org/alpine/v3.20/main \
                 --repository http://dl-cdn.alpinelinux.org/alpine/v3.20/community \
