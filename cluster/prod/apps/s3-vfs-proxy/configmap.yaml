@@ -1,0 +1,19 @@
+# Static bucket list, per Sander's design: rather than the Ceph RGW
+# system user auto-discovering buckets (S3 ListBuckets is always scoped
+# to buckets a user owns, regardless of admin/system caps - it can't),
+# this proxy exposes one virtual bucket whose top-level "folders" are
+# exactly the real bucket names listed here. Add a line to `buckets` and
+# re-sync to expose another existing bucket - no code change needed.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: s3-vfs-proxy-config
+  namespace: s3-vfs-proxy
+data:
+  config.json: |
+    {
+      "virtual_bucket": "vfs",
+      "upstream_endpoint": "http://rook-ceph-rgw-ceph-objectstore.rook-ceph.svc.cluster.local",
+      "region": "us-east-1",
+      "buckets": ["media-library", "immich-external-library"]
+    }

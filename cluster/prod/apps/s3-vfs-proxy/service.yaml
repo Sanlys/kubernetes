@@ -1,0 +1,16 @@
+# Internal-only, no Ingress. Only Filestash (or other in-cluster S3
+# clients) is meant to reach this - it does not verify the inbound
+# request's SigV4 signature, trusting cluster-network isolation instead
+# (see services/s3-vfs-proxy/src/sigv4.rs).
+apiVersion: v1
+kind: Service
+metadata:
+  name: s3-vfs-proxy
+  namespace: s3-vfs-proxy
+  labels: { app: s3-vfs-proxy }
+spec:
+  selector: { app: s3-vfs-proxy }
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

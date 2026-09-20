@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s3-vfs-proxy
+  namespace: s3-vfs-proxy
+  labels: { app: s3-vfs-proxy }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: s3-vfs-proxy }
+  template:
+    metadata:
+      labels: { app: s3-vfs-proxy }
+    spec:
+      # This namespace needs its own copy of the harbor-pull dockerconfigjson
+      # secret (same content as cluster/prod/apps/nginx-custom-image/secret.enc.yaml -
+      # imagePullSecrets don't cross namespaces). Create+sops-encrypt it here
+      # as harbor-pull-secret.enc.yaml out of band.
+      imagePullSecrets:
+        - name: harbor-pull
+      containers:
+        - name: s3-vfs-proxy
+          # Source: services/s3-vfs-proxy/ in this repo. Argo CD only
+          # applies manifests, it doesn't build anything - build and push
+          # this yourself, then point this at the real digest:
+          #   docker build -t harbor.k8s.lysakermoen.com/library/s3-vfs-proxy:v0.1.0 services/s3-vfs-proxy
+          #   docker push harbor.k8s.lysakermoen.com/library/s3-vfs-proxy:v0.1.0
+          image: harbor.k8s.lysakermoen.com/library/s3-vfs-proxy:v0.1.0
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: CONFIG_PATH
+              value: /etc/s3-vfs-proxy/config.json
+            # Every request is fully buffered in memory (see
+            # services/s3-vfs-proxy/src/upstream.rs) - this is the largest
+            # single file this proxy can move, and the memory limit below
+            # is sized to match it plus headroom. Raise both together if
+            # you need to move larger files through Filestash.
+            - name: MAX_BODY_BYTES
+              value: "536870912" # 512Mi
+            # Expects a Secret named "s3-vfs-proxy-upstream-creds" with keys
+            # UPSTREAM_ACCESS_KEY_ID / UPSTREAM_SECRET_ACCESS_KEY: the Ceph
+            # RGW system user's own keys, e.g. from
+            #   radosgw-admin user create --uid=filestash --display-name=filestash --system
+            # run in the rook-ceph-tools toolbox. Create+sops-encrypt this
+            # out of band as upstream-creds-secret.enc.yaml - this repo's
+            # agents don't have the age keys to do it themselves.
+            - name: UPSTREAM_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: s3-vfs-proxy-upstream-creds
+                  key: UPSTREAM_ACCESS_KEY_ID
+            - name: UPSTREAM_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: s3-vfs-proxy-upstream-creds
+                  key: UPSTREAM_SECRET_ACCESS_KEY
+          volumeMounts:
+            - name: config
+              mountPath: /etc/s3-vfs-proxy
+              readOnly: true
+          readinessProbe:
+            httpGet: { path: /, port: http }
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+          resources:
+            requests: { cpu: "100m", memory: "1Gi" }
+            limits: { memory: "1Gi" }
+      volumes:
+        - name: config
+          configMap:
+            name: s3-vfs-proxy-config
