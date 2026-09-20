@@ -14,7 +14,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use config::Config;
-use upstream::{Upstream, UpstreamResponse};
+use upstream::{ByteStream, Payload, Upstream, UpstreamResponse};
 
 #[derive(Clone)]
 struct AppState {
@@ -43,12 +43,6 @@ async fn main() {
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(8080);
-    // Every upstream request is fully buffered (see upstream.rs), so this
-    // doubles as the effective max file size this proxy can move.
-    let max_body_bytes: usize = std::env::var("MAX_BODY_BYTES")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(2 * 1024 * 1024 * 1024);
 
     tracing::info!(
         virtual_bucket = %config.virtual_bucket,
@@ -75,7 +69,13 @@ async fn main() {
                 .delete(object_delete)
                 .post(object_post),
         )
-        .layer(DefaultBodyLimit::max(max_body_bytes))
+        // File data (PutObject/UploadPart/GetObject) is streamed with
+        // constant memory (see upstream.rs's `Payload::Streamed`), so
+        // there's no memory reason to cap request size. Axum's own
+        // default (2MB) would otherwise silently reject any upload past
+        // it - disable it and let RGW's own bucket/quota limits be the
+        // real ceiling.
+        .layer(DefaultBodyLimit::disable())
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(("0.0.0.0", port))
@@ -191,6 +191,29 @@ fn passthrough(r: UpstreamResponse) -> Response {
         }
     }
     builder.body(Body::from(r.body)).unwrap()
+}
+
+/// Same as `passthrough`, but for a `reqwest::Response` we haven't (and
+/// won't) buffer - the body streams straight through to the client with
+/// constant memory, regardless of how large the object is. Used for
+/// GetObject and for the streamed PutObject/UploadPart responses (which
+/// happen to be tiny, but there's no need for a second code path).
+fn passthrough_streamed(resp: reqwest::Response) -> Response {
+    let status = resp.status();
+    let mut builder = Response::builder().status(status);
+    for name in [
+        header::CONTENT_TYPE,
+        header::CONTENT_LENGTH,
+        header::ETAG,
+        header::LAST_MODIFIED,
+        header::ACCEPT_RANGES,
+        header::CONTENT_RANGE,
+    ] {
+        if let Some(v) = resp.headers().get(&name) {
+            builder = builder.header(name, v.clone());
+        }
+    }
+    builder.body(Body::from_stream(resp.bytes_stream())).unwrap()
 }
 
 /// Same as `passthrough` but for HEAD responses: keep the metadata
@@ -355,8 +378,10 @@ async fn object_get(
         }
     }
     let path = format!("/{real_bucket}/{real_key}");
-    match state.upstream.request(Method::GET, &path, &[], &extra, Bytes::new()).await {
-        Ok(r) => passthrough(r),
+    // Streamed both ways: this is the actual file data, so it's forwarded
+    // with constant memory rather than buffered - see upstream.rs.
+    match state.upstream.request_raw(Method::GET, &path, &[], &extra, Payload::Empty).await {
+        Ok(resp) => passthrough_streamed(resp),
         Err(e) => upstream_error(e),
     }
 }
@@ -381,7 +406,10 @@ async fn object_put(
     Path((vbucket, key)): Path<(String, String)>,
     uri: Uri,
     headers: HeaderMap,
-    body: Bytes,
+    // Must be the last extractor: it takes the raw, unbuffered request
+    // body so PutObject/UploadPart can stream straight through to RGW
+    // (see upstream.rs) instead of holding the whole file in memory.
+    body: Body,
 ) -> Response {
     let (real_bucket, real_key) = match resolve(&state, &vbucket, &key) {
         Ok(v) => v,
@@ -390,6 +418,7 @@ async fn object_put(
     let query = parse_query(&uri);
     let path = format!("/{real_bucket}/{real_key}");
 
+    // CopyObject: server-side, no request body involved at all.
     if let Some(copy_source) = headers.get("x-amz-copy-source") {
         let cs = url_decode(copy_source.to_str().unwrap_or_default());
         let trimmed = cs.trim_start_matches('/');
@@ -413,15 +442,24 @@ async fn object_put(
         };
     }
 
-    if has_query_flag(&query, "uploadId") {
-        return match state.upstream.request(Method::PUT, &path, &query, &[], body).await {
-            Ok(r) => passthrough(r),
-            Err(e) => upstream_error(e),
-        };
-    }
-
-    match state.upstream.request(Method::PUT, &path, &[], &[], body).await {
-        Ok(r) => passthrough(r),
+    // Plain PutObject or UploadPart: stream the body through. S3 clients
+    // always send a Content-Length for these (no chunked-encoding
+    // uploads), so there's a real length to hand upstream even though we
+    // never buffer the bytes ourselves.
+    let content_length = headers
+        .get(header::CONTENT_LENGTH)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(0);
+    let stream: ByteStream = Box::pin(body.into_data_stream());
+    let payload = Payload::Streamed { content_length, stream };
+    let upload_query = if has_query_flag(&query, "uploadId") {
+        query
+    } else {
+        Vec::new()
+    };
+    match state.upstream.request_raw(Method::PUT, &path, &upload_query, &[], payload).await {
+        Ok(resp) => passthrough_streamed(resp),
         Err(e) => upstream_error(e),
     }
 }

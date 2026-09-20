@@ -32,13 +32,6 @@ spec:
           env:
             - name: CONFIG_PATH
               value: /etc/s3-vfs-proxy/config.json
-            # Every request is fully buffered in memory (see
-            # services/s3-vfs-proxy/src/upstream.rs) - this is the largest
-            # single file this proxy can move, and the memory limit below
-            # is sized to match it plus headroom. Raise both together if
-            # you need to move larger files through Filestash.
-            - name: MAX_BODY_BYTES
-              value: "536870912" # 512Mi
             # Expects a Secret named "s3-vfs-proxy-upstream-creds" with keys
             # UPSTREAM_ACCESS_KEY_ID / UPSTREAM_SECRET_ACCESS_KEY: the Ceph
             # RGW system user's own keys, e.g. from
@@ -66,9 +59,15 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 6
+          # File data (PutObject/UploadPart/GetObject) streams straight
+          # through with constant memory regardless of file size - see
+          # services/s3-vfs-proxy/src/upstream.rs's `Payload::Streamed`.
+          # This only needs to cover the process baseline plus a handful
+          # of concurrent connections' small internal buffers, not file
+          # sizes.
           resources:
-            requests: { cpu: "100m", memory: "1Gi" }
-            limits: { memory: "1Gi" }
+            requests: { cpu: "100m", memory: "256Mi" }
+            limits: { memory: "256Mi" }
       volumes:
         - name: config
           configMap:

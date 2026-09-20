@@ -1,13 +1,18 @@
 use crate::sigv4;
 use bytes::Bytes;
-use reqwest::{Method, StatusCode};
+use futures_util::Stream;
+use reqwest::{Method, Response, StatusCode};
+use std::pin::Pin;
 
-/// Thin, signed HTTP client for the real Ceph RGW endpoint. Every request
-/// this service makes upstream is fully buffered (see main.rs's body-size
-/// limit) - simpler and more robust than trying to stream+sign at the
-/// same time, at the cost of holding one request/response body in memory
-/// at a time. Fine for a personal homelab's file sizes; not meant for
-/// multi-GB uploads.
+/// Signed HTTP client for the real Ceph RGW endpoint.
+///
+/// Small control-plane payloads (list/delete/multipart-control XML) are
+/// buffered and hashed for a real SigV4 signature - they're a few KB at
+/// most, buffering them is free. Actual file data (PutObject/UploadPart
+/// request bodies, GetObject response bodies) is streamed end to end
+/// with constant memory regardless of file size, using SigV4's
+/// UNSIGNED-PAYLOAD mode so we never need the whole body in hand just to
+/// hash it. See `Payload::Streamed`.
 #[derive(Clone)]
 pub struct Upstream {
     client: reqwest::Client,
@@ -22,6 +27,17 @@ pub struct UpstreamResponse {
     pub status: StatusCode,
     pub headers: reqwest::header::HeaderMap,
     pub body: Bytes,
+}
+
+pub type ByteStream = Pin<Box<dyn Stream<Item = Result<Bytes, axum::Error>> + Send>>;
+
+pub enum Payload {
+    Empty,
+    Buffered(Bytes),
+    /// A request body we forward without ever buffering it whole.
+    /// `content_length` is passed straight through from the client's own
+    /// Content-Length header (S3 PutObject/UploadPart always send one).
+    Streamed { content_length: u64, stream: ByteStream },
 }
 
 impl Upstream {
@@ -43,20 +59,40 @@ impl Upstream {
 
     /// `path` is the raw (unencoded) logical path, e.g. "/media-library/foo bar.txt".
     /// `extra_headers` are attached to the request AND included in the
-    /// SigV4 signature (e.g. x-amz-copy-source).
-    pub async fn request(
+    /// SigV4 signature (e.g. x-amz-copy-source). Returns the raw,
+    /// unconsumed `reqwest::Response` so the caller can choose to stream
+    /// it (file downloads) or buffer it (everything else).
+    pub async fn request_raw(
         &self,
         method: Method,
         path: &str,
         query: &[(String, String)],
         extra_headers: &[(String, String)],
-        body: Bytes,
-    ) -> Result<UpstreamResponse, reqwest::Error> {
-        let body_hash = {
-            use sha2::{Digest, Sha256};
-            let mut hasher = Sha256::new();
-            hasher.update(&body);
-            hex::encode(hasher.finalize())
+        payload: Payload,
+    ) -> Result<Response, reqwest::Error> {
+        let content_length = match &payload {
+            Payload::Streamed { content_length, .. } => Some(*content_length),
+            _ => None,
+        };
+
+        let (body_hash, body): (Option<String>, reqwest::Body) = match payload {
+            // Real hash of the empty string, not UNSIGNED-PAYLOAD - these
+            // requests (GET/HEAD/DELETE) genuinely have no body, so there's
+            // nothing to gain from the streamed variant's shortcut.
+            Payload::Empty => {
+                use sha2::{Digest, Sha256};
+                let hasher = Sha256::new();
+                (Some(hex::encode(hasher.finalize())), reqwest::Body::from(Bytes::new()))
+            }
+            Payload::Buffered(bytes) => {
+                use sha2::{Digest, Sha256};
+                let mut hasher = Sha256::new();
+                hasher.update(&bytes);
+                (Some(hex::encode(hasher.finalize())), reqwest::Body::from(bytes))
+            }
+            // No hash: signed as UNSIGNED-PAYLOAD (see sigv4::sign), so we
+            // never have to read the stream twice or buffer it to hash it.
+            Payload::Streamed { stream, .. } => (None, reqwest::Body::wrap_stream(stream)),
         };
 
         let signed_extra: Vec<(&str, &str)> = extra_headers
@@ -70,7 +106,7 @@ impl Upstream {
             path,
             query,
             &signed_extra,
-            Some(&body_hash),
+            body_hash.as_deref(),
             &self.access_key,
             &self.secret_key,
             &self.region,
@@ -102,11 +138,32 @@ impl Upstream {
         for (k, v) in extra_headers {
             req = req.header(k, v);
         }
-        if !body.is_empty() {
-            req = req.body(body);
+        if let Some(len) = content_length {
+            req = req.header(reqwest::header::CONTENT_LENGTH, len);
         }
+        req = req.body(body);
 
-        let resp = req.send().await?;
+        req.send().await
+    }
+
+    /// Convenience wrapper over `request_raw` for the small control-plane
+    /// calls (list/delete/multipart-control/copy/head) that fully buffer
+    /// both the request and response bodies - fine for anything that's
+    /// inherently a few KB of XML, never used for file data.
+    pub async fn request(
+        &self,
+        method: Method,
+        path: &str,
+        query: &[(String, String)],
+        extra_headers: &[(String, String)],
+        body: Bytes,
+    ) -> Result<UpstreamResponse, reqwest::Error> {
+        let payload = if body.is_empty() {
+            Payload::Empty
+        } else {
+            Payload::Buffered(body)
+        };
+        let resp = self.request_raw(method, path, query, extra_headers, payload).await?;
         let status = resp.status();
         let headers = resp.headers().clone();
         let body = resp.bytes().await?;
