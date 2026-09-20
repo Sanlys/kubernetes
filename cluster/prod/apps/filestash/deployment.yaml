@@ -30,7 +30,12 @@ spec:
       initContainers:
         - name: seed-state
           image: machines/filestash:latest
-          command: ["sh", "-c", "test -d /mnt/state/log || cp -a /app/data/state/. /mnt/state/"]
+          # Plain -r, not -a: -a also tries to copy the destination
+          # directory's own timestamps, which needs ownership of the PVC
+          # mount root itself (owned by root) - the container runs as the
+          # image's non-root "filestash" user, so that utimensat() call is
+          # rejected even though the file copies themselves succeed.
+          command: ["sh", "-c", "test -d /mnt/state/log || cp -r /app/data/state/. /mnt/state/"]
           volumeMounts:
             - name: data
               mountPath: /mnt/state
