@@ -229,7 +229,7 @@ spec:
         # which picks a server itself from SERVER_COUNTRIES/etc) pins the
         # exact server Mullvad put in the downloaded config.
         - name: gluetun
-          image: qmcgaw/gluetun:v3.40.0
+          image: qmcgaw/gluetun:v3.41.3
           ports:
             - containerPort: 8888
               name: http-proxy
