@@ -45,7 +45,7 @@ spec:
       # so no rclone/FUSE mount and no privileged securityContext needed.
       containers:
         - name: prowlarr
-          image: lscr.io/linuxserver/prowlarr:1.24.3
+          image: lscr.io/linuxserver/prowlarr:2.6.5
           env:
             - name: PUID
               value: "1000"
