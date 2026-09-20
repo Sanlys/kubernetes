@@ -71,7 +71,7 @@ spec:
         # cluster's nodes (requires kubelet/containerd MountFlags=shared,
         # which Talos doesn't set up).
         - name: copy-rclone-binary
-          image: rclone/rclone:1.68
+          image: rclone/rclone:1.75
           command: ["sh", "-c", "cp \"$(command -v rclone)\" /shared-bin/rclone && chmod +x /shared-bin/rclone"]
           volumeMounts:
             - name: rclone-bin
