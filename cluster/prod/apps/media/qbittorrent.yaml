@@ -333,7 +333,7 @@ spec:
             requests: { cpu: "50m", memory: "128Mi" }
             limits: { memory: "128Mi" }
         - name: qbittorrent
-          image: lscr.io/linuxserver/qbittorrent:5.0.4
+          image: lscr.io/linuxserver/qbittorrent:20.04.1
           env:
             - name: PUID
               value: "1000"
