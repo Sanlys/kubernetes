@@ -50,7 +50,7 @@ spec:
               mountPath: /shared-bin
       containers:
         - name: bazarr
-          image: lscr.io/linuxserver/bazarr:1.4.5
+          image: lscr.io/linuxserver/bazarr:1.6.1
           env:
             - name: PUID
               value: "1000"
