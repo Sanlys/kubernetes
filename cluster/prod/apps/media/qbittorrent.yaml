@@ -149,7 +149,7 @@ spec:
         # come from the container's own distro. Same technique as
         # immich-server; see cluster/prod/apps/immich/server.yaml.
         - name: copy-rclone-binary
-          image: rclone/rclone:1.68
+          image: rclone/rclone:1.75
           command: ["sh", "-c", "cp \"$(command -v rclone)\" /shared-bin/rclone && chmod +x /shared-bin/rclone"]
           volumeMounts:
             - name: rclone-bin
