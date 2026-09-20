@@ -19,20 +19,31 @@ spec:
     spec:
       # Filestash expects state/log to already exist (it opens a log file
       # there on startup but never MkdirAll's the directory itself, and
-      # doesn't ship it pre-created in the image either - confirmed by the
-      # copy below succeeding yet still leaving it FATAL ERROR-ing on a
-      # missing state/log). Guarantee it explicitly, once, on a fresh PVC.
-      # A marker file (rather than testing for state/log itself) gates the
-      # one-time seed so later restarts don't re-copy over persisted state
-      # (admin setup, backend connections, plugins).
+      # doesn't ship it pre-created in the image either). Guarantee it
+      # explicitly, once, on a fresh PVC. A marker file (rather than
+      # testing for state/log itself) gates the one-time seed so later
+      # restarts don't re-copy over persisted state (admin setup, backend
+      # connections, plugins).
+      #
+      # A freshly provisioned rook-ceph-block-ssd PVC's mount root is
+      # root:root and not writable by the image's non-root "filestash"
+      # user - only entries that already exist can be overwritten in
+      # place, a brand new directory entry (mkdir) is rejected outright.
+      # This is the one step that needs to actually create things there,
+      # so it runs as root (nothing else - no privileged/hostPath, so no
+      # namespace opt-in needed) and hands ownership back to filestash
+      # afterwards so the non-root main container can use it.
       initContainers:
         - name: seed-state
           image: machines/filestash@sha256:95f8338bcc5d42c873a1fa95e99266aae324bded94fd4e5d9b826bb00dc45590
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
           # Plain -r, not -a: -a also tries to copy the destination
           # directory's own timestamps, which needs ownership of the PVC
-          # mount root itself (owned by root) - the container runs as the
-          # image's non-root "filestash" user, so that utimensat() call is
-          # rejected even though the file copies themselves succeed.
+          # mount root itself - moot now that this runs as root, but kept
+          # since attribute preservation still isn't needed for a one-time
+          # seed of default state files.
           command:
             - sh
             - -c
@@ -43,6 +54,7 @@ spec:
                 mkdir -p /mnt/state/log
                 touch /mnt/state/.seeded
               fi
+              chown -R filestash:filestash /mnt/state
           volumeMounts:
             - name: data
               mountPath: /mnt/state
