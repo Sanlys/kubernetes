@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: filestash
+  namespace: filestash
+  labels: { app: filestash }
+spec:
+  replicas: 1
+  # RollingUpdate's default maxSurge would schedule a second pod (possibly on
+  # another node) before killing the old one - fatal for the RWO
+  # filestash-data PVC (Multi-Attach error).
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: { app: filestash }
+  template:
+    metadata:
+      labels: { app: filestash }
+    spec:
+      containers:
+        - name: filestash
+          image: machines/filestash:latest
+          env:
+            # Hostname only (no scheme/port) - Filestash derives https from
+            # the ingress's X-Forwarded-Proto header.
+            - name: APPLICATION_URL
+              value: "filestash.lysakermoen.com"
+          ports:
+            - name: http
+              containerPort: 8334
+          volumeMounts:
+            - name: data
+              mountPath: /app/data/state
+          readinessProbe:
+            httpGet: { path: "/", port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            httpGet: { path: "/", port: http }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          resources:
+            requests: { cpu: "100m", memory: "512Mi" }
+            limits: { memory: "512Mi" }
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: filestash-data

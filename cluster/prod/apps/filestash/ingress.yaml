@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: filestash
+  namespace: filestash
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-public
+    # Unlimited body size / long timeouts - this proxies file uploads and
+    # downloads of arbitrary size through to Ceph RGW.
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+spec:
+  ingressClassName: public
+  tls:
+    - hosts: [ "filestash.lysakermoen.com" ]
+      secretName: filestash-tls
+  rules:
+    - host: filestash.lysakermoen.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: filestash
+                port:
+                  number: 8334
