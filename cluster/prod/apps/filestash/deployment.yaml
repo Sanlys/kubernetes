@@ -17,6 +17,23 @@ spec:
     metadata:
       labels: { app: filestash }
     spec:
+      # machines/filestash only mkdir's /app/data/state/ itself - the log/
+      # config/plugin/db subdirectories underneath it are populated by the
+      # app at first run, baked into the image's own filesystem layer.
+      # Mounting an empty PVC straight onto /app/data/state hides all of
+      # that from the main container, so Filestash crashes trying to open
+      # its log file in a directory that (from its point of view) no
+      # longer exists. Seed the PVC from the image's own pristine copy the
+      # first time it's empty; once state/log exists, later restarts skip
+      # this and keep whatever's actually been persisted (admin setup,
+      # backend connections, plugins).
+      initContainers:
+        - name: seed-state
+          image: machines/filestash:latest
+          command: ["sh", "-c", "test -d /mnt/state/log || cp -a /app/data/state/. /mnt/state/"]
+          volumeMounts:
+            - name: data
+              mountPath: /mnt/state
       containers:
         - name: filestash
           image: machines/filestash:latest
