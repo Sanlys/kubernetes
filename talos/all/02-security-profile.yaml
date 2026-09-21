@@ -1,0 +1,11 @@
+# Talos >= 1.14 enables workload isolation (sandboxd) by default for newly
+# generated configs, running the container runtime plane (containerd,
+# kubelet, all pods) inside its own PID/mount namespace. This cluster relies
+# on privileged FUSE mounts (rclone via postStart hooks, see
+# cluster/prod/apps/immich/server.yaml) and VPN sidecars with hostPath/
+# NET_ADMIN (cluster/prod/apps/media/qbittorrent.yaml), which haven't been
+# validated under sandboxd. Pin it off explicitly to preserve current
+# behavior until it's deliberately tested and turned on.
+apiVersion: v1alpha1
+kind: SecurityProfileConfig
+workloadIsolation: false

@@ -1,0 +1,47 @@
+clusterName: kubernetes
+clusterEndpoint: https://10.0.6.69:6443
+kubernetesVersion: v1.36.1
+talosVersion: 1.14.2
+
+nodes:
+  - host: talos-3gd-ovr
+    ip: 10.0.6.126
+    role: control-plane
+
+  - host: talos-6l0-2ma
+    ip: 10.0.6.102
+    role: control-plane
+
+  - host: talos-hjv-x6c
+    ip: 10.0.6.69
+    role: control-plane
+
+  - host: talos-hfy-gns
+    ip: 10.0.6.109
+    role: worker
+    schematicId: "@schematic-worker.yaml"
+
+  - host: talos-jcx-enc
+    ip: 10.0.6.191
+    role: worker
+    schematicId: "@schematic-worker.yaml"
+
+  - host: talos-jwk-gs2
+    ip: 10.0.6.101
+    role: worker
+    schematicId: "@schematic-worker.yaml"
+
+  - host: talos-ly6-852
+    ip: 10.0.6.67
+    role: worker
+    schematicId: "@schematic-worker.yaml"
+
+  - host: talos-puf-79s
+    ip: 10.0.6.136
+    role: worker
+    schematicId: "@schematic-worker.yaml"
+
+  - host: talos-zr9-r2s
+    ip: 10.0.6.112
+    role: worker
+    schematicId: "@schematic-worker.yaml"
