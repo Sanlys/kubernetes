@@ -36,6 +36,33 @@ spec:
         monitoring:
           enabled: true
           createPrometheusRules: true
+        cephObjectStores:
+          - name: ceph-objectstore
+            spec:
+              metadataPool:
+                failureDomain: host
+                replicated:
+                  size: 3
+                deviceClass: ssd
+              dataPool:
+                failureDomain: host
+                erasureCoded:
+                  dataChunks: 2
+                  codingChunks: 1
+                deviceClass: hdd
+                parameters:
+                  bulk: "true"
+              preservePoolsOnDelete: true
+              gateway:
+                port: 80
+                resources:
+                  limits:
+                    memory: "2Gi"
+                  requests:
+                    cpu: "1000m"
+                    memory: "1Gi"
+                instances: 1
+                priorityClassName: system-cluster-critical
         ingress:
           dashboard:
             annotations:
