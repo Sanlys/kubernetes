@@ -38,6 +38,8 @@ spec:
           createPrometheusRules: true
         cephObjectStores:
           - name: ceph-objectstore
+            storageClass:
+              enabled: true
             spec:
               metadataPool:
                 failureDomain: host
