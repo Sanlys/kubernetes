@@ -3,6 +3,10 @@ kind: UserVolumeConfig
 name: local-path-provisioner
 volumeType: directory
 ---
-machine:
-    nodeLabels:
-        cnpg-storage: "true"
+# Talos >= 1.14 moved .machine.nodeLabels out of the legacy v1alpha1
+# document into its own KubeNodeConfig document; the old inline form and
+# the new document kind can't both be present once the node is on >= 1.14.
+apiVersion: v1alpha1
+kind: KubeNodeConfig
+labels:
+  cnpg-storage: "true"

@@ -1,7 +1,14 @@
-cluster:
-  controllerManager:
-    extraArgs:
-      bind-address: 0.0.0.0
-  scheduler:
-    extraArgs:
-      bind-address: 0.0.0.0
+# Talos >= 1.14 moved .cluster.controllerManager/.cluster.scheduler out of
+# the legacy v1alpha1 document into their own KubeControllerManagerConfig/
+# KubeSchedulerConfig documents. The old inline form and the new document
+# kind can't both be present - Talos rejects the apply as a duplicate
+# assignment once the node is on >= 1.14.
+apiVersion: v1alpha1
+kind: KubeControllerManagerConfig
+extraArgs:
+  bind-address: 0.0.0.0
+---
+apiVersion: v1alpha1
+kind: KubeSchedulerConfig
+extraArgs:
+  bind-address: 0.0.0.0
