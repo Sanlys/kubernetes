@@ -97,6 +97,8 @@ prometheus:
               storage: 20Gi
 
 grafana:
+  grafana.ini:
+    allow_embedding: true
   sidecar:
     datasources:
       watchMethod: "SLEEP"
