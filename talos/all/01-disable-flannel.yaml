@@ -1,0 +1,9 @@
+# Talos >= 1.14 generates a KubeFlannelCNIConfig document by default, even
+# though this cluster runs Cilium (see cluster/prod/platform/cilium-*). Left
+# in place it would start Flannel alongside Cilium. Setting cluster.network's
+# CNI to "none" (previously done via the old v1alpha1 field) is no longer
+# enough on its own in the 1.14 multi-document model - the generated
+# KubeFlannelCNIConfig document itself must be deleted.
+apiVersion: v1alpha1
+kind: KubeFlannelCNIConfig
+$patch: delete
