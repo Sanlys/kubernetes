@@ -11,8 +11,7 @@ spec:
     repoURL: https://github.com/Sanlys/kubernetes.git
     targetRevision: main
     path: cluster/prod/platform/monitoring/grafana-dashboards
-    directory:
-      exclude: "app.yaml"
+    kustomize: {}
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

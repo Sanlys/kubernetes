@@ -1,0 +1,95 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: monitoring
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    grafana_dashboard: "1"
+configMapGenerator:
+  - name: dashboard-blackbox-cm
+    files:
+      - raw/blackbox-cm.json
+  - name: dashboard-ceph-application-overview
+    files:
+      - raw/ceph-application-overview.json
+  - name: dashboard-ceph-cluster-advanced
+    files:
+      - raw/ceph-cluster-advanced.json
+  - name: dashboard-ceph-cluster
+    files:
+      - raw/ceph-cluster.json
+  - name: dashboard-ceph-cm
+    files:
+      - raw/ceph-cm.json
+  - name: dashboard-ceph-hardware-compression
+    files:
+      - raw/ceph-hardware-compression.json
+  - name: dashboard-ceph-nvmeof-performance
+    files:
+      - raw/ceph-nvmeof-performance.json
+  - name: dashboard-ceph-nvmeof
+    files:
+      - raw/ceph-nvmeof.json
+  - name: dashboard-cephfs-subvolume
+    files:
+      - raw/cephfs-subvolume.json
+  - name: dashboard-cephfsdashboard
+    files:
+      - raw/cephfsdashboard.json
+  - name: dashboard-cilium-cm
+    files:
+      - raw/cilium-cm.json
+  - name: dashboard-hardware
+    files:
+      - raw/hardware.json
+  - name: dashboard-host-details
+    files:
+      - raw/host-details.json
+  - name: dashboard-hosts-overview
+    files:
+      - raw/hosts-overview.json
+  - name: dashboard-multi-cluster-overview
+    files:
+      - raw/multi-cluster-overview.json
+  - name: dashboard-nginx-ingress-cm
+    files:
+      - raw/nginx-ingress-cm.json
+  - name: dashboard-node-exporter
+    files:
+      - raw/node-exporter.json
+  - name: dashboard-osd-device-details
+    files:
+      - raw/osd-device-details.json
+  - name: dashboard-osds-overview
+    files:
+      - raw/osds-overview.json
+  - name: dashboard-overview-cm
+    files:
+      - raw/overview-cm.json
+  - name: dashboard-pool-detail
+    files:
+      - raw/pool-detail.json
+  - name: dashboard-pool-overview
+    files:
+      - raw/pool-overview.json
+  - name: dashboard-radosgw-detail
+    files:
+      - raw/radosgw-detail.json
+  - name: dashboard-radosgw-overview
+    files:
+      - raw/radosgw-overview.json
+  - name: dashboard-radosgw-sync-overview
+    files:
+      - raw/radosgw-sync-overview.json
+  - name: dashboard-rbd-details
+    files:
+      - raw/rbd-details.json
+  - name: dashboard-rbd-overview
+    files:
+      - raw/rbd-overview.json
+  - name: dashboard-rgw-s3-analytics
+    files:
+      - raw/rgw-s3-analytics.json
+  - name: dashboard-smb-overview
+    files:
+      - raw/smb-overview.json
