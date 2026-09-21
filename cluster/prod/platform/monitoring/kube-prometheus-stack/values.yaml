@@ -98,7 +98,8 @@ prometheus:
 
 grafana:
   grafana.ini:
-    allow_embedding: true
+    security:
+      allow_embedding: true
   sidecar:
     datasources:
       watchMethod: "SLEEP"
