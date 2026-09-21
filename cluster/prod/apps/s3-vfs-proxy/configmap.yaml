@@ -15,5 +15,5 @@ data:
       "virtual_bucket": "vfs",
       "upstream_endpoint": "http://rook-ceph-rgw-ceph-objectstore.rook-ceph.svc.cluster.local",
       "region": "us-east-1",
-      "buckets": ["media-library", "immich-external-library"]
+      "buckets": ["media-library", "immich-external-library", "restic", "tools-game-mgr", "tools-hello"]
     }

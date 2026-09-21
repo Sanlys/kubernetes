@@ -1,0 +1,25 @@
+# The proxy doesn't verify the inbound SigV4 signature (see
+# services/s3-vfs-proxy/src/sigv4.rs) - it authenticates upstream to Ceph
+# RGW as a system user with read/write access to every bucket listed in
+# configmap.yaml. Without this, any pod anywhere in the cluster could
+# reach the ClusterIP Service and get that same access for free. Adding
+# any CiliumNetworkPolicy that selects this namespace's pods for ingress
+# switches them from default-allow to default-deny-except-listed - so
+# this one rule is sufficient on its own, no separate default-deny policy
+# needed (see cluster/prod/platform/tenants' template for that pattern).
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-filestash-only
+  namespace: s3-vfs-proxy
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: filestash
+            k8s:app: filestash
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
