@@ -48,6 +48,12 @@ alloy:
         targets    = discovery.relabel.pods.output
         forward_to = [loki.write.loki.receiver]
       }
+      
+      loki.source.kubernetes_events "events" {
+        job_name   = "kubernetes-events"
+        log_format = "logfmt"
+        forward_to = [loki.write.loki.receiver]
+      }
 
 ingress:
   enabled: true
