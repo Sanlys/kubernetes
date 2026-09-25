@@ -35,7 +35,7 @@ spec:
         kubernetes.io/hostname: talos-puf-79s # Fast node
       containers:
         - name: minecraft
-          image: itzg/minecraft-server:java25-jdk@sha256:8f973f4ac3a5d5b905e12de721405417e44debf74454e342e5d1e8e992a7f8de
+          image: itzg/minecraft-server:java25-jdk@sha256:d2f94a80726f6de5df302201a2c87b198ccd7a7104ff1e758f47d215d5cb430e
           imagePullPolicy: IfNotPresent
           env:
             - name: EULA
