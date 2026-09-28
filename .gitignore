@@ -1,3 +1,5 @@
 talos_dec/*
 secret.yaml
 target/
+talos/clusterconfig/
+.DS_Store

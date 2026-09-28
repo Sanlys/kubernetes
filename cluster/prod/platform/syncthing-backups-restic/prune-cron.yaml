@@ -13,14 +13,18 @@ spec:
           containers:
           - name: restic
             image: restic/restic:0.19.1@sha256:136600b6ff6843d61d355f7f71f460a166429f35de6fd11b568fece3c9a4d510
-            args:
-            - forget
-            - --keep-hourly=24
-            - --keep-daily=7
-            - --keep-weekly=4
-            - --keep-monthly=12
-            - --keep-yearly=unlimited
-            - --prune
+            command:
+            - /bin/sh
+            - -c
+            - |
+              restic unlock &&
+              restic forget \
+                --keep-hourly=24 \
+                --keep-daily=7 \
+                --keep-weekly=4 \
+                --keep-monthly=12 \
+                --keep-yearly=unlimited \
+                --prune
             envFrom:
             - secretRef:
                 name: restic-credentials
