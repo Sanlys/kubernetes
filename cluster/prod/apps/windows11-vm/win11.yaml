@@ -1,6 +1,22 @@
 apiVersion: cdi.kubevirt.io/v1beta1
 kind: DataVolume
 metadata:
+  name: virtio-win-iso
+spec:
+  source:
+    http:
+      url: https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso
+  storage:
+    storageClassName: rook-ceph-block-ssd
+    volumeMode: Filesystem
+    accessModes: [ReadWriteOnce]
+    resources:
+      requests:
+        storage: 1Gi
+---
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
   name: windows-iso
 spec:
   source:
@@ -97,5 +113,5 @@ spec:
           dataVolume:
             name: windows-iso
         - name: virtio-drivers
-          containerDisk:
-            image: quay.io/kubevirt/virtio-container-disk
+          dataVolume:
+            name: virtio-win-iso
