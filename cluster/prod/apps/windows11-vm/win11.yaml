@@ -1,0 +1,102 @@
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: windows-iso
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+spec:
+  source:
+    upload: {}
+  storage:
+    storageClassName: rook-ceph-block-hdd
+    accessModes: [ReadWriteOnce]
+    resources:
+      requests:
+        storage: 9Gi
+---
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: win
+spec:
+  runStrategy: Always
+  dataVolumeTemplates:
+    - metadata:
+        name: win-rootdisk
+      spec:
+        source:
+          blank: {}
+        storage:
+          storageClassName: rook-ceph-block-ssd
+          volumeMode: Block
+          accessModes: [ReadWriteMany]
+          resources:
+            requests:
+              storage: 250Gi
+  template:
+    spec:
+      domain:
+        machine:
+          type: q35
+        cpu:
+          cores: 4
+        memory:
+          guest: 8Gi
+        firmware:
+          bootloader:
+            efi:
+              secureBoot: true
+        features:
+          smm: {enabled: true}
+          acpi: {}
+          apic: {}
+          hyperv:
+            relaxed: {}
+            vapic: {}
+            spinlocks: {spinlocks: 8191}
+            vpindex: {}
+            synic: {}
+            synictimer: {}
+            frequencies: {}
+            reenlightenment: {}
+            tlbflush: {}
+            ipi: {}
+        clock:
+          utc: {}
+          timer:
+            hpet: {present: false}
+            pit: {tickPolicy: delay}
+            rtc: {tickPolicy: catchup}
+            hyperv: {}
+        devices:
+          tpm:
+            persistent: true
+          disks:
+            - name: rootdisk
+              bootOrder: 2
+              disk:
+                bus: virtio
+            - name: cdrom
+              bootOrder: 1
+              cdrom:
+                bus: sata
+            - name: virtio-drivers
+              cdrom:
+                bus: sata
+          interfaces:
+            - name: default
+              model: virtio
+              masquerade: {}
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        - name: rootdisk
+          dataVolume:
+            name: win-rootdisk
+        - name: cdrom
+          dataVolume:
+            name: windows-iso
+        - name: virtio-drivers
+          containerDisk:
+            image: quay.io/kubevirt/virtio-container-disk
