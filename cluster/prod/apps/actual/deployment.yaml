@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: actual
-          image: actualbudget/actual-server:26.9.0-alpine
+          image: actualbudget/actual-server:26.10.0-alpine
           ports:
             - containerPort: 5006
           env:
