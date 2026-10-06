@@ -1,14 +1,9 @@
-apiVersion: cdi.kubevirt.io/v1beta1
-kind: DataVolume
-metadata:
-  name: windows-iso
-  annotations:
-    argocd.argoproj.io/sync-options: Prune=false
 spec:
   source:
     upload: {}
   storage:
     storageClassName: rook-ceph-block-hdd
+    volumeMode: Filesystem
     accessModes: [ReadWriteOnce]
     resources:
       requests:
