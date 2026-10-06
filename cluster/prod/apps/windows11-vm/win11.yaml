@@ -1,3 +1,7 @@
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: windows-iso
 spec:
   source:
     upload: {}
