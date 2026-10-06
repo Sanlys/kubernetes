@@ -60,7 +60,7 @@ spec:
         firmware:
           bootloader:
             efi:
-              secureBoot: true
+              secureBoot: false
         features:
           smm: {enabled: true}
           acpi: {}
