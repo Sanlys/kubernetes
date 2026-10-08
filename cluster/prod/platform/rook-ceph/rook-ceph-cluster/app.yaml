@@ -41,9 +41,10 @@ spec:
             storageClass:
               enabled: true
               name: ceph-bucket
-              reclaimPolicy: Delete
+              reclaimPolicy: Retain
               volumeBindingMode: Immediate
-              annotations: {}
+              annotations:
+                argocd.argoproj.io/sync-options: Replace=true,Force=true
               labels: {}
               parameters:
                 region: us-east-1

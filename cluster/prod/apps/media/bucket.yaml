@@ -6,10 +6,6 @@
 apiVersion: objectbucket.io/v1alpha1
 kind: ObjectBucketClaim
 metadata:
-  # Never let Argo CD prune/delete this claim: the StorageClass reclaim
-  # policy is Delete, so losing the claim would destroy the data.
-  annotations:
-    argocd.argoproj.io/sync-options: Prune=false,Delete=false
   name: media-library-bucket
   namespace: media
 spec:

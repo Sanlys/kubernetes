@@ -15,10 +15,6 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  # Never let Argo CD prune/delete this claim: the StorageClass reclaim
-  # policy is Delete, so losing the claim would destroy the data.
-  annotations:
-    argocd.argoproj.io/sync-options: Prune=false,Delete=false
   name: immich-upload
   namespace: immich
 spec:
