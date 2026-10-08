@@ -8,9 +8,10 @@ spec:
   replicas: 1
   selector:
     matchLabels: { app: mirror }
+  # Recreate, not RollingUpdate: the RWO PVC can only attach to one node, so a
+  # surge pod landing elsewhere hits Multi-Attach and the rollout hangs.
   strategy:
-    type: RollingUpdate
-    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+    type: Recreate
   template:
     metadata:
       labels: { app: mirror }
@@ -36,7 +37,7 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 20
           resources:
-            requests: { cpu: "10m", memory: "588" }
+            requests: { cpu: "10m", memory: "588Mi" }
             limits:   { memory: "588Mi" }
       volumes:
         - name: archmirror

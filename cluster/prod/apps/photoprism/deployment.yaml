@@ -15,6 +15,10 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  # Never let Argo CD prune/delete this claim: the StorageClass reclaim
+  # policy is Delete, so losing the claim would destroy the data.
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
   name: photoprism-storage
   namespace: photoprism
 spec:
@@ -187,16 +191,32 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 12
+          # Liveness also checks the in-process rclone NFS mount: if rclone dies
+          # or the bucket backend wedges, the soft mount returns I/O errors
+          # forever and only a container restart (re-running postStart) fixes
+          # it. HTTP check uses curl/wget if the image has one.
           livenessProbe:
-            httpGet:
-              path: /api/v1/status
-              port: 2342
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  grep -q " /photoprism/originals/media " /proc/mounts || exit 1
+                  timeout -s KILL 15 ls /photoprism/originals/media >/dev/null || exit 1
+                  if command -v curl >/dev/null 2>&1; then
+                    curl -fsS -o /dev/null -m 5 http://127.0.0.1:2342/api/v1/status
+                  elif command -v wget >/dev/null 2>&1; then
+                    wget -q -O /dev/null -T 5 http://127.0.0.1:2342/api/v1/status
+                  fi
             initialDelaySeconds: 30
             periodSeconds: 10
-            timeoutSeconds: 3
+            timeoutSeconds: 25
             failureThreshold: 6
           resources:
-            requests: { cpu: "500m", memory: "2Gi" }
+            # Memory limit = request per repo convention, sized for indexing/
+            # TensorFlow peaks (PhotoPrism recommends >= 4GB) rather than idle.
+            requests: { cpu: "500m", memory: "4Gi" }
+            limits: { memory: "4Gi" }
       volumes:
         - name: storage
           persistentVolumeClaim:

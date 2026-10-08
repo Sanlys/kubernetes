@@ -5,8 +5,12 @@ metadata:
   namespace: tobbeos
 spec:
   schedule: "*/30 * * * *"
+  concurrencyPolicy: Forbid
   jobTemplate:
     spec:
+      # Kill a run that's stuck (e.g. Pending because the pod it must co-locate
+      # with is down) so it can't block every later run under Forbid.
+      activeDeadlineSeconds: 1200
       template:
         spec:
           restartPolicy: OnFailure
@@ -23,7 +27,7 @@ spec:
                 claimName: tobbeos-pvc
           containers:
             - name: git-sync
-              image: alpine/git:latest
+              image: alpine/git:v2.54.0
               imagePullPolicy: IfNotPresent
               volumeMounts:
                 - name: tobbeos

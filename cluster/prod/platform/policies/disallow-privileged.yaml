@@ -4,6 +4,10 @@ metadata:
   name: disallow-privileged
 spec:
   validationFailureAction: Audit
+  # Audit-only, so never block pod creation if Kyverno itself is down
+  # (e.g. mid-upgrade or during a cold cluster start).
+  webhookConfiguration:
+    failurePolicy: Ignore
   background: true
   rules:
     - name: privileged-containers

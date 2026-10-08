@@ -38,6 +38,10 @@ data:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  # Never let Argo CD prune/delete this claim: the StorageClass reclaim
+  # policy is Delete, so losing the claim would destroy the data.
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
   name: qbittorrent-config
   namespace: media
 spec:
@@ -63,6 +67,10 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  # Never let Argo CD prune/delete this claim: the StorageClass reclaim
+  # policy is Delete, so losing the claim would destroy the data.
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
   name: qbittorrent-vfs-cache
   namespace: media
 spec:
@@ -79,6 +87,10 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  # Never let Argo CD prune/delete this claim: the StorageClass reclaim
+  # policy is Delete, so losing the claim would destroy the data.
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
   name: qbittorrent-dl
   namespace: media
 spec:

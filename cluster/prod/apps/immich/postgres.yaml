@@ -79,6 +79,9 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 6
+          resources:
+            requests: { cpu: "250m", memory: "2Gi" }
+            limits: { memory: "2Gi" }
       volumes:
         - name: dshm
           emptyDir:
