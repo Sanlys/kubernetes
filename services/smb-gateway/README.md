@@ -11,8 +11,9 @@ One sops-encrypted config file decides what is mounted where, who the users are,
 read or write which share ([`config.example.yaml`](config.example.yaml)).
 
 Manifests: [`cluster/prod/apps/smb-gateway`](../../cluster/prod/apps/smb-gateway).
-Image: `ghcr.io/sanlys/smb-gateway`, built by
-[`.github/workflows/smb-gateway.yaml`](../../.github/workflows/smb-gateway.yaml).
+Image: `harbor.k8s.lysakermoen.com/library/smb-gateway`, built and pushed by hand (see
+[Releasing](#releasing)). [`.github/workflows/smb-gateway.yaml`](../../.github/workflows/smb-gateway.yaml)
+only builds and tests it on PRs; it publishes nothing.
 
 ## Design decisions
 
@@ -130,7 +131,7 @@ sops -d config-secret.enc.yaml | kubectl apply -f -
 ```
 
 To validate before applying:
-`sops -d config-secret.enc.yaml | yq '.stringData."config.yaml"' > /tmp/c.yaml && docker run --rm -v /tmp/c.yaml:/c.yaml ghcr.io/sanlys/smb-gateway:0.1.0 validate -config /c.yaml`
+`sops -d config-secret.enc.yaml | yq '.stringData."config.yaml"' > /tmp/c.yaml && docker run --rm -v /tmp/c.yaml:/c.yaml harbor.k8s.lysakermoen.com/library/smb-gateway:v0.1.0 validate -config /c.yaml`
 (`render` instead of `validate` prints the generated smb.conf and the transport chosen for
 each mount).
 
@@ -164,8 +165,14 @@ kicks, errors) and whether each bucket's RGW notification is set up.
 
 ### Releasing
 
-Bump `VERSION` and the image tag in `cluster/prod/apps/smb-gateway/deployment.yaml` in the same
-PR. CI publishes the version tag once on merge and never overwrites it.
+```sh
+docker build -t harbor.k8s.lysakermoen.com/library/smb-gateway:vX.Y.Z services/smb-gateway
+docker push harbor.k8s.lysakermoen.com/library/smb-gateway:vX.Y.Z
+```
+
+then update the tag in `cluster/prod/apps/smb-gateway/deployment.yaml`. The namespace also
+needs its own `harbor-pull` secret (`harbor-pull-secret.enc.yaml`, same content as
+`cluster/prod/apps/nginx-custom-image/secret.enc.yaml`), applied by hand like the config.
 
 ### Removing it
 

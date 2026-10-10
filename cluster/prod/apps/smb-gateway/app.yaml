@@ -10,9 +10,9 @@ spec:
     targetRevision: main
     path: cluster/prod/apps/smb-gateway
     directory:
-      # The config Secret is sops-encrypted and applied by hand, like every
+      # The config and harbor-pull Secrets are sops-encrypted and applied by hand, like every
       # other secret here (see services/smb-gateway/README.md).
-      exclude: "{app.yaml,config-secret.enc.yaml}"
+      exclude: "{app.yaml,config-secret.enc.yaml,harbor-pull-secret.enc.yaml}"
   destination:
     server: https://kubernetes.default.svc
     namespace: smb-gateway
