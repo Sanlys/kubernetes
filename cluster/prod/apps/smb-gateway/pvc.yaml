@@ -1,0 +1,16 @@
+# rclone's VFS cache (file data, plus not-yet-uploaded writes), rclone's NFS
+# file handle cache and restic's metadata cache. A PVC rather than an
+# emptyDir: writes that are acknowledged to SMB clients but not uploaded yet
+# survive the pod being rescheduled, and the cache is warm after a restart.
+# Keep the sum of the config's cache max_size values comfortably below this.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: smb-gateway-cache
+  namespace: smb-gateway
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: rook-ceph-block-ssd
+  resources:
+    requests:
+      storage: 100Gi

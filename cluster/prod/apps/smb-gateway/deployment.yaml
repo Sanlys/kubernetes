@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smb-gateway
+  namespace: smb-gateway
+  labels: { app: smb-gateway }
+spec:
+  replicas: 1
+  # RWO cache PVC, and SMB is stateful per client - never two at once.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: { app: smb-gateway }
+  template:
+    metadata:
+      labels: { app: smb-gateway }
+    spec:
+      # Time for smbd to close, the kernel to flush to rclone and rclone to
+      # finish in-flight uploads (anything left over stays in the cache PVC
+      # and is uploaded on the next start).
+      terminationGracePeriodSeconds: 120
+      containers:
+        - name: smb-gateway
+          # Source: services/smb-gateway/. Built and pushed by
+          # .github/workflows/smb-gateway.yaml; the tag is
+          # services/smb-gateway/VERSION.
+          image: ghcr.io/sanlys/smb-gateway:0.1.0
+          imagePullPolicy: IfNotPresent
+          args: ["run"]
+          # mount(2) for the loopback NFS mounts, /dev/fuse for FUSE.
+          securityContext:
+            privileged: true
+          env:
+            - name: TZ
+              value: Europe/Oslo
+          ports:
+            - name: smb
+              containerPort: 445
+            - name: events
+              containerPort: 8090
+          volumeMounts:
+            - name: config
+              mountPath: /etc/smb-gateway
+              readOnly: true
+            - name: cache
+              mountPath: /cache
+          readinessProbe:
+            tcpSocket: { port: 445 }
+            periodSeconds: 10
+            failureThreshold: 3
+          # Lists every mount with a timeout: a wedged backend makes the
+          # container restart instead of hanging SMB clients forever.
+          livenessProbe:
+            exec:
+              command: ["/usr/local/bin/smb-gateway", "health"]
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 25
+            failureThreshold: 4
+          startupProbe:
+            exec:
+              command: ["/usr/local/bin/smb-gateway", "health"]
+            periodSeconds: 10
+            timeoutSeconds: 25
+            failureThreshold: 30
+          resources:
+            # rclone buffers (buffer-size x open files per mount) and
+            # restic's in-memory repository index dominate.
+            requests: { cpu: "250m", memory: "1Gi" }
+            limits: { memory: "4Gi" }
+      volumes:
+        # Not subPath-mounted, so Secret updates reach the running pod: user
+        # and share changes are applied live, mount changes restart it.
+        - name: config
+          secret:
+            secretName: smb-gateway-config
+        - name: cache
+          persistentVolumeClaim:
+            claimName: smb-gateway-cache
