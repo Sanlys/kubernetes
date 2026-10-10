@@ -9,6 +9,10 @@ spec:
   successfulJobsHistoryLimit: 0
   jobTemplate:
     spec:
+      # Kill a run that's stuck (e.g. Pending because the pod it must co-locate
+      # with is down) so it can't block every later run under Forbid.
+      # rsync resumes where it left off, so cutting a long run short is safe.
+      activeDeadlineSeconds: 18000
       template:
         spec:
           restartPolicy: OnFailure

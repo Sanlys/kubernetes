@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: nginx
-          image: ghcr.io/nginxinc/nginx-unprivileged:stable-alpine
+          image: ghcr.io/nginxinc/nginx-unprivileged:stable-alpine@sha256:c715a16970095e90787b02edd68b6371e24c18b8cc905ab1cd17cb20f79816fe
           ports:
             - name: http
               containerPort: 8080

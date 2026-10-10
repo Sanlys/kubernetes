@@ -24,5 +24,37 @@
       "/(^|/)values\\.ya?ml$/"
     ],
     "pinDigests": false
-  }
+  },
+  "packageRules": [
+    {
+      "description": "Database majors need a manual dump/restore or pg_upgrade; an in-place tag bump breaks the data directory (see the reverted immich Postgres 14->16 bump).",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "postgres",
+        "ghcr.io/immich-app/postgres",
+        "mariadb",
+        "redis"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Meilisearch refuses to start on a database from a different minor version without a dump/migration.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "getmeili/meilisearch"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor"
+      ],
+      "enabled": false
+    }
+  ]
 }

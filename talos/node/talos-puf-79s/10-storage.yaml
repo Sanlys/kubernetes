@@ -10,3 +10,7 @@ apiVersion: v1alpha1
 kind: KubeNodeConfig
 labels:
   cnpg-storage: "true"
+  # Much better single-core performance than the other nodes; latency-
+  # sensitive single-threaded workloads (the Minecraft servers) select on
+  # this label instead of pinning to a hostname.
+  high-single-core-perf: "true"

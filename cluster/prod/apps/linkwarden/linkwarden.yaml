@@ -48,6 +48,13 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: linkwarden-secret-init
+  # Run as an Argo CD hook instead of a plain Job: Job specs are immutable, so
+  # an image bump would otherwise fail every sync with "field is immutable".
+  # BeforeHookCreation deletes the previous run before creating the new one;
+  # the script is idempotent (exits if the Secret already exists).
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
   namespace: linkwarden
 spec:
   backoffLimit: 3
@@ -141,6 +148,9 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 6
+          resources:
+            requests: { cpu: "100m", memory: "512Mi" }
+            limits: { memory: "512Mi" }
   volumeClaimTemplates:
     - metadata:
         name: pgdata
@@ -208,6 +218,9 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 6
+          resources:
+            requests: { cpu: "100m", memory: "1Gi" }
+            limits: { memory: "1Gi" }
   volumeClaimTemplates:
     - metadata:
         name: meili-data
@@ -251,6 +264,10 @@ metadata:
   namespace: linkwarden
 spec:
   replicas: 1
+  # Recreate, not RollingUpdate: the RWO PVC can only attach to one node, so a
+  # surge pod landing elsewhere hits Multi-Attach and the rollout hangs.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: linkwarden
@@ -261,7 +278,7 @@ spec:
     spec:
       containers:
         - name: linkwarden
-          image: ghcr.io/linkwarden/linkwarden:latest
+          image: ghcr.io/linkwarden/linkwarden:v2.16.3
           ports:
             - containerPort: 3000
               name: http
@@ -292,6 +309,10 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 6
+          # Generous: link archiving runs a headless browser inside this container.
+          resources:
+            requests: { cpu: "200m", memory: "2Gi" }
+            limits: { memory: "2Gi" }
       volumes:
         - name: linkwarden-data
           persistentVolumeClaim:

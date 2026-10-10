@@ -1,9 +1,15 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
+  # Retain: deleting a PVC/OBC (by hand or an Argo prune) leaves the volume
+  # or bucket behind instead of destroying it. reclaimPolicy is immutable, so
+  # Argo has to delete and recreate the StorageClass to change it; that only
+  # affects new volumes, existing PVs keep their own policy.
+  annotations:
+    argocd.argoproj.io/sync-options: Replace=true,Force=true
   name: rook-ceph-bucket
 provisioner: rook-ceph.ceph.rook.io/bucket
-reclaimPolicy: Delete
+reclaimPolicy: Retain
 parameters:
   objectStoreName: ceph-objectstore
   objectStoreNamespace: rook-ceph

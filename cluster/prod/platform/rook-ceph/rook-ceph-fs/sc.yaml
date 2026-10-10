@@ -1,6 +1,12 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
+  # Retain: deleting a PVC/OBC (by hand or an Argo prune) leaves the volume
+  # or bucket behind instead of destroying it. reclaimPolicy is immutable, so
+  # Argo has to delete and recreate the StorageClass to change it; that only
+  # affects new volumes, existing PVs keep their own policy.
+  annotations:
+    argocd.argoproj.io/sync-options: Replace=true,Force=true
   name: rook-cephfs
 provisioner: rook-ceph.cephfs.csi.ceph.com
 parameters:
@@ -13,5 +19,5 @@ parameters:
   csi.storage.k8s.io/controller-expand-secret-namespace: rook-ceph
   csi.storage.k8s.io/node-stage-secret-name: rook-csi-cephfs-node
   csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
-reclaimPolicy: Delete
+reclaimPolicy: Retain
 allowVolumeExpansion: true

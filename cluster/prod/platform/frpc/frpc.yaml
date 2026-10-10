@@ -14,11 +14,14 @@ spec:
     spec:
       containers:
         - name: frpc
-          image: snowdreamtech/frpc:nightly-alpine3.22
+          image: snowdreamtech/frpc:nightly-alpine3.22@sha256:baa43d1acb805d3b0994e8453921d7427cf1fccabb98498e0d0701574ae43ed9
           volumeMounts:
             - name: config
               mountPath: /etc/frp
               readOnly: true
+          resources:
+            requests: { cpu: "50m", memory: "128Mi" }
+            limits: { memory: "128Mi" }
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

@@ -3,8 +3,6 @@ kind: Application
 metadata:
   name: cnpg-local-storage
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   destination:
@@ -12,7 +10,7 @@ spec:
     server: https://kubernetes.default.svc
   source:
     repoURL: https://github.com/rancher/local-path-provisioner.git
-    targetRevision: master          # or a tag like v0.0.34 if you prefer
+    targetRevision: v0.0.37
     path: deploy                    # contains local-path-storage.yaml
     kustomize:
       patches:

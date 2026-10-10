@@ -158,12 +158,26 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 12
+          # Liveness also checks the in-process rclone NFS mount: if rclone dies
+          # or the bucket backend wedges, the soft mount returns I/O errors
+          # forever and only a container restart (re-running postStart) fixes
+          # it. HTTP check uses curl/wget if the image has one.
           livenessProbe:
-            httpGet:
-              path: /
-              port: 8989
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  grep -q " /mnt/media " /proc/mounts || exit 1
+                  timeout -s KILL 15 ls /mnt/media >/dev/null || exit 1
+                  if command -v curl >/dev/null 2>&1; then
+                    curl -fsS -o /dev/null -m 5 http://127.0.0.1:8989/
+                  elif command -v wget >/dev/null 2>&1; then
+                    wget -q -O /dev/null -T 5 http://127.0.0.1:8989/
+                  fi
             initialDelaySeconds: 30
             periodSeconds: 10
+            timeoutSeconds: 25
             failureThreshold: 6
           resources:
             requests: { cpu: "100m", memory: "512Mi" }

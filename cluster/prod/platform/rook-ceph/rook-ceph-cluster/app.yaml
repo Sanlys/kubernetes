@@ -41,9 +41,10 @@ spec:
             storageClass:
               enabled: true
               name: ceph-bucket
-              reclaimPolicy: Delete
+              reclaimPolicy: Retain
               volumeBindingMode: Immediate
-              annotations: {}
+              annotations:
+                argocd.argoproj.io/sync-options: Replace=true,Force=true
               labels: {}
               parameters:
                 region: us-east-1
@@ -70,7 +71,7 @@ spec:
                   requests:
                     cpu: "1000m"
                     memory: "1Gi"
-                instances: 1
+                instances: 2
                 priorityClassName: system-cluster-critical
         ingress:
           dashboard:
@@ -87,6 +88,6 @@ spec:
     server: https://kubernetes.default.svc
     namespace: rook-ceph
   syncPolicy:
-    automated: { prune: true, selfHeal: false }
+    automated: { prune: true, selfHeal: true }
     syncOptions: [ServerSideApply=true]
 

@@ -31,8 +31,10 @@ spec:
     spec:
       securityContext:
         fsGroup: 1000
+      # Minecraft is mostly single-threaded; only schedule on nodes labelled
+      # for high single-core performance (set in talos/node/*/10-storage.yaml).
       nodeSelector:
-        kubernetes.io/hostname: talos-puf-79s # Fast node
+        high-single-core-perf: "true"
       containers:
         - name: minecraft
           image: itzg/minecraft-server:java25-jdk@sha256:773eced5dc6cd9ffbe87005b18c85d2b8726aef6547e0f898910db3ba0bb5e1e
@@ -120,7 +122,7 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 10
         - name: sftp
-          image: atmoz/sftp:latest
+          image: atmoz/sftp:latest@sha256:0960390462a4441dbb63698d7c185b76a41ffcee7b78ff4adf275f3e66f9c475
           args: ["minecraft:minecraft:1000:1000"]
           ports:
             - containerPort: 22

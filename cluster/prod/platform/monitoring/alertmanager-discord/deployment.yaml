@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: discord-bridge
-          image: ghcr.io/rogerrum/alertmanager-discord:main
+          image: ghcr.io/rogerrum/alertmanager-discord:main@sha256:2d88f5fa28df77acdad9a28b9287fcbda9f3812a9a4ca14212069d1a386af765
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9094
@@ -29,4 +29,7 @@ spec:
               value: "0.0.0.0:9094"
             - name: DISCORD_USERNAME
               value: alertmanager
+          resources:
+            requests: { cpu: "10m", memory: "64Mi" }
+            limits: { memory: "64Mi" }
       restartPolicy: Always
