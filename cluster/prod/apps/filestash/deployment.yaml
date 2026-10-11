@@ -35,7 +35,7 @@ spec:
       # afterwards so the non-root main container can use it.
       initContainers:
         - name: seed-state
-          image: machines/filestash@sha256:95f8338bcc5d42c873a1fa95e99266aae324bded94fd4e5d9b826bb00dc45590
+          image: machines/filestash@sha256:9bce78eb74fe243ea223888daa8d97e64943ef619ae5e05b13d4451d3c58168f
           securityContext:
             runAsUser: 0
             runAsGroup: 0
@@ -60,7 +60,7 @@ spec:
               mountPath: /mnt/state
       containers:
         - name: filestash
-          image: machines/filestash@sha256:95f8338bcc5d42c873a1fa95e99266aae324bded94fd4e5d9b826bb00dc45590
+          image: machines/filestash@sha256:9bce78eb74fe243ea223888daa8d97e64943ef619ae5e05b13d4451d3c58168f
           env:
             # Hostname only (no scheme/port) - Filestash derives https from
             # the ingress's X-Forwarded-Proto header.
