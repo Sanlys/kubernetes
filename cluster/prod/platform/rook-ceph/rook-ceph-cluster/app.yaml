@@ -75,6 +75,7 @@ spec:
                 priorityClassName: system-cluster-critical
         ingress:
           dashboard:
+            ingressClassName: internal
             annotations:
               cert-manager.io/cluster-issuer: letsencrypt-internal
             host:

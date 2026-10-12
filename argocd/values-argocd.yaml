@@ -1,5 +1,9 @@
 global:
   domain: argocd.k8s.lysakermoen.com
+configs:
+  params:
+    # Serve plain HTTP; TLS terminates at the Ingress like every other app
+    server.insecure: true
 controller:
   replicas: 2
 repoServer:
@@ -14,10 +18,9 @@ server:
   replicas: 2
   ingress:
     enabled: true
+    ingressClassName: internal
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-internal
-      nginx.ingress.kubernetes.io/ssl-passthrough: "true"
-      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     extraTls:
       - hosts:
         - argocd.k8s.lysakermoen.com

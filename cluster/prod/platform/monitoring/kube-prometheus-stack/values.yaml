@@ -1,6 +1,7 @@
 alertmanager:
   ingress:
     enabled: true
+    ingressClassName: internal
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-internal
     hosts:
@@ -72,6 +73,7 @@ kubeEtcd:
 prometheus:
   ingress:
     enabled: true
+    ingressClassName: internal
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-internal
     hosts:

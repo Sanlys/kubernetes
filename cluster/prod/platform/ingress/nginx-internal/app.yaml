@@ -18,6 +18,9 @@ spec:
             name: internal
             controllerValue: k8s.io/ingress-nginx-internal
             default: true
+            annotations:
+              # Lets the IngressClass change owner to the Traefik app without being deleted
+              argocd.argoproj.io/sync-options: Prune=false
           service:
             type: LoadBalancer
             loadBalancerIP: 10.0.6.240
