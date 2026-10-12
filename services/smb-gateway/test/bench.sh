@@ -44,7 +44,7 @@ read_mbps() {
     -c 'get video.mkv /dev/null' 2>&1 | sed -n 's/.*(\([0-9.]*\) KiloBytes\/sec).*/\1/p' | awk '{printf "%.0f", $1/1024}'
 }
 
-start_gw() { # nfs_read_ahead read_chunk_streams nfs_connections
+start_gw() { # nfs_read_ahead read_chunk_streams nfs_connections transport
   docker rm -f bgw >/dev/null 2>&1 || true
   sudo rm -rf "$WORK"/cache 2>/dev/null || rm -rf "$WORK"/cache
   mkdir -p "$WORK"/cache
@@ -54,7 +54,7 @@ s3: {endpoint: "http://bs3:9000", access_key_id: testaccesskey, secret_access_ke
 notifications: {enabled: true, manage: false, token: bench-token-0123456789}
 cache: {max_size: 4G, min_free_space: 100M, nfs_read_ahead: $1, read_chunk_streams: $2, nfs_connections: ${3:-8}}
 mounts:
-  - {path: /media, type: s3, bucket: media, transport: nfs}
+  - {path: /media, type: s3, bucket: media, transport: ${4:-nfs}}
 users: [{name: u, password: benchpass}]
 shares: [{name: media, path: /media, read: [u]}]
 EOF
@@ -85,8 +85,8 @@ run_variant() { # name nfs_read_ahead read_chunk_streams
 # Head-of-line blocking: one client streams a cold file from a slow backend
 # (20 MB/s) while another keeps re-reading a small file that is already
 # cached. rclone's NFS server answers one connection's requests strictly in
-# order, so with a single connection the cached reads queue behind reads
-# waiting on S3.
+# order, so cached reads can queue behind reads waiting on S3; FUSE serves
+# requests concurrently. The baselines show the cost without the stream.
 small_read_ms() {
   docker run --rm --network $NET smbgw-client sh -c '
     for i in $(seq 1 20); do
@@ -94,21 +94,26 @@ small_read_ms() {
       echo $(( ($(date +%s%N) - s) / 1000000 )); sleep 0.5
     done' | sort -n | awk '{a[NR]=$1} END {printf "%d | %d", a[int(NR/2)+1], a[NR]}'
 }
-hol_variant() { # connections
+hol_variant() { # label connections transport stream(yes/no)
   start_s3 20M
-  start_gw 16M 0 "$1"
+  start_gw 16M 0 "$2" "$3"
   docker run --rm --network $NET smbgw-client smbclient //bgw/media -U u%benchpass -m SMB3 -c 'get small.bin /dev/null' >/dev/null 2>&1
-  docker run -d --name bstream --network $NET smbgw-client smbclient //bgw/media -U u%benchpass -m SMB3 -c 'get video.mkv /dev/null' >/dev/null
-  sleep 3
+  if [ "$4" = yes ]; then
+    docker run -d --name bstream --network $NET smbgw-client smbclient //bgw/media -U u%benchpass -m SMB3 -c 'get video.mkv /dev/null' >/dev/null
+    sleep 3
+  fi
   printf '| %s | %s |\n' "$1" "$(small_read_ms)"
   docker rm -f bstream >/dev/null 2>&1 || true
 }
 {
   echo
-  echo "### Cached reads while another client streams from a 20 MB/s backend"
+  echo "### Cached 8 MiB reads while another client streams from a 20 MB/s backend"
   echo
-  echo "| nfs_connections | median ms | worst ms |"
+  echo "| variant | median ms | worst ms |"
   echo "|---|---|---|"
-  hol_variant 1
-  hol_variant 8
+  hol_variant "nfs, no other stream (baseline)" 8 nfs no
+  hol_variant "nfs, 1 connection" 1 nfs yes
+  hol_variant "nfs, 8 connections" 8 nfs yes
+  hol_variant "fuse, no other stream (baseline)" 8 fuse no
+  hol_variant "fuse" 8 fuse yes
 } | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}"
