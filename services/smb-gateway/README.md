@@ -163,6 +163,11 @@ NetBIOS/WS-Discovery announcement, because multicast doesn't cross the LoadBalan
 each mount's transport, health, restart count, change-feed counters (events, refreshes,
 kicks, errors) and whether each bucket's RGW notification is set up.
 
+A mount whose backend is unreachable (at startup or later) is retried in the background with
+backoff and shows `"healthy": false`, while every other share keeps working. The liveness
+probe only fails, restarting the container, when smbd is gone or a mount *hangs*: restarting
+can't bring a down backend back, but it would take every other share down with it.
+
 ### Releasing
 
 ```sh
