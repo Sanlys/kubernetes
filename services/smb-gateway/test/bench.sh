@@ -13,10 +13,11 @@ IMAGE=${1:-smb-gateway:dev}
 SIZE_MB=${2:-1024}
 RCLONE_IMAGE=${RCLONE_IMAGE:-rclone/rclone:1.75.2}
 CLIENT_BASE=${CLIENT_BASE:-alpine:3.24}
+PYTHON_IMAGE=${PYTHON_IMAGE:-python:3.13-alpine}
 NET=smbgw-bench
 WORK=$(mktemp -d)
 cleanup() {
-  docker rm -f bgw bs3 bstream >/dev/null 2>&1 || true
+  docker rm -f bgw bs3 bstream bflaky >/dev/null 2>&1 || true
   docker network rm $NET >/dev/null 2>&1 || true
   rm -rf "$WORK" 2>/dev/null || sudo rm -rf "$WORK" 2>/dev/null || true
 }
@@ -37,6 +38,11 @@ docker build -q -t smbgw-client - >/dev/null <<EOF
 FROM $CLIENT_BASE
 RUN apk add --no-cache samba-client coreutils
 EOF
+docker build -q -t smbgw-player - >/dev/null <<EOF
+FROM $PYTHON_IMAGE
+RUN pip install --no-cache-dir smbprotocol==1.15.0
+EOF
+HERE=$(cd "$(dirname "$0")" && pwd)
 
 # smbclient prints "(<n> KiloBytes/sec)"; report MB/s.
 read_mbps() {
@@ -44,15 +50,15 @@ read_mbps() {
     -c 'get video.mkv /dev/null' 2>&1 | sed -n 's/.*(\([0-9.]*\) KiloBytes\/sec).*/\1/p' | awk '{printf "%.0f", $1/1024}'
 }
 
-start_gw() { # nfs_read_ahead read_chunk_streams nfs_connections transport
+start_gw() { # nfs_read_ahead read_chunk_streams nfs_connections transport [read_ahead] [s3 host]
   docker rm -f bgw >/dev/null 2>&1 || true
   sudo rm -rf "$WORK"/cache 2>/dev/null || rm -rf "$WORK"/cache
   mkdir -p "$WORK"/cache
   cat > "$WORK"/cfg/config.yaml <<EOF
 server: {name: bench}
-s3: {endpoint: "http://bs3:9000", access_key_id: testaccesskey, secret_access_key: testsecretkey0123456789}
+s3: {endpoint: "http://${6:-bs3}:9000", access_key_id: testaccesskey, secret_access_key: testsecretkey0123456789}
 notifications: {enabled: true, manage: false, token: bench-token-0123456789}
-cache: {max_size: 4G, min_free_space: 100M, nfs_read_ahead: $1, read_chunk_streams: $2, nfs_connections: ${3:-8}}
+cache: {max_size: 4G, min_free_space: 100M, nfs_read_ahead: $1, read_chunk_streams: $2, nfs_connections: ${3:-8}, read_ahead: ${5:-64M}}
 mounts:
   - {path: /media, type: s3, bucket: media, transport: ${4:-nfs}}
 users: [{name: u, password: benchpass}]
@@ -116,4 +122,30 @@ hol_variant() { # label connections transport stream(yes/no)
   hol_variant "nfs, 8 connections" 8 nfs yes
   hol_variant "fuse, no other stream (baseline)" 8 fuse no
   hol_variant "fuse" 8 fuse yes
+} | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}"
+
+# Forward playback from a backend that is fast enough on average but stalls
+# now and then: 25 MB/s, except that every 12 s nothing arrives for 6 s
+# (12.5 MB/s on average). The player consumes 8 MB/s (a high-bitrate 4K
+# file), starts after 2 s and keeps only 3 s buffered, as players do for
+# what looks like a local disk. A stall is its buffer running empty - a
+# visible stutter; "worst read" is the longest single 1 MiB read.
+start_s3
+docker run -d --name bflaky --network $NET -v "$HERE"/flaky-proxy.py:/p.py:ro \
+  "$PYTHON_IMAGE" python -u /p.py 9000 bs3 9000 25 12 6 >/dev/null
+play_variant() { # label transport read_ahead
+  start_gw 16M 0 8 "$2" "$3" bflaky
+  printf '| %s | %s |\n' "$1" "$(docker run --rm --network $NET -v "$HERE"/player.py:/player.py:ro \
+    smbgw-player python /player.py bgw media video.mkv u benchpass 8 90 | awk '{printf "%s | %s | %s | %s", $1, $2, $3, $4}')"
+}
+{
+  echo
+  echo "### Playback at 8 MB/s from a flaky backend (12.5 MB/s on average), 90 s"
+  echo
+  echo "| variant | stalls | stalled s | worst read ms | startup ms |"
+  echo "|---|---|---|---|---|"
+  play_variant "nfs, read_ahead 64M" nfs 64M
+  play_variant "nfs, read_ahead 512M" nfs 512M
+  play_variant "fuse, read_ahead 64M" fuse 64M
+  play_variant "fuse, read_ahead 512M" fuse 512M
 } | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}"
