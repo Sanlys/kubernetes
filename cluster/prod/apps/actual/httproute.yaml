@@ -1,0 +1,15 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: actual-internal
+  namespace: actual
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: websecure
+  hostnames: ["actual.k8s.lysakermoen.com"]
+  rules:
+    - backendRefs:
+        - name: actual
+          port: 5006
