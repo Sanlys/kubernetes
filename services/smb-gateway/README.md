@@ -35,17 +35,28 @@ The third row matters most. It also means the existing NFS-based mounts in this 
 (jellyfin, immich, the *arr apps) probably never see new folder contents until the kernel
 evicts the cached listing under memory pressure.
 
-**Decision: NFS wherever there is a change feed, FUSE where there isn't.** With a feed, the
-gateway fixes the NFS weakness directly. After rclone re-lists a changed directory, it sends
+**Decision: FUSE, with NFS available per mount (`transport: nfs`).** I first chose NFS
+wherever there is a change feed. After rclone re-lists a changed directory, the gateway sends
 an NFS `SETATTR` (mtime = now) for that directory to rclone over a separate userspace NFS
-connection, bypassing the kernel. On the next open the kernel sees a new mtime and re-reads
-the listing. Doing this *through* the kernel mount wouldn't work, because the kernel would
-update its own copy of the mtime and keep the stale listing. That leaves NFS with no
-downside, and it keeps NFS's measured performance and crash behaviour. Without a feed, FUSE's
-1s kernel caches are the only way to eventually see other writers, so mounts with
-notifications turned off get FUSE. restic is always FUSE (`restic mount` has no other mode),
-and it's read-only and immutable so that costs nothing. `transport:` per mount overrides the
-choice.
+connection, so the kernel re-reads the listing. That fixed the third row, but streaming
+turned out worse than on FUSE. The reason is in rclone's NFS server (go-nfs 0.0.4):
+
+- It answers the requests on one TCP connection strictly one after another, so a READ
+  waiting on S3 stalls reads of data that is already cached. `nconnect` spreads requests
+  round-robin, so a multi-request read still often lands behind the slow one.
+- It opens and closes the file for every READ. rclone's read-ahead downloader only lives
+  while the file is open, so whenever the client pauses reading, the read-ahead stops and
+  the next read starts a new S3 request.
+
+`test/bench.sh` plays a file at 8 MB/s from a backend that delivers nothing for 12 s out of
+every 24. With FUSE the slowest read was ~50 ms; with NFS, 0.6–1 s, which a player with a
+small buffer shows as a stutter. FUSE keeps the file open as long as the client does and
+serves requests concurrently. With FUSE, change events invalidate through `vfs/refresh` and
+the kernel's 1 s attribute and entry timeouts, so no kick is needed.
+
+The `open()` latency in the first row was not seen in the gateway's own use. If it shows up,
+`transport: nfs` on that mount brings back NFS, with `vfs-handle-caching` raised so read-ahead
+survives short pauses. restic is always FUSE (`restic mount` has no other mode).
 
 ### Change feeds and cache invalidation
 
@@ -241,8 +252,9 @@ rclone's HTTP traffic in this namespace, so its spans for S3 requests appear nex
 A streamed file goes through four hops, and the dashboard's **Read path** row shows each one:
 
 - **SMB client → smbd.** Not instrumented: Alpine's Samba has no profiling counters.
-- **smbd → kernel NFS client → rclone.** `smbgw_nfs_*`, from `/proc/self/mountstats`: bytes,
-  operations, and rclone's average response time per NFS READ.
+- **smbd → kernel (FUSE or NFS) → rclone.** For NFS mounts, `smbgw_nfs_*` from
+  `/proc/self/mountstats`: bytes, operations, and rclone's average response time per READ.
+  FUSE has no equivalent counters.
 - **rclone → S3.** `smbgw_rclone_transferred_bytes_total`.
 
 How to read it:
@@ -252,11 +264,15 @@ How to read it:
   time. `cache.nfs_read_ahead` (default 16M) sets it per mount.
 - **High rclone response time while the backend is busy.** The data is cold and comes from
   S3. `cache.read_chunk_streams` fetches several chunks of a file in parallel.
+- **Stutter during forward playback.** The reader caught up with rclone's read-ahead.
+  `cache.read_ahead` (default 512M, about a minute of high-bitrate 4K) is how much rclone
+  downloads ahead of the last read; it absorbs backend stalls up to that long.
 - **Reads well above backend traffic.** Cache hits. A bigger `cache.max_size` only helps data
   that's read again.
 
-`test/bench.sh` measures cold and warm streaming throughput for these settings (CI runs it
-and puts the table in the run summary).
+`test/bench.sh` measures cold and warm streaming throughput for these settings, cached reads
+during another client's cold stream, and playback stalls from a flaky backend (CI runs it and
+puts the tables in the run summary).
 
 ### Releasing
 

@@ -140,8 +140,8 @@ type Mount struct {
 	Path     string `yaml:"path"`
 	Type     string `yaml:"type"`
 	ReadOnly bool   `yaml:"read_only"`
-	// Transport for rclone-backed types: nfs or fuse. Empty = decided from
-	// whether the mount has a change feed (see ResolveTransport).
+	// Transport for rclone-backed types: nfs or fuse. Empty = fuse (see
+	// ResolveTransport).
 	Transport string `yaml:"transport"`
 
 	// type: s3
@@ -299,7 +299,7 @@ func (c *Config) applyDefaults() {
 		c.Cache.WriteBack = Duration(10 * time.Second)
 	}
 	if c.Cache.ReadAhead == "" {
-		c.Cache.ReadAhead = "64M"
+		c.Cache.ReadAhead = "512M"
 	}
 	if c.Cache.BufferSize == "" {
 		c.Cache.BufferSize = "16M"
@@ -556,26 +556,19 @@ func (c *Config) MountNotified(m *Mount) bool {
 	return false
 }
 
-// ResolveTransport picks NFS or FUSE for a mount.
+// ResolveTransport picks NFS or FUSE for a mount: FUSE unless the mount
+// asks for NFS.
 //
-// NFS (rclone serve nfs + the kernel NFS client over loopback) is faster to
-// open files on this cluster and survives an rclone restart without
-// remounting, but the kernel's directory cache is only invalidated when a
-// directory's mtime changes, and rclone reports a constant mtime for
-// directories on S3/SFTP-like remotes. The gateway can bump that mtime when it
-// learns about a change - but only if the mount has a change feed. Without
-// one, FUSE (whose kernel caches expire after a second) is the only way to
-// eventually see changes made by others, so that is the default there.
+// rclone's NFS server answers one connection's requests strictly in order
+// and opens and closes the file for every READ, so a read waiting on S3
+// stalls cached reads behind it, and rclone's read-ahead stops whenever
+// reads pause. FUSE keeps the file open for as long as the client does and
+// serves requests concurrently; measured in test/bench.sh, its slowest read
+// during playback from a flaky backend was ~50ms against 0.6-1s over NFS.
 // restic has no NFS mode at all.
 func (c *Config) ResolveTransport(m *Mount) string {
-	if m.Type == TypeRestic {
-		return TransportFUSE
-	}
-	if m.Transport != "" {
+	if m.Type != TypeRestic && m.Transport != "" {
 		return m.Transport
-	}
-	if c.MountNotified(m) {
-		return TransportNFS
 	}
 	return TransportFUSE
 }

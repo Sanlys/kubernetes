@@ -125,14 +125,14 @@ hol_variant() { # label connections transport stream(yes/no)
 } | tee -a "${GITHUB_STEP_SUMMARY:-/dev/null}"
 
 # Forward playback from a backend that is fast enough on average but stalls
-# now and then: 25 MB/s, except that every 12 s nothing arrives for 6 s
-# (12.5 MB/s on average). The player consumes 8 MB/s (a high-bitrate 4K
+# now and then: 25 MB/s, except that every 24 s nothing arrives for 12 s
+# (12.5 MB/s on average) - longer than 64M of read-ahead lasts at 8 MB/s. The player consumes 8 MB/s (a high-bitrate 4K
 # file), starts after 2 s and keeps only 3 s buffered, as players do for
 # what looks like a local disk. A stall is its buffer running empty - a
 # visible stutter; "worst read" is the longest single 1 MiB read.
 start_s3
 docker run -d --name bflaky --network $NET -v "$HERE"/flaky-proxy.py:/p.py:ro \
-  "$PYTHON_IMAGE" python -u /p.py 9000 bs3 9000 25 12 6 >/dev/null
+  "$PYTHON_IMAGE" python -u /p.py 9000 bs3 9000 25 24 12 >/dev/null
 play_variant() { # label transport read_ahead
   start_gw 16M 0 8 "$2" "$3" bflaky
   printf '| %s | %s |\n' "$1" "$(docker run --rm --network $NET -v "$HERE"/player.py:/player.py:ro \
