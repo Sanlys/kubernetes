@@ -12,7 +12,7 @@ spec:
     directory:
       # The config and harbor-pull Secrets are sops-encrypted and applied by hand, like every
       # other secret here (see services/smb-gateway/README.md).
-      exclude: "{app.yaml,config-secret.enc.yaml,harbor-pull-secret.enc.yaml}"
+      exclude: "{app.yaml,config-secret.enc.yaml,harbor-pull-secret.enc.yaml,secret.enc.yaml}"
   destination:
     server: https://kubernetes.default.svc
     namespace: smb-gateway
