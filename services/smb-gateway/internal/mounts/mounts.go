@@ -313,6 +313,11 @@ func (in *Instance) mountNFS() error {
 		// a soft mount can silently lose data.
 		"hard", "timeo=600", "retrans=2",
 		"rsize=1048576", "wsize=1048576",
+		// Several TCP connections: rclone's NFS server (go-nfs) handles the
+		// requests on each connection strictly in order, so with one
+		// connection a READ waiting on S3 holds up every other request on
+		// the mount. Requests are spread over the connections round-robin.
+		fmt.Sprintf("nconnect=%d", in.cfg.Cache.NFSConnections),
 		// Attribute caching only needs to cover a burst of stats from one
 		// Explorer refresh - loopback GETATTRs against rclone's in-memory
 		// tree are cheap. Directory listings are invalidated explicitly

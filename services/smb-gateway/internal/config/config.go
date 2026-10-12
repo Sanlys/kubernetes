@@ -115,6 +115,12 @@ type Cache struct {
 	// ReadChunkStreams > 0 makes rclone fetch that many chunks of a file
 	// from the backend in parallel instead of one stream.
 	ReadChunkStreams int `yaml:"read_chunk_streams"`
+	// NFSConnections is the number of TCP connections per NFS mount
+	// (nconnect). rclone's NFS server answers the requests on one
+	// connection strictly one after another, so with a single connection
+	// one read waiting on S3 stalls every other read and lookup on the
+	// mount - including ones for data that is already cached.
+	NFSConnections int `yaml:"nfs_connections"`
 }
 
 type MountCache struct {
@@ -298,6 +304,9 @@ func (c *Config) applyDefaults() {
 	if c.Cache.BufferSize == "" {
 		c.Cache.BufferSize = "16M"
 	}
+	if c.Cache.NFSConnections == 0 {
+		c.Cache.NFSConnections = 8
+	}
 	if c.Cache.NFSReadAhead == "" {
 		c.Cache.NFSReadAhead = "16M"
 	}
@@ -419,6 +428,9 @@ func (c *Config) Validate() error {
 
 	if n, err := ParseSize(c.Cache.NFSReadAhead); err != nil || n < 4096 {
 		add("cache.nfs_read_ahead %q must be a size of at least 4K", c.Cache.NFSReadAhead)
+	}
+	if c.Cache.NFSConnections < 1 || c.Cache.NFSConnections > 16 {
+		add("cache.nfs_connections must be between 1 and 16 (the kernel's nconnect limit)")
 	}
 	if c.Cache.ReadChunkStreams < 0 || c.Cache.ReadChunkStreams > 64 {
 		add("cache.read_chunk_streams must be between 0 and 64")

@@ -43,6 +43,7 @@ cache:
   # debounce: 1s           # coalesce change events this long
   # nfs_read_ahead: 16M    # kernel readahead on the NFS mounts (Linux default: 128K)
   # read_chunk_streams: 0  # >0: fetch that many chunks of a file from S3 in parallel
+  # nfs_connections: 8     # TCP connections per NFS mount; 1 makes a slow read block all others
 
 # Where things appear in the tree. Mounts can share parent folders
 # (/backups/...) but cannot be nested inside each other.
