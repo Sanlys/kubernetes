@@ -59,9 +59,11 @@ alloy:
       // app handles, plus its outgoing HTTP/SQL/Redis calls, without changing
       // the app. Each Alloy pod instruments the processes on its own node.
       beyla.ebpf "apps" {
-        // TEMPORARY: log every span Beyla captures, to find why none reach Tempo.
+        // TEMPORARY: log every span Beyla captures, plus Beyla's debug output (incl.
+        // BPF logs), to find why none reach Tempo.
         // Remove once traces show up.
         trace_printer = "text"
+        debug         = true
 
         // Keep the set of processes small. Beyla attaches to each one in turn, and
         // when attaching takes over 20s its pipeline panics and takes Alloy down.
