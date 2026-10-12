@@ -1,0 +1,76 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik-internal
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://traefik.github.io/charts
+    chart: traefik
+    targetRevision: 41.7.1
+    helm:
+      values: |
+        deployment:
+          replicas: 2
+        podDisruptionBudget:
+          enabled: true
+          maxUnavailable: 1
+        # The IngressClass is created below; the chart's own "traefik" class is not used
+        ingressClass:
+          enabled: false
+        providers:
+          kubernetesIngress:
+            enabled: false
+          kubernetesCRD:
+            enabled: true
+          # NGINX compatibility: serves the existing Ingresses and their
+          # nginx.ingress.kubernetes.io annotations unchanged
+          kubernetesIngressNGINX:
+            enabled: true
+            controllerClass: k8s.io/ingress-nginx-internal
+            ingressClass: internal
+            ingressClassByName: true
+            watchIngressWithoutClass: false
+            publishService:
+              enabled: true
+        ports:
+          web:
+            http:
+              redirections:
+                entryPoint:
+                  to: websecure
+                  scheme: https
+                  permanent: true
+          websecure:
+            transport:
+              respondingTimeouts:
+                # Traefik v3 defaults to 60s for reading a whole request, which cuts long S3 uploads
+                readTimeout: 0
+        service:
+          type: LoadBalancer
+          spec:
+            loadBalancerIP: 10.0.6.240
+        metrics:
+          prometheus:
+            serviceMonitor:
+              enabled: true
+        extraObjects:
+          # Taken over from ingress-nginx-internal with an identical spec
+          # (spec.controller is immutable). Prune=false keeps it alive while
+          # it moves between the two apps in either direction.
+          - apiVersion: networking.k8s.io/v1
+            kind: IngressClass
+            metadata:
+              name: internal
+              annotations:
+                ingressclass.kubernetes.io/is-default-class: "true"
+                argocd.argoproj.io/sync-options: Prune=false
+            spec:
+              controller: k8s.io/ingress-nginx-internal
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true, ServerSideApply=true]
