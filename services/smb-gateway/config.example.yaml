@@ -1,0 +1,115 @@
+# smb-gateway config. In the cluster this lives in the sops-encrypted Secret
+# cluster/prod/apps/smb-gateway/config-secret.enc.yaml (key: config.yaml) -
+# see README.md for how to edit it. All values below are placeholders.
+
+server:
+  name: nas                    # NetBIOS name, max 15 chars; also names the RGW topic
+  workgroup: WORKGROUP
+  description: Lysakermoen NAS
+  # min_protocol: SMB2_10
+  # log_level: 1
+
+# Default S3 connection for every s3/restic mount (a mount's own `s3:` block
+# overrides single fields, e.g. other credentials for one bucket).
+# A dedicated RGW user is best; it needs read (and write, for writable
+# mounts) on every bucket below plus permission to set bucket notifications:
+#   radosgw-admin user create --uid=smb-gateway --display-name=smb-gateway --system
+s3:
+  endpoint: http://rook-ceph-rgw-ceph-objectstore.rook-ceph.svc.cluster.local
+  region: us-east-1
+  access_key_id: CHANGEME
+  secret_access_key: CHANGEME
+
+# Ceph RGW bucket notifications -> cache invalidation. The gateway creates
+# a persistent topic and a bucket notification per bucket itself.
+notifications:
+  enabled: true
+  manage: true
+  endpoint_url: http://smb-gateway-events.smb-gateway.svc.cluster.local:8090
+  token: CHANGEME-long-random-string   # openssl rand -hex 24
+  # topic_ttl: 1h                      # how long RGW retries an undelivered event
+
+# Local cache (on the gateway's SSD PVC). Defaults per mount; the sum of all
+# max_size values should stay below the PVC size.
+cache:
+  max_size: 20G
+  max_age: 7d
+  # min_free_space: 2G
+  # write_back: 10s      # upload a file this long after the last write to it
+  # read_ahead: 64M
+  # debounce: 1s         # coalesce change events this long
+
+# Where things appear in the tree. Mounts can share parent folders
+# (/backups/...) but cannot be nested inside each other.
+mounts:
+  - path: /media
+    type: s3
+    bucket: media-library
+    cache:
+      max_size: 40G
+
+  - path: /photos
+    type: s3
+    bucket: immich-external-library
+    read_only: true        # written by syncthing's rclone-sync
+    cache:
+      prefetch_max_size: 32M   # warm new photos in folders people are browsing
+
+  - path: /tools/game-mgr
+    type: s3
+    bucket: tools-game-mgr
+    # prefix: some/sub/folder   # expose only part of a bucket
+    # preserve_modtime: true    # keep client mtimes (costs a HEAD per file on listing)
+    # transport: fuse           # override the automatic nfs/fuse choice
+
+  # restic is always read-only and always FUSE. Shows /snapshots, /hosts,
+  # /tags, /ids like `restic mount`.
+  - path: /backups/syncthing
+    type: restic
+    repository: s3:http://rook-ceph-rgw-ceph-objectstore.rook-ceph.svc.cluster.local/restic
+    password: CHANGEME
+    # s3: {access_key_id: ..., secret_access_key: ...}   # if not the default
+
+  # Syncthing's data, through its existing SFTP sidecar. Writes land on
+  # Syncthing's volume and get synced to the other devices like any local
+  # change; Syncthing's event API drives invalidation.
+  - path: /syncthing
+    type: syncthing
+    sftp:
+      host: syncthing-sftp.syncthing.svc.cluster.local
+      user: user
+      password: CHANGEME
+      path: upload           # the sftp sidecar mounts Syncthing's /data here
+    syncthing:
+      url: http://syncthing.syncthing.svc.cluster.local:8384
+      api_key: CHANGEME      # Syncthing GUI -> Actions -> Settings -> API Key
+      data_root: /data       # Syncthing's own path for the same directory
+
+users:
+  - name: sander
+    password: CHANGEME
+  - name: guest-tv
+    password: CHANGEME
+
+groups:
+  family: [sander]
+  tv: [guest-tv, sander]
+
+# Access is decided per share: `read` = read-only, `write` = read+write.
+# Entries are users or @groups. Writes to read-only mounts fail regardless.
+shares:
+  - name: files
+    path: /                  # everything
+    comment: All storage
+    read: ["@family"]
+    write: [sander]
+
+  - name: media
+    path: /media
+    read: ["@tv"]
+    write: [sander]
+
+  - name: backups
+    path: /backups
+    browseable: false
+    read: [sander]

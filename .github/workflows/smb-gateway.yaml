@@ -1,0 +1,46 @@
+name: smb-gateway
+
+on:
+  pull_request:
+    paths:
+      - services/smb-gateway/**
+      - .github/workflows/smb-gateway.yaml
+  workflow_dispatch:
+
+# Build and test only - the image is pushed to Harbor by hand (see
+# services/smb-gateway/README.md), nothing is published from here.
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    name: integration (${{ matrix.transport }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # nfs is the default for mounts with a change feed and is the path
+        # the kernel-cache invalidation exists for; it needs the runner's
+        # kernel NFS client, which this sandbox-free VM has.
+        transport: [nfs, fuse]
+    defaults:
+      run:
+        working-directory: services/smb-gateway
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image (runs unit tests)
+        uses: docker/build-push-action@v6
+        with:
+          context: services/smb-gateway
+          load: true
+          tags: smb-gateway:dev
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Load kernel modules
+        run: sudo modprobe nfs && sudo modprobe fuse
+      - name: Integration test
+        env:
+          TRANSPORT: ${{ matrix.transport }}
+        run: ./test/integration.sh smb-gateway:dev
+

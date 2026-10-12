@@ -1,0 +1,27 @@
+# SMB from anywhere that can reach the LoadBalancer IP (LAN); the event
+# receiver only from the RGW pods. The event path also carries a token, so
+# this is defence in depth. Selecting the pods for ingress switches them to
+# default-deny-except-listed.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: smb-gateway
+  namespace: smb-gateway
+spec:
+  endpointSelector:
+    matchLabels:
+      app: smb-gateway
+  ingress:
+    - fromEntities: [world, cluster]
+      toPorts:
+        - ports:
+            - port: "445"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: rook-ceph
+            app: rook-ceph-rgw
+      toPorts:
+        - ports:
+            - port: "8090"
+              protocol: TCP

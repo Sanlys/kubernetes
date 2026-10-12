@@ -1,0 +1,17 @@
+# renovate:ignore-dependencies
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: smb-gateway
+  labels:
+    # The gateway mounts NFS (loopback, from rclone) and FUSE (restic, and
+    # rclone where there's no change feed) inside its own container, which
+    # needs mount(2) and /dev/fuse - same reasoning as the media and immich
+    # namespaces.
+    pod-security.kubernetes.io/enforce: "privileged"
+    pod-security.kubernetes.io/enforce-version: "latest"
+    pod-security.kubernetes.io/warn: "baseline"
+    pod-security.kubernetes.io/audit: "baseline"
+    # excludes this namespace from the disallow-privileged/disallow-hostpath
+    # Kyverno ClusterPolicies (same escape hatch media/immich use)
+    role: infra

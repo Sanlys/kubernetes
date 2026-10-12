@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: smb-gateway
+  namespace: smb-gateway
+spec:
+  type: LoadBalancer
+  # Pinned so clients can map \\10.0.6.230\files permanently.
+  loadBalancerIP: 10.0.6.230
+  # Keep client IPs (Samba logs them) - there's only one pod anyway.
+  externalTrafficPolicy: Local
+  selector:
+    app: smb-gateway
+  ports:
+    - name: smb
+      port: 445
+      targetPort: 445
+      protocol: TCP
+---
+# Ceph RGW pushes bucket notifications here (cluster-internal only).
+apiVersion: v1
+kind: Service
+metadata:
+  name: smb-gateway-events
+  namespace: smb-gateway
+spec:
+  selector:
+    app: smb-gateway
+  ports:
+    - name: events
+      port: 8090
+      targetPort: 8090
+      protocol: TCP
