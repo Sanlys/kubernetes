@@ -55,6 +55,72 @@ alloy:
         forward_to = [loki.write.loki.receiver]
       }
 
+      // eBPF auto-instrumentation: a server span for every HTTP/gRPC request an
+      // app handles, plus its outgoing HTTP/SQL/Redis calls, without changing
+      // the app. Each Alloy pod instruments the processes on its own node.
+      beyla.ebpf "apps" {
+        discovery {
+          instrument {
+            kubernetes {
+              namespace = "*"
+            }
+          }
+          // Platform pieces, and apps that already send their own traces
+          exclude_instrument {
+            kubernetes {
+              namespace = "{kube-system,monitoring,traefik,argocd,cert-manager,cnpg-system,kubevirt,kyverno,local-path-storage,metallb-system,tekton*,snapshots,windows11-vm,frpc,ingress-internal,ingress-public}"
+            }
+          }
+        }
+
+        ebpf {
+          // Read the traceparent Traefik sends, so the app's span joins Traefik's trace
+          track_request_headers = true
+        }
+
+        attributes {
+          kubernetes {
+            enable = "true"
+          }
+        }
+
+        traces {
+          // Only record requests that arrive with a sampled parent (through
+          // Traefik); health probes and background traffic start no trace
+          sampler {
+            name = "parentbased_always_off"
+          }
+        }
+
+        output {
+          traces = [otelcol.processor.batch.traces.input]
+        }
+      }
+
+      otelcol.processor.batch "traces" {
+        output {
+          traces = [otelcol.exporter.otlp.tempo.input]
+        }
+      }
+
+      otelcol.exporter.otlp "tempo" {
+        client {
+          endpoint = "tempo.monitoring.svc.cluster.local:4317"
+          tls {
+            insecure = true
+          }
+        }
+      }
+
+  # beyla.ebpf loads eBPF programs and has to see every process on the node
+  securityContext:
+    privileged: true
+    runAsUser: 0
+    runAsGroup: 0
+
+controller:
+  hostPID: true
+
 ingress:
   enabled: true
   annotations:
