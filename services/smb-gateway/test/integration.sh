@@ -110,8 +110,9 @@ docker run -d --name gw --network $NET --privileged --device /dev/fuse \
   -v "$WORK"/cfg:/etc/smb-gateway -v "$WORK"/cache:/cache "$IMAGE" run --debug >/dev/null
 
 all_mounts_healthy() {
-  docker exec gw wget -qO- http://127.0.0.1:8090/healthz 2>/dev/null | grep -q '"ok":true' &&
-    ! docker exec gw wget -qO- http://127.0.0.1:8090/healthz 2>/dev/null | grep -q '"healthy":false'
+  local h
+  h=$(docker exec gw wget -qO- http://127.0.0.1:8090/healthz 2>/dev/null) || return 1
+  [[ "$h" == *'"ok":true'* && "$h" != *'"healthy":false'* ]]
 }
 
 # Syncthing's SFTP server isn't there yet: the gateway must still come up
@@ -295,14 +296,36 @@ pass "password change applied live"
 
 # --- observability --------------------------------------------------------
 logs=$(docker logs gw 2>&1)
-jq_ok() { grep -F "$1" <<<"$logs" | head -1 | python3 -c 'import json,sys; json.loads(sys.stdin.read())' 2>/dev/null; }
-jq_ok '"msg":"smb login"' || fail "no JSON login log line"
-grep -F '"msg":"smb login failed"' <<<"$logs" | grep -q '"status":"NT_STATUS_WRONG_PASSWORD"' || fail "failed login not logged with its status"
-grep -F '"event":"file_op"' <<<"$logs" | grep -F '"op":"unlinkat"' | grep -q '"user":"sander"' || fail "file deletes not audited with the login name"
-grep -F '"msg":"cache invalidated"' <<<"$logs" | grep -q '"trace_id":"' || fail "invalidation log line lacks trace_id"
-grep -F '"component":"rclone"' <<<"$logs" | grep -q '"mount":"/media"' || fail "rclone logs not re-emitted as JSON"
-bad=$(grep -v '^{' <<<"$logs" | head -3 || true)
-[ -z "$bad" ] || fail "non-JSON log lines: $bad"
+# One pass over the log in Python: no `grep | head` / `grep | grep -q`
+# pipelines, which die of SIGPIPE under pipefail once the log is long.
+LOGCHECK='
+import json, sys
+want = dict(a.split("=", 1) for a in sys.argv[1:])
+for line in sys.stdin:
+    try:
+        d = json.loads(line)
+    except ValueError:
+        continue
+    if all(str(d.get(k)) == v for k, v in want.items()):
+        sys.exit(0)
+sys.exit(1)'
+logcheck() { python3 -c "$LOGCHECK" "${@:2}" <<<"$logs"; } # logcheck - field=value...
+logcheck - msg="smb login" || fail "no JSON login log line"
+logcheck - msg="smb login failed" status=NT_STATUS_WRONG_PASSWORD || fail "failed login not logged with its status"
+logcheck - event=file_op op=unlinkat user=sander || fail "file deletes not audited with the login name"
+python3 -c '
+import json, sys
+ok = any("trace_id" in d for d in (json.loads(l) for l in sys.stdin if l.startswith("{")) if d.get("msg") == "cache invalidated")
+sys.exit(0 if ok else 1)' <<<"$logs" || fail "invalidation log line lacks trace_id"
+logcheck - component=rclone mount=/media || fail "rclone logs not re-emitted as JSON"
+bad=$(python3 -c '
+import json, sys
+for l in sys.stdin:
+    try:
+        json.loads(l)
+    except ValueError:
+        print(l.rstrip()); break' <<<"$logs")
+[ -z "$bad" ] || fail "non-JSON log line: $bad"
 pass "logs are JSON: logins, file ops, invalidations with trace ids, rclone"
 
 metrics=$(docker exec gw wget -qO- http://127.0.0.1:8090/metrics)
@@ -317,7 +340,7 @@ pass "metrics exported"
 spans=""
 for i in $(seq 1 15); do
   spans=$(docker logs otelcol 2>&1)
-  grep -q "Name *: invalidate.batch" <<<"$spans" && break
+  [[ "$spans" == *"Name           : invalidate.batch"* ]] && break
   sleep 1
 done
 for n in "POST /rgw/" rgw.event invalidate.batch refresh "rclone /vfs/refresh" syncthing.events mount.launch; do
