@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"os"
 	"os/exec"
 	"strings"
@@ -40,6 +41,7 @@ type Instance struct {
 	cmd      *exec.Cmd
 	exited   chan struct{}
 	restarts int
+	mounted  bool // launch completed and the process hasn't exited since
 	stopping bool
 	lastErr  string
 }
@@ -113,6 +115,7 @@ func (in *Instance) startProcess() error {
 		if err != nil {
 			in.lastErr = err.Error()
 		}
+		in.mounted = false
 		in.mu.Unlock()
 		close(exited)
 	}()
@@ -139,10 +142,32 @@ func (in *Instance) Start(ctx context.Context) error {
 		}
 	}
 	if err := in.launch(ctx); err != nil {
-		return err
+		// One unreachable backend (say Syncthing restarting) must not take
+		// the other shares down with it: keep retrying in the background.
+		in.log.Error("mount failed, retrying in the background", "err", err)
+		in.abortLaunch()
 	}
 	go in.supervise(ctx)
 	return nil
+}
+
+// abortLaunch makes sure a failed launch looks like an exited process, so
+// the supervisor retries it.
+func (in *Instance) abortLaunch() {
+	in.mu.Lock()
+	defer in.mu.Unlock()
+	if in.cmd != nil && in.cmd.Process != nil && in.exited != nil {
+		select {
+		case <-in.exited:
+		default:
+			_ = syscall.Kill(-in.cmd.Process.Pid, syscall.SIGTERM)
+			return
+		}
+	}
+	if in.exited == nil {
+		in.exited = make(chan struct{})
+		close(in.exited)
+	}
 }
 
 func (in *Instance) launch(ctx context.Context) error {
@@ -174,6 +199,9 @@ func (in *Instance) launch(ctx context.Context) error {
 			return err
 		}
 	}
+	in.mu.Lock()
+	in.mounted = true
+	in.mu.Unlock()
 	in.log.Info("mounted", "transport", in.Transport, "type", in.M.Type, "read_only", in.M.ReadOnly)
 	return nil
 }
@@ -181,6 +209,14 @@ func (in *Instance) launch(ctx context.Context) error {
 func (in *Instance) ready(ctx context.Context) error {
 	switch in.Transport {
 	case config.TransportNFS:
+		// rclone opens its rc port first, then sets up the remote (for
+		// SFTP that's a whole SSH handshake), and only then starts
+		// listening for NFS - so wait for the NFS port itself.
+		c, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", in.Ports.NFS), 2*time.Second)
+		if err != nil {
+			return err
+		}
+		c.Close()
 		cctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 		defer cancel()
 		return in.RC.Ping(cctx)
@@ -203,6 +239,9 @@ func (in *Instance) mountNFS() error {
 		// No NLM: Samba keeps its own lock database, and rclone has no
 		// lock manager anyway.
 		"nolock",
+		// rclone has no NFSACL service; without this the kernel probes
+		// for it on every mount and rclone logs "No handler for 100227".
+		"noacl",
 		// hard: if rclone restarts, I/O blocks until it is back (the
 		// supervisor restarts it within seconds, and the on-disk handle
 		// cache keeps handles valid) instead of failing writes, which on
@@ -257,13 +296,7 @@ func (in *Instance) supervise(ctx context.Context) {
 			if backoff < time.Minute {
 				backoff *= 2
 			}
-			// launch failed after starting the process: make sure the loop
-			// sees an exit to retry on.
-			in.mu.Lock()
-			if in.cmd != nil && in.cmd.Process != nil {
-				_ = syscall.Kill(-in.cmd.Process.Pid, syscall.SIGTERM)
-			}
-			in.mu.Unlock()
+			in.abortLaunch()
 			continue
 		}
 		backoff = time.Second
@@ -301,15 +334,23 @@ func (in *Instance) Stop(grace time.Duration) {
 	}
 }
 
+// ErrDown means the mount isn't up yet: still starting, or its backend is
+// unreachable and the supervisor is retrying. The supervisor is already on it,
+// so unlike a hang this is no reason to restart the whole gateway.
+var ErrDown = errors.New("not mounted (starting, or backend unreachable and being retried)")
+
 // Health checks that the mount answers within timeout.
 func (in *Instance) Health(timeout time.Duration) error {
 	in.mu.Lock()
-	exited := in.exited
+	exited, mounted := in.exited, in.mounted
 	in.mu.Unlock()
 	select {
 	case <-exited:
-		return fmt.Errorf("process not running")
+		return ErrDown
 	default:
+	}
+	if !mounted {
+		return ErrDown
 	}
 	done := make(chan error, 1)
 	go func() {

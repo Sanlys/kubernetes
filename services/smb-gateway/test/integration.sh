@@ -30,7 +30,7 @@ cleanup() {
     echo "---- health ----"; docker exec gw wget -qO- http://127.0.0.1:8090/healthz 2>/dev/null || true
   fi
   if [ -n "${KEEP:-}" ]; then echo "KEEP set, leaving containers and $WORK"; exit $status; fi
-  docker rm -f gw s3 sftp syncthing >/dev/null 2>&1 || true
+  docker rm -f gw s3 sftp sftp-real syncthing >/dev/null 2>&1 || true
   docker network rm $NET >/dev/null 2>&1 || true
   rm -rf "$WORK" 2>/dev/null || sudo rm -rf "$WORK" 2>/dev/null || true
   exit $status
@@ -53,7 +53,6 @@ chmod -R a+rwX "$WORK"/st
 
 docker run -d --name s3 --network $NET -v "$WORK"/s3:/data "$RCLONE_IMAGE" \
   serve s3 /data --addr :9000 --auth-key testaccesskey,testsecretkey0123456789 --dir-cache-time 1s --vfs-cache-mode writes >/dev/null
-docker run -d --name sftp --network $NET -v "$WORK"/st:/home/user/upload "$SFTP_IMAGE" user:pass:1000:1000 >/dev/null
 docker run -d --name syncthing --network $NET -v "$HERE"/fake-syncthing.py:/app.py:ro \
   --entrypoint python3 "${PYTHON_IMAGE:-python:3.13-alpine}" /app.py >/dev/null
 
@@ -106,12 +105,35 @@ write_config sanderpw
 docker run -d --name gw --network $NET --privileged --device /dev/fuse \
   -v "$WORK"/cfg:/etc/smb-gateway -v "$WORK"/cache:/cache "$IMAGE" run --debug >/dev/null
 
+all_mounts_healthy() {
+  docker exec gw wget -qO- http://127.0.0.1:8090/healthz 2>/dev/null | grep -q '"ok":true' &&
+    ! docker exec gw wget -qO- http://127.0.0.1:8090/healthz 2>/dev/null | grep -q '"healthy":false'
+}
+
+# Syncthing's SFTP server isn't there yet: the gateway must still come up
+# and serve everything else, and keep retrying that one mount.
 for i in $(seq 1 60); do
   docker exec gw smb-gateway health >/dev/null 2>&1 && break
   [ "$(docker inspect -f '{{.State.Running}}' gw)" = true ] || fail "gateway exited"
   sleep 1
 done
 docker exec gw smb-gateway health >/dev/null || fail "gateway never became healthy"
+out=$(smb sander sanderpw files 'get media/existing.txt /dev/stdout')
+grep -q "hello from s3" <<<"$out" || fail "s3 share not served while syncthing is down: $out"
+pass "other shares work while one backend is unreachable"
+
+# Now bring SFTP up behind a proxy that delays every connection by 3s, like
+# a slow SSH handshake: rclone answers on its rc port long before its NFS
+# port is listening, and the gateway must wait for the latter.
+docker run -d --name sftp-real --network $NET -v "$WORK"/st:/home/user/upload "$SFTP_IMAGE" user:pass:1000:1000 >/dev/null
+docker run -d --name sftp --network $NET -v "$HERE"/slow-proxy.py:/p.py:ro \
+  --entrypoint python3 "${PYTHON_IMAGE:-python:3.13-alpine}" /p.py 22 sftp-real 22 3 >/dev/null
+for i in $(seq 1 120); do
+  all_mounts_healthy && break
+  [ "$(docker inspect -f '{{.State.Running}}' gw)" = true ] || fail "gateway exited"
+  sleep 1
+done
+all_mounts_healthy || fail "syncthing mount never came up after its backend appeared"
 docker exec gw grep -E " /srv/smb/(media|syncthing) " /proc/mounts
 pass "gateway healthy ($TRANSPORT)"
 

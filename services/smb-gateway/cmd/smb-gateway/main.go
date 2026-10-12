@@ -166,7 +166,7 @@ func run(cfgFile, cacheRoot, listen string, log *slog.Logger) error {
 
 	for i, m := range c.Mounts {
 		in := mounts.New(c, m, treeRoot, rcloneConf, cacheRoot, i, log)
-		if err := in.Start(ctx); err != nil {
+		if err := in.Start(ctx); err != nil { // only local setup errors
 			g.stopMounts()
 			return err
 		}
@@ -370,7 +370,13 @@ func (g *gateway) healthz(w http.ResponseWriter, r *http.Request) {
 	for _, in := range g.instances {
 		st := mountStatus{Path: in.M.Path, Type: in.M.Type, Transport: in.Transport, Healthy: true, Restarts: in.Restarts()}
 		if err := in.Health(10 * time.Second); err != nil {
-			st.Healthy, st.Error, ok = false, err.Error(), false
+			st.Healthy, st.Error = false, err.Error()
+			// A hung mount needs a restart; a down one is already being
+			// retried, and restarting the pod wouldn't bring its backend
+			// back - it would only take the other shares down too.
+			if !errors.Is(err, mounts.ErrDown) {
+				ok = false
+			}
 		}
 		if inv := g.invs[in.M.Path]; inv != nil {
 			s := inv.Stats()
