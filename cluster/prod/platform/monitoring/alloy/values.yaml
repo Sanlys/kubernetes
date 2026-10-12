@@ -60,6 +60,8 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-internal
   ingressClassName: internal
+  # The chart defaults to the Faro receiver port (12347), which the Service doesn't expose; point at the UI instead
+  faroPort: 12345
   hosts:
    - alloy.k8s.lysakermoen.com
   tls:
