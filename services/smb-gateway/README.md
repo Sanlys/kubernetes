@@ -49,8 +49,9 @@ turned out worse than on FUSE. The reason is in rclone's NFS server (go-nfs 0.0.
   the next read starts a new S3 request.
 
 `test/bench.sh` plays a file at 8 MB/s from a backend that delivers nothing for 12 s out of
-every 24. With FUSE the slowest read was ~50 ms; with NFS, 0.6–1 s, which a player with a
-small buffer shows as a stutter. FUSE keeps the file open as long as the client does and
+every 24. With FUSE and 512M of read-ahead the slowest read was ~50 ms. With FUSE and 64M it
+was 1 s (the stall outlasted the read-ahead), and NFS stayed at ~0.6 s with either. A player
+with a small buffer shows a read like that as a stutter. FUSE keeps the file open as long as the client does and
 serves requests concurrently. With FUSE, change events invalidate through `vfs/refresh` and
 the kernel's 1 s attribute and entry timeouts, so no kick is needed.
 
