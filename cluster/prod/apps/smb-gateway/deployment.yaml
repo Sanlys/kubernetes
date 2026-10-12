@@ -41,10 +41,20 @@ spec:
           env:
             - name: TZ
               value: Europe/Oslo
+            # Spans to Tempo, like Traefik. Logs are JSON on stdout (Alloy
+            # ships them to Loki; lines inside a trace carry trace_id) and
+            # metrics are on :8090/metrics (servicemonitor.yaml).
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://tempo.monitoring.svc.cluster.local:4317
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+            # debug adds every directory read and rclone's internals
+            - name: SMBGW_LOG_LEVEL
+              value: info
           ports:
             - name: smb
               containerPort: 445
-            - name: events
+            - name: http
               containerPort: 8090
           volumeMounts:
             - name: config

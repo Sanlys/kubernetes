@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - services/smb-gateway/**
+      - cluster/prod/apps/smb-gateway/prometheusrule.yaml
       - .github/workflows/smb-gateway.yaml
   workflow_dispatch:
 
@@ -44,3 +45,9 @@ jobs:
           TRANSPORT: ${{ matrix.transport }}
         run: ./test/integration.sh smb-gateway:dev
 
+  alerts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check and unit-test the PrometheusRule
+        run: services/smb-gateway/test/check-alerts.sh

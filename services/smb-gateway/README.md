@@ -168,6 +168,74 @@ backoff and shows `"healthy": false`, while every other share keeps working. The
 probe only fails, restarting the container, when smbd is gone or a mount *hangs*: restarting
 can't bring a down backend back, but it would take every other share down with it.
 
+### Observability
+
+Same setup as Traefik: JSON logs to Loki (via Alloy), OTLP traces to Tempo, Prometheus metrics,
+and a Grafana dashboard, **SMB gateway** (`grafana-dashboards/raw/smb-gateway.json`).
+
+**Logs.** Everything is one JSON stream on stdout: the gateway itself, plus smbd, rclone and
+restic re-emitted with their fields (`component`, `mount`, `level`). At the default `info` level
+you get:
+
+- every SMB login attempt, with user, client IP, workstation and NT status (`"event":"login"`).
+  This is the log to check when a client can't log in.
+- every SMB write-open, rename, delete, mkdir and share connect, with login name, client, share
+  and path (`"event":"file_op"`, from Samba's `full_audit`). Reads are at debug level, because
+  every directory listing opens the directory.
+- every Ceph/Syncthing change event, and one `cache invalidated` line per batch listing the
+  folders refreshed
+- rclone's uploads, deletes and cache evictions, plus mount (re)starts and config reloads
+
+Lines written inside a trace carry `trace_id`, which Grafana links to Tempo. Set
+`SMBGW_LOG_LEVEL=debug` in the deployment for reads, every refresh and rclone internals.
+Useful queries:
+
+```
+{namespace="smb-gateway"} | json | level=~"WARN|ERROR"
+{namespace="smb-gateway"} |= `"event":"file_op"` | json | user="sander" | op!="open_read"
+{namespace="smb-gateway"} |= `"msg":"smb login failed"`
+```
+
+**Traces** (`service.name=smb-gateway`):
+
+- **Events:** each RGW push (`POST /rgw/` → one `rgw.event` per record) and each Syncthing
+  event batch.
+- **Cache invalidation:** each invalidation batch is its own trace (`invalidate.batch`), *linked*
+  to the events it coalesced. Below it are a `refresh` and an `rclone /vfs/refresh` per folder,
+  plus `nfs.kick`.
+- **Startup and setup:** `mount.launch`, `rgw.ensure_notification`.
+
+SMB operations themselves can't be traced, because Samba has no tracing. Alloy's Beyla also sees
+rclone's HTTP traffic in this namespace, so its spans for S3 requests appear next to these.
+
+**Metrics** (`smbgw_*` on `:8090/metrics`, scraped by `cluster/prod/apps/smb-gateway/servicemonitor.yaml`):
+
+- **Mounts:** state and restarts.
+- **rclone, per mount:** cache size, pending and failed uploads, transfer bytes and operations.
+- **SMB:** sessions per user, share connections, open files, logins by user and result, file
+  operations by share, user and op.
+- **Change feeds:** events by source and mount, refreshes and their latency, kernel kicks, and
+  feed health (RGW notification configured, Syncthing feed connected).
+
+**Alerts** (`cluster/prod/apps/smb-gateway/prometheusrule.yaml`, to Discord like the rest):
+
+| Alert | Severity | Why it matters |
+|---|---|---|
+| SMBGatewayDown, SMBGatewaySmbdDown | critical | nothing is being served |
+| SMBGatewayMountDown | critical | a backend has been unreachable for 10m |
+| SMBGatewayUploadsStuck | critical | writes clients were told succeeded haven't reached S3 in 30m |
+| SMBGatewayUploadErrors | critical | uploads failing: those files exist only in the cache volume |
+| SMBGatewayCacheOutOfSpace | critical | new writes fail |
+| SMBGatewayCacheVolumeFilling | warning | cache PVC over 90% |
+| SMBGatewayMountFlapping | warning | a mount's process restarted more than 3 times in an hour |
+| SMBGatewayRGWNotificationsMissing, SMBGatewaySyncthingFeedDown | warning | listings can go stale |
+| SMBGatewayInvalidationFailing | warning | events arrive but refreshes fail |
+| SMBGatewayEventsRejected | warning | pushes with the wrong token, usually a stale RGW topic |
+| SMBGatewayLoginFailures | warning | more than 10 failed logins for one name in 15m |
+
+`test/check-alerts.sh` checks the rules with promtool and runs the unit tests in
+`test/alerts_test.yaml`. CI runs both.
+
 ### Releasing
 
 ```sh

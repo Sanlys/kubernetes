@@ -17,6 +17,7 @@ TRANSPORT=${TRANSPORT:-nfs}
 RCLONE_IMAGE=${RCLONE_IMAGE:-rclone/rclone:1.75.2}
 RESTIC_IMAGE=${RESTIC_IMAGE:-restic/restic:0.19.1}
 SFTP_IMAGE=${SFTP_IMAGE:-atmoz/sftp:alpine}
+OTELCOL_IMAGE=${OTELCOL_IMAGE:-otel/opentelemetry-collector:0.136.0}
 CLIENT_BASE=${CLIENT_BASE:-alpine:3.24}
 NET=smbgw-test
 TOKEN=test-token-0123456789abcdef
@@ -30,7 +31,7 @@ cleanup() {
     echo "---- health ----"; docker exec gw wget -qO- http://127.0.0.1:8090/healthz 2>/dev/null || true
   fi
   if [ -n "${KEEP:-}" ]; then echo "KEEP set, leaving containers and $WORK"; exit $status; fi
-  docker rm -f gw s3 sftp sftp-real syncthing >/dev/null 2>&1 || true
+  docker rm -f gw s3 sftp sftp-real syncthing otelcol >/dev/null 2>&1 || true
   docker network rm $NET >/dev/null 2>&1 || true
   rm -rf "$WORK" 2>/dev/null || sudo rm -rf "$WORK" 2>/dev/null || true
   exit $status
@@ -102,7 +103,10 @@ EOF
 }
 write_config sanderpw
 
+docker run -d --name otelcol --network $NET -v "$HERE"/otelcol.yaml:/etc/otelcol/config.yaml:ro \
+  "$OTELCOL_IMAGE" --config /etc/otelcol/config.yaml >/dev/null
 docker run -d --name gw --network $NET --privileged --device /dev/fuse \
+  -e OTEL_EXPORTER_OTLP_ENDPOINT=http://otelcol:4317 -e OTEL_EXPORTER_OTLP_INSECURE=true -e OTEL_BSP_SCHEDULE_DELAY=500 \
   -v "$WORK"/cfg:/etc/smb-gateway -v "$WORK"/cache:/cache "$IMAGE" run --debug >/dev/null
 
 all_mounts_healthy() {
@@ -158,6 +162,8 @@ smb sander sanderpw media 'put /src/up.txt shows/up.txt' >/dev/null
 for i in $(seq 1 30); do [ -f "$WORK"/s3/media/shows/up.txt ] && break; sleep 1; done
 grep -q "written over smb" "$WORK"/s3/media/shows/up.txt 2>/dev/null || fail "write did not reach the bucket"
 pass "write via smb uploaded to s3"
+
+smb sander sanderpw media 'put /src/up.txt shows/delete-me.txt; del shows/delete-me.txt' >/dev/null
 
 out=$(smb reader readerpw media 'put /src/up.txt denied.txt' || true)
 grep -q "NT_STATUS_ACCESS_DENIED" <<<"$out" || fail "reader could write: $out"
@@ -286,5 +292,39 @@ out=$(smb sander sanderpw files 'ls' || true)
 grep -q NT_STATUS_LOGON_FAILURE <<<"$out" || fail "old password still works"
 [ "$(docker inspect -f '{{.RestartCount}}' gw)" = 0 ] || fail "container restarted for a user change"
 pass "password change applied live"
+
+# --- observability --------------------------------------------------------
+logs=$(docker logs gw 2>&1)
+jq_ok() { grep -F "$1" <<<"$logs" | head -1 | python3 -c 'import json,sys; json.loads(sys.stdin.read())' 2>/dev/null; }
+jq_ok '"msg":"smb login"' || fail "no JSON login log line"
+grep -F '"msg":"smb login failed"' <<<"$logs" | grep -q '"status":"NT_STATUS_WRONG_PASSWORD"' || fail "failed login not logged with its status"
+grep -F '"event":"file_op"' <<<"$logs" | grep -F '"op":"unlinkat"' | grep -q '"user":"sander"' || fail "file deletes not audited with the login name"
+grep -F '"msg":"cache invalidated"' <<<"$logs" | grep -q '"trace_id":"' || fail "invalidation log line lacks trace_id"
+grep -F '"component":"rclone"' <<<"$logs" | grep -q '"mount":"/media"' || fail "rclone logs not re-emitted as JSON"
+bad=$(grep -v '^{' <<<"$logs" | head -3 || true)
+[ -z "$bad" ] || fail "non-JSON log lines: $bad"
+pass "logs are JSON: logins, file ops, invalidations with trace ids, rclone"
+
+metrics=$(docker exec gw wget -qO- http://127.0.0.1:8090/metrics)
+for m in 'smbgw_mount_up{mount="/media"' 'smbgw_events_total{kind="changed",mount="/media",source="rgw"}' \
+         'smbgw_refreshes_total{mount="/media",result="ok"}' 'smbgw_smb_auth_total{result="NT_STATUS_WRONG_PASSWORD",user="sander"}' \
+         'smbgw_smb_file_ops_total{op="unlinkat",result="ok",share="media",user="sander"}' 'smbgw_rclone_transferred_bytes_total{mount="/media"}' \
+         'smbgw_rclone_uploads_queued{mount="/media"}' 'smbgw_smbd_up 1' 'smbgw_events_total{kind="changed",mount="/syncthing",source="syncthing"}'; do
+  grep -qF "$m" <<<"$metrics" || fail "metric missing: $m"
+done
+pass "metrics exported"
+
+spans=""
+for i in $(seq 1 15); do
+  spans=$(docker logs otelcol 2>&1)
+  grep -q "Name *: invalidate.batch" <<<"$spans" && break
+  sleep 1
+done
+for n in "POST /rgw/" rgw.event invalidate.batch refresh "rclone /vfs/refresh" syncthing.events mount.launch; do
+  grep -q "Name *: $n\$" <<<"$spans" || fail "span $n not exported"
+done
+if grep -q "Name *: rclone /vfs/stats" <<<"$spans"; then fail "metrics scrapes create traces"; fi
+[ "$TRANSPORT" != nfs ] || grep -q "Name *: nfs.kick$" <<<"$spans" || fail "span nfs.kick not exported"
+pass "traces exported over OTLP"
 
 echo "ALL TESTS PASSED ($TRANSPORT)"

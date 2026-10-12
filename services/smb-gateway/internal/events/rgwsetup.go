@@ -15,7 +15,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/aws/smithy-go"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/config"
+	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/obs"
 )
 
 // BucketSetup is the RGW-side configuration one bucket needs to push its
@@ -114,7 +119,17 @@ func EnsureRGWLoop(ctx context.Context, c *config.Config, b BucketSetup, log *sl
 	backoff := 10 * time.Second
 	for {
 		cctx, cancel := context.WithTimeout(ctx, time.Minute)
+		cctx, span := obs.Tracer().Start(cctx, "rgw.ensure_notification", trace.WithAttributes(
+			attribute.String("bucket", b.Bucket)))
 		err := EnsureRGW(cctx, c, b, log)
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+			obs.RGWConfigured.WithLabelValues(b.Bucket).Set(0)
+		} else {
+			obs.RGWConfigured.WithLabelValues(b.Bucket).Set(1)
+		}
+		span.End()
 		cancel()
 		ok(err == nil, err)
 		if err == nil {

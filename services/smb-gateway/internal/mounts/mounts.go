@@ -5,6 +5,7 @@ package mounts
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -17,9 +18,13 @@ import (
 	"syscall"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sys/unix"
 
 	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/config"
+	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/obs"
 	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/rclone"
 )
 
@@ -54,7 +59,7 @@ func New(c *config.Config, m *config.Mount, treeRoot, confFile, cacheRoot string
 		cfg:        c,
 		confFile:   confFile,
 		cacheRoot:  cacheRoot,
-		log:        log.With("mount", m.Path),
+		log:        log.With("mount", m.Path, "component", component(m)),
 	}
 	if m.Type != config.TypeRestic {
 		// Fixed ports per position in the config; loopback only.
@@ -62,6 +67,13 @@ func New(c *config.Config, m *config.Mount, treeRoot, confFile, cacheRoot string
 		in.RC = rclone.NewRC(in.Ports.RC)
 	}
 	return in
+}
+
+func component(m *config.Mount) string {
+	if m.Type == config.TypeRestic {
+		return "restic"
+	}
+	return "rclone"
 }
 
 func (in *Instance) command() *exec.Cmd {
@@ -122,12 +134,48 @@ func (in *Instance) startProcess() error {
 	return nil
 }
 
+// rclone's --use-json-log line format.
+type rcloneLine struct {
+	Level      string `json:"level"`
+	Msg        string `json:"msg"`
+	Object     string `json:"object"`
+	ObjectType string `json:"objectType"`
+	Source     string `json:"source"`
+}
+
+// pipeLog re-emits a child's output through the gateway's JSON logger:
+// rclone's JSON lines keep their level and fields, anything else (restic)
+// becomes an info line.
 func pipeLog(log *slog.Logger, r io.Reader) {
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 64*1024), 1024*1024)
 	for sc.Scan() {
-		log.Info(sc.Text())
+		line := sc.Text()
+		var rl rcloneLine
+		if strings.HasPrefix(line, "{") && json.Unmarshal([]byte(line), &rl) == nil && rl.Msg != "" {
+			attrs := []any{"source", rl.Source}
+			if rl.Object != "" {
+				attrs = append(attrs, "object", rl.Object)
+			}
+			log.Log(context.Background(), rcloneLevel(rl.Level), rl.Msg, attrs...)
+			continue
+		}
+		if strings.TrimSpace(line) != "" {
+			log.Info(line)
+		}
 	}
+}
+
+func rcloneLevel(l string) slog.Level {
+	switch l {
+	case "debug":
+		return slog.LevelDebug
+	case "info", "notice":
+		return slog.LevelInfo
+	case "warning":
+		return slog.LevelWarn
+	}
+	return slog.LevelError
 }
 
 // Start launches the process and attaches the mount, then supervises it in
@@ -170,7 +218,25 @@ func (in *Instance) abortLaunch() {
 	}
 }
 
-func (in *Instance) launch(ctx context.Context) error {
+func (in *Instance) launch(ctx context.Context) (err error) {
+	ctx, span := obs.Tracer().Start(ctx, "mount.launch", trace.WithAttributes(
+		attribute.String("mount", in.M.Path), attribute.String("mount.type", in.M.Type),
+		attribute.String("mount.transport", in.Transport)))
+	start := time.Now()
+	defer func() {
+		result := "ok"
+		if err != nil {
+			result = "error"
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		obs.MountLaunches.WithLabelValues(in.M.Path, result).Inc()
+		span.End()
+		if err == nil {
+			in.log.InfoContext(ctx, "mounted", "transport", in.Transport, "type", in.M.Type,
+				"read_only", in.M.ReadOnly, "duration_ms", time.Since(start).Milliseconds())
+		}
+	}()
 	if in.Transport == config.TransportFUSE {
 		// A previous process' mount would still be listed (dead) after a
 		// crash; FUSE needs a clean mountpoint.
@@ -202,7 +268,6 @@ func (in *Instance) launch(ctx context.Context) error {
 	in.mu.Lock()
 	in.mounted = true
 	in.mu.Unlock()
-	in.log.Info("mounted", "transport", in.Transport, "type", in.M.Type, "read_only", in.M.ReadOnly)
 	return nil
 }
 
@@ -363,6 +428,14 @@ func (in *Instance) Health(timeout time.Duration) error {
 	case <-time.After(timeout):
 		return fmt.Errorf("listing %s timed out after %s", in.MountPoint, timeout)
 	}
+}
+
+// Up reports whether the mount is attached and its process running,
+// without touching the filesystem.
+func (in *Instance) Up() bool {
+	in.mu.Lock()
+	defer in.mu.Unlock()
+	return in.mounted
 }
 
 func (in *Instance) Restarts() int {
