@@ -12,18 +12,16 @@ spec:
     helm:
       values: |
         controller:
-          watchIngressWithoutClass: true
-          ingressClass: internal
+          # Legacy: kept running for rollback while Traefik serves "internal"
+          watchIngressWithoutClass: false
+          ingressClass: legacy-internal
           ingressClassResource:
-            name: internal
-            controllerValue: k8s.io/ingress-nginx-internal
-            default: true
-            annotations:
-              # Lets the IngressClass change owner to the Traefik app without being deleted
-              argocd.argoproj.io/sync-options: Prune=false
+            name: legacy-internal
+            controllerValue: k8s.io/ingress-nginx-legacy-internal
+            default: false
           service:
             type: LoadBalancer
-            loadBalancerIP: 10.0.6.240
+            loadBalancerIP: 10.0.6.242
           metrics:
             enabled: true
             serviceMonitor:
