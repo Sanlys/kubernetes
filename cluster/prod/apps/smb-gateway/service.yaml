@@ -17,17 +17,20 @@ spec:
       targetPort: 445
       protocol: TCP
 ---
-# Ceph RGW pushes bucket notifications here (cluster-internal only).
+# Ceph RGW pushes bucket notifications here, and Prometheus scrapes
+# /metrics (cluster-internal only).
 apiVersion: v1
 kind: Service
 metadata:
   name: smb-gateway-events
   namespace: smb-gateway
+  labels:
+    app: smb-gateway
 spec:
   selector:
     app: smb-gateway
   ports:
-    - name: events
+    - name: http
       port: 8090
       targetPort: 8090
       protocol: TCP

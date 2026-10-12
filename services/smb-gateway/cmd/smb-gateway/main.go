@@ -23,12 +23,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/sys/unix"
 
 	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/config"
 	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/events"
 	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/invalidate"
 	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/mounts"
+	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/obs"
 	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/rclone"
 	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/samba"
 )
@@ -48,14 +51,15 @@ func main() {
 	cfgFile := fs.String("config", "/etc/smb-gateway/config.yaml", "config file")
 	cacheRoot := fs.String("cache", "/cache", "persistent cache directory")
 	listen := fs.String("listen", ":8090", "address for the event receiver and health endpoint")
-	debug := fs.Bool("debug", false, "debug logging")
+	debug := fs.Bool("debug", false, "debug logging (same as -log-level debug)")
+	logLevel := fs.String("log-level", envOr("SMBGW_LOG_LEVEL", "info"), "debug, info, warn or error (env SMBGW_LOG_LEVEL)")
 	_ = fs.Parse(os.Args[2:])
 
-	level := slog.LevelInfo
+	level := obs.ParseLevel(*logLevel)
 	if *debug {
 		level = slog.LevelDebug
 	}
-	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
+	log := obs.NewLogger(level)
 
 	switch os.Args[1] {
 	case "validate":
@@ -86,6 +90,13 @@ func main() {
 		fmt.Fprintln(os.Stderr, "unknown command", os.Args[1])
 		os.Exit(2)
 	}
+}
+
+func envOr(k, def string) string {
+	if v := os.Getenv(k); v != "" {
+		return v
+	}
+	return def
 }
 
 func health(listen string) int {
@@ -151,6 +162,12 @@ func run(cfgFile, cacheRoot, listen string, log *slog.Logger) error {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
+	shutdownTracing := obs.SetupTracing(ctx, log)
+	defer func() {
+		sctx, scancel := context.WithTimeout(context.Background(), 5*time.Second)
+		shutdownTracing(sctx)
+		scancel()
+	}()
 
 	for _, d := range []string{path.Dir(rcloneConf), treeRoot, cacheRoot} {
 		if err := os.MkdirAll(d, 0o755); err != nil {
@@ -342,10 +359,26 @@ func parseSize(s string) int64 {
 }
 
 func (g *gateway) routes() http.Handler {
+	obs.Registry.MustRegister(&collector{g: g})
 	mux := http.NewServeMux()
-	mux.Handle("/rgw/", g.rgw)
+	mux.Handle("/rgw/", otelhttp.NewHandler(g.rgw, "rgw.push"))
 	mux.HandleFunc("/healthz", g.healthz)
+	mux.Handle("/metrics", promhttp.HandlerFor(obs.Registry, promhttp.HandlerOpts{}))
 	return mux
+}
+
+func (g *gateway) smbdRunning() bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.smbdDone == nil {
+		return false
+	}
+	select {
+	case <-g.smbdDone:
+		return false
+	default:
+		return true
+	}
 }
 
 type mountStatus struct {
@@ -384,15 +417,8 @@ func (g *gateway) healthz(w http.ResponseWriter, r *http.Request) {
 		}
 		ms = append(ms, st)
 	}
+	smbdUp := g.smbdRunning()
 	g.mu.Lock()
-	smbdUp := false
-	if g.smbdDone != nil {
-		select {
-		case <-g.smbdDone:
-		default:
-			smbdUp = true
-		}
-	}
 	rgw := map[string]string{}
 	for k, v := range g.rgwOK {
 		if v == "" {
@@ -427,10 +453,18 @@ func (g *gateway) applySamba() error {
 
 func (g *gateway) startSmbd() error {
 	cmd := exec.Command("smbd", "--foreground", "--no-process-group", "--debug-stdout", "-s", smbConf)
-	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+	// smbd's output (including the login and file-operation audit) is
+	// parsed back into structured JSON log lines and metrics.
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	cmd.Stderr = cmd.Stdout
 	if err := cmd.Start(); err != nil {
 		return err
 	}
+	parser := &samba.LogParser{Log: g.log, TreeRoot: treeRoot, KnownUser: g.knownUser}
+	go parser.Run(out)
 	g.mu.Lock()
 	g.smbd = cmd
 	g.smbdErr = make(chan error, 1)
@@ -439,10 +473,28 @@ func (g *gateway) startSmbd() error {
 	g.mu.Unlock()
 	go func() {
 		err := cmd.Wait()
+		obs.SMBDRestarts.Inc()
 		close(done)
 		errc <- err
 	}()
 	return nil
+}
+
+func (g *gateway) setCfg(c *config.Config) {
+	g.mu.Lock()
+	g.cfg = c
+	g.mu.Unlock()
+}
+
+func (g *gateway) knownUser(name string) bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	for _, u := range g.cfg.Users {
+		if strings.EqualFold(u.Name, name) {
+			return true
+		}
+	}
+	return false
 }
 
 func (g *gateway) stopSmbd() {
@@ -499,6 +551,7 @@ func (g *gateway) watchConfig(ctx context.Context, file string, restart chan<- s
 		last = sum
 		nc, err := config.Parse(raw)
 		if err != nil {
+			obs.ConfigReloads.WithLabelValues("invalid").Inc()
 			g.log.Error("changed config is invalid, keeping the running one", "err", err)
 			continue
 		}
@@ -507,17 +560,19 @@ func (g *gateway) watchConfig(ctx context.Context, file string, restart chan<- s
 			return
 		}
 		old := g.cfg
-		g.cfg = nc
+		g.setCfg(nc)
 		if err := g.applySamba(); err != nil {
+			obs.ConfigReloads.WithLabelValues("error").Inc()
 			g.log.Error("applying new users/shares failed, reverting", "err", err)
-			g.cfg = old
+			g.setCfg(old)
 			_ = g.applySamba()
 			continue
 		}
+		obs.ConfigReloads.WithLabelValues("ok").Inc()
 		g.ensureSharePaths()
 		if out, err := exec.Command("smbcontrol", "smbd", "reload-config").CombinedOutput(); err != nil {
 			g.log.Error("smbcontrol reload-config", "err", err, "out", string(out))
 		}
-		g.log.Info("reloaded users and shares")
+		g.log.Info("reloaded users and shares", "users", len(nc.Users), "shares", len(nc.Shares))
 	}
 }

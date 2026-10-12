@@ -14,6 +14,9 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/config"
 )
 
@@ -132,7 +135,10 @@ func Args(c *config.Config, m *config.Mount, transport, confFile, cacheRoot, mou
 		"--transfers", "8",
 		"--uid", "1000", "--gid", "1000", "--umask", "002",
 		"--rc", "--rc-addr", fmt.Sprintf("127.0.0.1:%d", p.RC), "--rc-no-auth",
-		"--log-level", "NOTICE",
+		// INFO logs every upload, delete and cache eviction; JSON so the
+		// gateway can re-emit it with its fields intact.
+		"--log-level", "INFO",
+		"--use-json-log",
 		"--stats", "0",
 	)
 	if m.Type == config.TypeS3 && !m.PreserveModtime {
@@ -154,7 +160,18 @@ type RC struct {
 }
 
 func NewRC(port int) *RC {
-	return &RC{Addr: fmt.Sprintf("http://127.0.0.1:%d", port), Client: &http.Client{Timeout: 5 * time.Minute}}
+	return &RC{Addr: fmt.Sprintf("http://127.0.0.1:%d", port), Client: &http.Client{
+		Timeout: 5 * time.Minute,
+		// Client spans for each rc call, with traceparent propagated
+		// to rclone.
+		Transport: otelhttp.NewTransport(http.DefaultTransport,
+			otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string { return "rclone " + r.URL.Path }),
+			// Only calls made as part of a trace (refreshes); the metrics
+			// scrape's stats calls would otherwise be a root trace each.
+			otelhttp.WithFilter(func(r *http.Request) bool {
+				return trace.SpanContextFromContext(r.Context()).IsValid()
+			})),
+	}}
 }
 
 func (r *RC) Call(ctx context.Context, method string, params map[string]any, out any) error {
@@ -184,22 +201,6 @@ func (r *RC) Ping(ctx context.Context) error {
 	return r.Call(ctx, "rc/noop", map[string]any{}, nil)
 }
 
-// Forget drops rclone's cached listing of dir (and everything below it) and
-// reports whether rclone actually had it cached. dir must not be the root;
-// an empty dir would mean "forget everything".
-func (r *RC) Forget(ctx context.Context, dir string) (bool, error) {
-	if dir == "" {
-		return false, fmt.Errorf("refusing to forget the root")
-	}
-	var res struct {
-		Forgotten []string `json:"forgotten"`
-	}
-	if err := r.Call(ctx, "vfs/forget", map[string]any{"dir": dir}, &res); err != nil {
-		return false, err
-	}
-	return len(res.Forgotten) > 0, nil
-}
-
 // Refresh re-lists dir from the remote right now (non-recursively).
 func (r *RC) Refresh(ctx context.Context, dir string) error {
 	params := map[string]any{}
@@ -218,4 +219,40 @@ func (r *RC) Refresh(ctx context.Context, dir string) error {
 		}
 	}
 	return nil
+}
+
+// VFSStats is the subset of vfs/stats the gateway exports as metrics.
+type VFSStats struct {
+	DiskCache struct {
+		BytesUsed         float64 `json:"bytesUsed"`
+		ErroredFiles      float64 `json:"erroredFiles"`
+		Files             float64 `json:"files"`
+		OutOfSpace        bool    `json:"outOfSpace"`
+		UploadsInProgress float64 `json:"uploadsInProgress"`
+		UploadsQueued     float64 `json:"uploadsQueued"`
+	} `json:"diskCache"`
+	MetadataCache struct {
+		Dirs  float64 `json:"dirs"`
+		Files float64 `json:"files"`
+	} `json:"metadataCache"`
+}
+
+func (r *RC) VFSStats(ctx context.Context) (*VFSStats, error) {
+	var s VFSStats
+	return &s, r.Call(ctx, "vfs/stats", map[string]any{}, &s)
+}
+
+// CoreStats is rclone's cumulative transfer accounting.
+type CoreStats struct {
+	Bytes     float64 `json:"bytes"`
+	Errors    float64 `json:"errors"`
+	Transfers float64 `json:"transfers"`
+	Deletes   float64 `json:"deletes"`
+	Renames   float64 `json:"renames"`
+	Checks    float64 `json:"checks"`
+}
+
+func (r *RC) CoreStats(ctx context.Context) (*CoreStats, error) {
+	var s CoreStats
+	return &s, r.Call(ctx, "core/stats", map[string]any{}, &s)
 }

@@ -33,6 +33,11 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+
+	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/obs"
 	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/rclone"
 )
 
@@ -48,6 +53,16 @@ type Change struct {
 	Path string
 	Kind Kind
 	Size int64
+	// Span of the event that reported the change; the batch span that
+	// handles it links back to it.
+	Span trace.SpanContext
+}
+
+func (k Kind) String() string {
+	if k == Removed {
+		return "removed"
+	}
+	return "changed"
 }
 
 // Kicker forces the kernel to revalidate its cached view of a directory.
@@ -101,6 +116,7 @@ func (iv *Invalidator) Notify(c Change) {
 	select {
 	case iv.ch <- c:
 	default:
+		obs.EventsDropped.WithLabelValues(iv.Name).Inc()
 		select {
 		case iv.ch <- Change{Path: "", Kind: Removed}:
 		default:
@@ -204,10 +220,43 @@ func Dirs(batch []Change, limit int) []string {
 
 func (iv *Invalidator) process(ctx context.Context, batch []Change) {
 	iv.count(func(s *Stats) { s.Events += int64(len(batch)); s.LastEvent = time.Now() })
+	obs.Batches.WithLabelValues(iv.Name).Inc()
+	obs.LastEvent.WithLabelValues(iv.Name).SetToCurrentTime()
+
+	// The batch is its own trace (events from many requests feed it),
+	// linked to the span of every event in it.
+	var links []trace.Link
+	seen := map[trace.SpanID]bool{}
+	for _, c := range batch {
+		if c.Span.IsValid() && !seen[c.Span.SpanID()] && len(links) < 128 {
+			seen[c.Span.SpanID()] = true
+			links = append(links, trace.Link{SpanContext: c.Span})
+		}
+	}
+	dirs := Dirs(batch, maxDirs)
+	ctx, span := obs.Tracer().Start(ctx, "invalidate.batch", trace.WithNewRoot(), trace.WithLinks(links...),
+		trace.WithAttributes(attribute.String("mount", iv.Name), attribute.Int("events", len(batch)),
+			attribute.Int("dirs", len(dirs)), attribute.StringSlice("dirs.list", dirs)))
+	defer span.End()
+	obs.BatchDirs.WithLabelValues(iv.Name).Observe(float64(len(dirs)))
+	start := time.Now()
+
 	done := map[string]bool{}
-	for _, d := range Dirs(batch, maxDirs) {
+	for _, d := range dirs {
 		iv.refreshDir(ctx, d, done)
 	}
+	refreshed := make([]string, 0, len(done))
+	for d := range done {
+		refreshed = append(refreshed, d)
+	}
+	sort.Strings(refreshed)
+	sample := make([]string, 0, 5)
+	for i := 0; i < len(batch) && i < 5; i++ {
+		sample = append(sample, batch[i].Path)
+	}
+	iv.Log.InfoContext(ctx, "cache invalidated", "mount", iv.Name, "events", len(batch), "paths_sample", sample,
+		"dirs_refreshed", refreshed, "duration_ms", time.Since(start).Milliseconds())
+
 	if iv.PrefetchMax > 0 && iv.MountPoint != "" {
 		for _, c := range batch {
 			if c.Kind == Changed && c.Size > 0 && c.Size <= iv.PrefetchMax && done[parent(c.Path)] {
@@ -226,31 +275,55 @@ func (iv *Invalidator) refreshDir(ctx context.Context, d string, done map[string
 		if done[d] {
 			return
 		}
-		err := iv.RC.Refresh(ctx, d)
+		rctx, span := obs.Tracer().Start(ctx, "refresh", trace.WithAttributes(
+			attribute.String("mount", iv.Name), attribute.String("dir", "/"+d)))
+		start := time.Now()
+		err := iv.RC.Refresh(rctx, d)
+		obs.RefreshSeconds.WithLabelValues(iv.Name).Observe(time.Since(start).Seconds())
 		if err == nil {
 			done[d] = true
+			obs.Refreshes.WithLabelValues(iv.Name, "ok").Inc()
 			iv.count(func(s *Stats) { s.Refreshes++ })
 			if iv.Kicker != nil {
-				if kerr := iv.Kicker.Kick(d); kerr != nil {
-					iv.count(func(s *Stats) { s.Errors++ })
-					iv.Log.Warn("kernel cache kick failed", "mount", iv.Name, "dir", d, "err", kerr)
-				} else {
-					iv.count(func(s *Stats) { s.Kicks++ })
-				}
+				iv.kick(rctx, d)
 			}
-			iv.Log.Debug("refreshed", "mount", iv.Name, "dir", d)
+			iv.Log.DebugContext(rctx, "refreshed", "mount", iv.Name, "dir", "/"+d, "duration_ms", time.Since(start).Milliseconds())
+			span.End()
 			return
 		}
+		span.RecordError(err)
 		if d == "" {
+			span.SetStatus(codes.Error, err.Error())
+			span.End()
+			obs.Refreshes.WithLabelValues(iv.Name, "error").Inc()
 			iv.count(func(s *Stats) { s.Errors++ })
-			iv.Log.Warn("refreshing root failed", "mount", iv.Name, "err", err)
+			iv.Log.WarnContext(rctx, "refreshing root failed", "mount", iv.Name, "err", err)
 			return
 		}
+		span.SetAttributes(attribute.Bool("fell_back_to_parent", true))
+		span.End()
+		obs.Refreshes.WithLabelValues(iv.Name, "missing").Inc()
 		// Most likely the directory itself is gone (or never was) - its
 		// parent's listing is what's stale then.
-		iv.Log.Debug("refresh failed, trying parent", "mount", iv.Name, "dir", d, "err", err)
+		iv.Log.DebugContext(rctx, "refresh failed, trying parent", "mount", iv.Name, "dir", "/"+d, "err", err)
 		d = parent(d)
 	}
+}
+
+func (iv *Invalidator) kick(ctx context.Context, d string) {
+	_, span := obs.Tracer().Start(ctx, "nfs.kick", trace.WithAttributes(
+		attribute.String("mount", iv.Name), attribute.String("dir", "/"+d)))
+	defer span.End()
+	if err := iv.Kicker.Kick(d); err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		obs.Kicks.WithLabelValues(iv.Name, "error").Inc()
+		iv.count(func(s *Stats) { s.Errors++ })
+		iv.Log.WarnContext(ctx, "kernel cache kick failed", "mount", iv.Name, "dir", "/"+d, "err", err)
+		return
+	}
+	obs.Kicks.WithLabelValues(iv.Name, "ok").Inc()
+	iv.count(func(s *Stats) { s.Kicks++ })
 }
 
 func (iv *Invalidator) prefetcher(ctx context.Context) {
@@ -266,7 +339,9 @@ func (iv *Invalidator) prefetcher(ctx context.Context) {
 			_, err = io.Copy(io.Discard, f)
 			f.Close()
 			if err == nil {
+				obs.Prefetched.WithLabelValues(iv.Name).Inc()
 				iv.count(func(s *Stats) { s.Prefetched++ })
+				iv.Log.Debug("prefetched", "mount", iv.Name, "path", "/"+p)
 			}
 		}
 	}

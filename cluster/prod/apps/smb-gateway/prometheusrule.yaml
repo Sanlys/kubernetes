@@ -1,0 +1,158 @@
+# Alerts for the SMB gateway, routed to Discord like every other alert.
+# kube-prometheus-stack only loads PrometheusRules carrying its release label.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: smb-gateway
+  namespace: smb-gateway
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: smb-gateway
+      rules:
+        # --- Is it serving at all? ------------------------------------------
+        - alert: SMBGatewayDown
+          expr: absent(up{namespace="smb-gateway", job="smb-gateway-events"} == 1)
+          for: 5m
+          labels: { severity: critical }
+          annotations:
+            summary: SMB gateway is down
+            description: >-
+              Prometheus hasn't been able to scrape the SMB gateway for 5 minutes.
+              Nothing is served on \\10.0.6.230. Check
+              `kubectl -n smb-gateway get pods` and the pod's logs.
+
+        - alert: SMBGatewaySmbdDown
+          expr: smbgw_smbd_up == 0
+          for: 2m
+          labels: { severity: critical }
+          annotations:
+            summary: smbd is not running in the SMB gateway
+            description: The gateway is up but Samba isn't; no client can connect.
+
+        - alert: SMBGatewayMountDown
+          expr: smbgw_mount_up == 0
+          for: 10m
+          labels: { severity: critical }
+          annotations:
+            summary: "SMB gateway mount {{ $labels.mount }} is down"
+            description: >-
+              {{ $labels.mount }} ({{ $labels.type }}) hasn't been mounted for 10 minutes:
+              its backend is unreachable and the gateway keeps retrying. The rest of the shares
+              still work. Logs: `{namespace="smb-gateway"} | json | mount="{{ $labels.mount }}"`.
+
+        - alert: SMBGatewayMountFlapping
+          expr: increase(smbgw_mount_restarts_total[1h]) > 3
+          labels: { severity: warning }
+          annotations:
+            summary: "SMB gateway mount {{ $labels.mount }} keeps restarting"
+            description: >-
+              The process behind {{ $labels.mount }} restarted {{ $value | humanize }} times in the last
+              hour (crashes, OOM kills or a backend that comes and goes). Clients see stalls each time.
+
+        # --- Data safety: writes are acknowledged once they're in the cache --
+        - alert: SMBGatewayUploadsStuck
+          expr: |
+            (smbgw_rclone_uploads_queued + smbgw_rclone_uploads_in_progress) > 0
+              and on (mount)
+            increase(smbgw_rclone_transferred_bytes_total[30m]) == 0
+          for: 30m
+          labels: { severity: critical }
+          annotations:
+            summary: "Writes to {{ $labels.mount }} aren't reaching the backend"
+            description: >-
+              {{ $value }} file(s) have been waiting to upload for over 30 minutes with no bytes
+              transferred. SMB clients were told the writes succeeded; until they're uploaded they
+              exist only in the gateway's cache volume. Check the rclone logs for {{ $labels.mount }}.
+
+        - alert: SMBGatewayUploadErrors
+          expr: smbgw_rclone_cache_errored_files > 0
+          for: 15m
+          labels: { severity: critical }
+          annotations:
+            summary: "Uploads to {{ $labels.mount }} are failing"
+            description: >-
+              rclone failed to upload {{ $value }} cached file(s) for {{ $labels.mount }}; they exist
+              only in the gateway's cache volume. Check the rclone logs and the S3 credentials.
+
+        - alert: SMBGatewayCacheOutOfSpace
+          expr: smbgw_rclone_cache_out_of_space == 1
+          for: 5m
+          labels: { severity: critical }
+          annotations:
+            summary: "SMB gateway cache for {{ $labels.mount }} is out of space"
+            description: >-
+              New writes to {{ $labels.mount }} fail until uploads drain or cache space is freed.
+              Lower cache.max_size in the config or grow the smb-gateway-cache PVC.
+
+        - alert: SMBGatewayCacheVolumeFilling
+          expr: |
+            kubelet_volume_stats_available_bytes{namespace="smb-gateway", persistentvolumeclaim="smb-gateway-cache"}
+              / kubelet_volume_stats_capacity_bytes{namespace="smb-gateway", persistentvolumeclaim="smb-gateway-cache"}
+            < 0.10
+          for: 15m
+          labels: { severity: warning }
+          annotations:
+            summary: SMB gateway cache volume is over 90% full
+            description: >-
+              The sum of the mounts' cache.max_size is probably larger than the PVC. rclone stops
+              accepting writes when free space drops under cache.min_free_space.
+
+        # --- Freshness: the change feeds that keep listings current -----------
+        - alert: SMBGatewayRGWNotificationsMissing
+          expr: smbgw_rgw_notification_configured == 0
+          for: 30m
+          labels: { severity: warning }
+          annotations:
+            summary: "Bucket {{ $labels.bucket }} isn't sending change notifications"
+            description: >-
+              The gateway couldn't set up the RGW notification for {{ $labels.bucket }} and keeps
+              retrying. Until it can, changes made outside the gateway show up only after
+              dir_cache_time (1h by default). Logs: `{namespace="smb-gateway"} |= "notification"`.
+
+        - alert: SMBGatewaySyncthingFeedDown
+          expr: smbgw_syncthing_feed_connected == 0
+          for: 15m
+          labels: { severity: warning }
+          annotations:
+            summary: SMB gateway lost Syncthing's event feed
+            description: >-
+              Files Syncthing pulls from other devices won't show up in {{ $labels.mount }} until the
+              feed is back. Check the Syncthing API URL and key in the config.
+
+        - alert: SMBGatewayInvalidationFailing
+          # Each side is tagged first: increase() drops the metric name, and the
+          # two series would otherwise collide on {mount, result}.
+          expr: |
+            sum by (mount) (
+              label_replace(increase(smbgw_refreshes_total{result="error"}[15m]), "step", "refresh", "", "")
+                or
+              label_replace(increase(smbgw_kernel_kicks_total{result="error"}[15m]), "step", "kick", "", "")
+            ) > 5
+          labels: { severity: warning }
+          annotations:
+            summary: "Cache refreshes for {{ $labels.mount }} are failing"
+            description: >-
+              Change events arrive but refreshing listings fails, so clients may see stale folders.
+              Look for "refresh"/"kick" warnings in the gateway's logs.
+
+        - alert: SMBGatewayEventsRejected
+          expr: increase(smbgw_events_rejected_total[15m]) > 0
+          labels: { severity: warning }
+          annotations:
+            summary: SMB gateway is rejecting change notifications
+            description: >-
+              Something is pushing events with the wrong token. Usually the RGW topic still has an old
+              notifications.token; restarting the gateway updates it.
+
+        # --- Security ---------------------------------------------------------
+        - alert: SMBGatewayLoginFailures
+          expr: sum by (user) (increase(smbgw_smb_auth_total{result!="ok"}[15m])) > 10
+          labels: { severity: warning }
+          annotations:
+            summary: "Repeated failed SMB logins for {{ $labels.user }}"
+            description: >-
+              {{ $value | humanize }} failed logins in 15 minutes for "{{ $labels.user }}" ("unknown"
+              means names that aren't configured). Either a client has a stale saved password or
+              someone is guessing. Logs: `{namespace="smb-gateway"} |= "smb login failed"`.

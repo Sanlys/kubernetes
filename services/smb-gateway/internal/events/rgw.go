@@ -12,7 +12,11 @@ import (
 	"net/url"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/invalidate"
+	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/obs"
 )
 
 // Target is one s3 mount listening for changes in a bucket (under prefix).
@@ -47,12 +51,16 @@ type RGWHandler struct {
 }
 
 func (h *RGWHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	tok := strings.TrimPrefix(r.URL.Path, "/rgw/")
 	if h.Token == "" || subtle.ConstantTimeCompare([]byte(tok), []byte(h.Token)) != 1 {
+		obs.EventsRejected.Inc()
+		h.Log.WarnContext(ctx, "rejected event push: bad token", "remote", r.RemoteAddr)
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 	if r.Method != http.MethodPost {
+		obs.EventsRejected.Inc()
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -81,12 +89,24 @@ func (h *RGWHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(rec.EventName, "ObjectRemoved") {
 			kind = invalidate.Removed
 		}
-		h.route(rec.S3.Bucket.Name, key, kind, rec.S3.Object.Size)
+		rctx, span := obs.Tracer().Start(ctx, "rgw.event", trace.WithAttributes(
+			attribute.String("bucket", rec.S3.Bucket.Name), attribute.String("key", key),
+			attribute.String("event", rec.EventName), attribute.Int64("size", rec.S3.Object.Size)))
+		mounts := h.route(span.SpanContext(), rec.S3.Bucket.Name, key, kind, rec.S3.Object.Size)
+		span.SetAttributes(attribute.StringSlice("mounts", mounts))
+		h.Log.InfoContext(rctx, "rgw event", "bucket", rec.S3.Bucket.Name, "key", key, "event", rec.EventName,
+			"size", rec.S3.Object.Size, "mounts", mounts)
+		span.End()
 	}
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *RGWHandler) route(bucket, key string, kind invalidate.Kind, size int64) {
+func (h *RGWHandler) route(sc trace.SpanContext, bucket, key string, kind invalidate.Kind, size int64) (mounts []string) {
+	defer func() {
+		if len(mounts) == 0 {
+			obs.EventsUnrouted.WithLabelValues(bucket).Inc()
+		}
+	}()
 	for _, t := range h.Targets {
 		if t.Bucket != bucket {
 			continue
@@ -98,6 +118,9 @@ func (h *RGWHandler) route(bucket, key string, kind invalidate.Kind, size int64)
 			}
 			rel = strings.TrimPrefix(key, t.Prefix+"/")
 		}
-		t.Inv.Notify(invalidate.Change{Path: rel, Kind: kind, Size: size})
+		obs.Events.WithLabelValues("rgw", t.Inv.Name, kind.String()).Inc()
+		t.Inv.Notify(invalidate.Change{Path: rel, Kind: kind, Size: size, Span: sc})
+		mounts = append(mounts, t.Inv.Name)
 	}
+	return mounts
 }

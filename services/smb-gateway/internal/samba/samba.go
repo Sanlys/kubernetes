@@ -53,8 +53,12 @@ func Render(c *config.Config, treeRoot string, readOnly func(sharePath string) b
 	w("printing", "bsd")
 	w("printcap name", "/dev/null")
 	w("disable spoolss", "yes")
-	w("log level", fmt.Sprint(c.Server.LogLevel))
+	// One line per message (parsed back into JSON by LogParser), every
+	// login attempt as a JSON audit record, and - via full_audit below -
+	// every file operation with user, client and share.
+	w("log level", fmt.Sprintf("%d auth_json_audit:3", c.Server.LogLevel))
 	w("logging", "stdout")
+	w("debug syslog format", "always")
 	// The filesystems underneath are rclone (S3/SFTP) and restic: no
 	// xattrs, no ACLs, no byte-range locks, and every smbd process sees the
 	// same mount, so Samba's own (tdb) locking is authoritative.
@@ -80,7 +84,12 @@ func Render(c *config.Config, treeRoot string, readOnly func(sharePath string) b
 	// S3 keys (and Syncthing files from Linux peers) may contain characters
 	// Windows can't represent. Map them to the private-use code points macOS
 	// uses for the same purpose instead of 8.3-mangling the name.
-	w("vfs objects", "catia")
+	w("vfs objects", "catia full_audit")
+	w("full_audit:prefix", "%U|%I|%S") // %U: the login name (%u would be the forced unix user)
+	w("full_audit:success", "connect disconnect openat renameat unlinkat mkdirat")
+	w("full_audit:failure", "connect openat renameat unlinkat mkdirat")
+	w("full_audit:syslog", "no")
+	w("full_audit:log_secdesc", "no")
 	w("catia:mappings", "0x22:0xf020,0x2a:0xf021,0x3a:0xf022,0x3c:0xf023,0x3e:0xf024,0x3f:0xf025,0x5c:0xf026,0x7c:0xf027")
 	w("idmap config * : backend", "tdb")
 	w("idmap config * : range", "3000-7999")

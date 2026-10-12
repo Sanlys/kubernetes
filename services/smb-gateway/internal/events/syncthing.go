@@ -11,7 +11,11 @@ import (
 	"time"
 
 	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/config"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/invalidate"
+	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/obs"
 )
 
 // Syncthing long-polls Syncthing's REST event API and forwards file changes
@@ -79,8 +83,11 @@ func (s *Syncthing) Run(ctx context.Context) {
 	s.http = &http.Client{Timeout: 90 * time.Second}
 	var since int64 = -1
 	backoff := time.Second
+	name := s.Inv.Name
 	for ctx.Err() == nil {
 		if err := s.poll(ctx, &since); err != nil && ctx.Err() == nil {
+			obs.SyncthingConnected.WithLabelValues(name).Set(0)
+			obs.SyncthingErrors.WithLabelValues(name).Inc()
 			s.Log.Warn("syncthing events", "err", err, "retry_in", backoff)
 			select {
 			case <-ctx.Done():
@@ -91,6 +98,7 @@ func (s *Syncthing) Run(ctx context.Context) {
 			}
 			continue
 		}
+		obs.SyncthingConnected.WithLabelValues(name).Set(1)
 		backoff = time.Second
 	}
 }
@@ -119,6 +127,12 @@ func (s *Syncthing) poll(ctx context.Context, since *int64) error {
 	if err := s.get(ctx, q, &evs); err != nil {
 		return err
 	}
+	if len(evs) == 0 {
+		return nil
+	}
+	ctx, span := obs.Tracer().Start(ctx, "syncthing.events", trace.WithAttributes(
+		attribute.String("mount", s.Inv.Name), attribute.Int("events", len(evs))))
+	defer span.End()
 	for _, e := range evs {
 		if e.ID > *since {
 			*since = e.ID
@@ -144,7 +158,10 @@ func (s *Syncthing) poll(ctx context.Context, since *int64) error {
 		if d.Action == "delete" || d.Action == "deleted" {
 			kind = invalidate.Removed
 		}
-		s.Inv.Notify(invalidate.Change{Path: path.Join(base, rel), Kind: kind})
+		p := path.Join(base, rel)
+		obs.Events.WithLabelValues("syncthing", s.Inv.Name, kind.String()).Inc()
+		s.Log.InfoContext(ctx, "syncthing event", "type", e.Type, "folder", d.Folder, "path", "/"+p, "action", d.Action)
+		s.Inv.Notify(invalidate.Change{Path: p, Kind: kind, Span: span.SpanContext()})
 	}
 	return nil
 }

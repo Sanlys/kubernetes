@@ -1,0 +1,75 @@
+# promtool test rules for cluster/prod/apps/smb-gateway/prometheusrule.yaml
+# (run by test/check-alerts.sh, which extracts the rule groups first).
+rule_files: [rules.yaml]
+evaluation_interval: 1m
+tests:
+  # Uploads queued while bytes keep flowing: fine. Queued with no progress
+  # for 30m: data only lives in the cache - alert.
+  - interval: 1m
+    input_series:
+      - series: 'smbgw_rclone_uploads_queued{mount="/media"}'
+        values: '2x80'
+      - series: 'smbgw_rclone_uploads_in_progress{mount="/media"}'
+        values: '1x80'
+      - series: 'smbgw_rclone_transferred_bytes_total{mount="/media"}'
+        values: '0+1000x20 20000x60'
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: SMBGatewayUploadsStuck
+        exp_alerts: []
+      - eval_time: 80m
+        alertname: SMBGatewayUploadsStuck
+        exp_alerts:
+          - exp_labels: { severity: critical, mount: /media }
+            exp_annotations:
+              summary: "Writes to /media aren't reaching the backend"
+              description: "3 file(s) have been waiting to upload for over 30 minutes with no bytes transferred. SMB clients were told the writes succeeded; until they're uploaded they exist only in the gateway's cache volume. Check the rclone logs for /media."
+
+  - interval: 1m
+    input_series:
+      - series: 'smbgw_smb_auth_total{user="unknown", result="NT_STATUS_NO_SUCH_USER"}'
+        values: '0+2x20'
+      - series: 'smbgw_smb_auth_total{user="sander", result="ok"}'
+        values: '0+5x20'
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: SMBGatewayLoginFailures
+        exp_alerts:
+          - exp_labels: { severity: warning, user: unknown }
+            exp_annotations:
+              summary: "Repeated failed SMB logins for unknown"
+              description: "30 failed logins in 15 minutes for \"unknown\" (\"unknown\" means names that aren't configured). Either a client has a stale saved password or someone is guessing. Logs: `{namespace=\"smb-gateway\"} |= \"smb login failed\"`."
+
+  # Refresh and kick errors are summed per mount.
+  - interval: 1m
+    input_series:
+      - series: 'smbgw_refreshes_total{mount="/media", result="error"}'
+        values: '0+0.25x20'
+      - series: 'smbgw_kernel_kicks_total{mount="/media", result="error"}'
+        values: '0+0.25x20'
+      - series: 'smbgw_refreshes_total{mount="/photos", result="ok"}'
+        values: '0+10x20'
+    alert_rule_test:
+      - eval_time: 16m
+        alertname: SMBGatewayInvalidationFailing
+        exp_alerts:
+          - exp_labels: { severity: warning, mount: /media }
+            exp_annotations:
+              summary: "Cache refreshes for /media are failing"
+              description: "Change events arrive but refreshing listings fails, so clients may see stale folders. Look for \"refresh\"/\"kick\" warnings in the gateway's logs."
+
+  - interval: 1m
+    input_series:
+      - series: 'up{namespace="smb-gateway", job="smb-gateway-events"}'
+        values: '1x5 0x10'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: SMBGatewayDown
+        exp_alerts: []
+      - eval_time: 12m
+        alertname: SMBGatewayDown
+        exp_alerts:
+          - exp_labels: { severity: critical }
+            exp_annotations:
+              summary: SMB gateway is down
+              description: "Prometheus hasn't been able to scrape the SMB gateway for 5 minutes. Nothing is served on \\\\10.0.6.230. Check `kubectl -n smb-gateway get pods` and the pod's logs."
