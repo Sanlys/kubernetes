@@ -84,12 +84,17 @@ alloy:
           }
         }
 
-        traces {
-          // Only record requests that arrive with a sampled parent (through
-          // Traefik); health probes and background traffic start no trace
-          sampler {
-            name = "parentbased_always_off"
-          }
+        // Default sampler (parent-based, always on). parentbased_always_off
+        // produced no app spans, likely because Beyla only reads the start of a
+        // request and misses traceparent behind large headers and cookies.
+        // Probe paths are dropped instead to keep the noise down.
+        routes {
+          unmatched        = "heuristic"
+          ignore_mode      = "traces"
+          ignored_patterns = [
+            "/health", "/healthz", "/livez", "/readyz", "/ping", "/metrics",
+            "/api/health", "/rest/noauth/health", "/-/healthy", "/-/ready",
+          ]
         }
 
         output {
