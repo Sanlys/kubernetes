@@ -336,6 +336,9 @@ for m in 'smbgw_mount_up{mount="/media"' 'smbgw_events_total{kind="changed",moun
   grep -qF "$m" <<<"$metrics" || fail "metric missing: $m"
 done
 if [ "$TRANSPORT" = nfs ]; then
+  # nconnect: one RPC transport per connection in mountstats.
+  xprts=$(docker exec gw awk '/^device / {m = ($5 == "/srv/smb/media")} m && /xprt:/ {n++} END {print n+0}' /proc/self/mountstats)
+  [ "$xprts" = 8 ] || fail "media mount uses $xprts NFS connections, want 8"
   for m in 'smbgw_nfs_ops_total{mount="/media",op="READ"}' 'smbgw_nfs_read_ahead_bytes{mount="/media"} 1.6777216e+07'; do
     grep -qF "$m" <<<"$metrics" || fail "metric missing: $m"
   done
