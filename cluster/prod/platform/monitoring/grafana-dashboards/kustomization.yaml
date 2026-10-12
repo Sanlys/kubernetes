@@ -93,3 +93,6 @@ configMapGenerator:
   - name: dashboard-smb-overview
     files:
       - raw/smb-overview.json
+  - name: dashboard-traefik-kubernetes
+    files:
+      - raw/traefik-kubernetes.json

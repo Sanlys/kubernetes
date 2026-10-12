@@ -55,7 +55,25 @@ spec:
           prometheus:
             serviceMonitor:
               enabled: true
+        # Read-only dashboard on the internal IP, TLS from cert-manager like every other app
+        ingressRoute:
+          dashboard:
+            enabled: true
+            matchRule: Host(`traefik.k8s.lysakermoen.com`)
+            entryPoints: ["websecure"]
+            tls:
+              secretName: traefik-dashboard-tls
         extraObjects:
+          - apiVersion: cert-manager.io/v1
+            kind: Certificate
+            metadata:
+              name: traefik-dashboard
+            spec:
+              secretName: traefik-dashboard-tls
+              dnsNames: ["traefik.k8s.lysakermoen.com"]
+              issuerRef:
+                kind: ClusterIssuer
+                name: letsencrypt-internal
           # Taken over from ingress-nginx-internal with an identical spec
           # (spec.controller is immutable). Prune=false keeps it alive while
           # it moves between the two apps in either direction.
