@@ -85,6 +85,12 @@ prometheus:
         hosts:
           - prometheus.k8s.lysakermoen.com
   prometheusSpec:
+    # Query API spans. Sampling is parent-based, so only requests that arrive
+    # with a sampled trace (through Traefik) are recorded.
+    tracingConfig:
+      endpoint: tempo.monitoring.svc.cluster.local:4317
+      clientType: grpc
+      insecure: true
     serviceMonitorSelectorNilUsesHelmValues: false
     serviceMonitorSelector: {}
     serviceMonitorNamespaceSelector: {}
@@ -102,6 +108,11 @@ grafana:
   grafana.ini:
     security:
       allow_embedding: true
+    # Grafana's own spans (HTTP handlers, datasource queries) under Traefik's trace
+    tracing.opentelemetry.otlp:
+      address: tempo.monitoring.svc.cluster.local:4317
+    tracing.opentelemetry:
+      propagation: w3c
   sidecar:
     datasources:
       watchMethod: "SLEEP"

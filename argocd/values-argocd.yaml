@@ -4,6 +4,9 @@ configs:
   params:
     # Serve plain HTTP; TLS terminates at the Ingress like every other app
     server.insecure: true
+    # Spans from the API server, repo server and application controller
+    otlp.address: tempo.monitoring.svc.cluster.local:4317
+    otlp.insecure: true
 controller:
   replicas: 2
 repoServer:
