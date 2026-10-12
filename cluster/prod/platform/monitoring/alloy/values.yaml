@@ -59,6 +59,10 @@ alloy:
       // app handles, plus its outgoing HTTP/SQL/Redis calls, without changing
       // the app. Each Alloy pod instruments the processes on its own node.
       beyla.ebpf "apps" {
+        // TEMPORARY: log every span Beyla captures, to find why none reach Tempo.
+        // Remove once traces show up.
+        trace_printer = "text"
+
         discovery {
           instrument {
             kubernetes {
