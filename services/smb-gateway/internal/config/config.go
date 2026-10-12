@@ -108,6 +108,13 @@ type Cache struct {
 	// Debounce is how long the invalidator coalesces change events before
 	// refreshing, so a burst of uploads into one folder costs one LIST.
 	Debounce Duration `yaml:"debounce"`
+	// NFSReadAhead is the kernel readahead for the loopback NFS mounts.
+	// Linux (since 5.4) defaults NFS to 128K, which turns a sequential read
+	// (a video stream) into many small synchronous round trips to rclone.
+	NFSReadAhead string `yaml:"nfs_read_ahead"`
+	// ReadChunkStreams > 0 makes rclone fetch that many chunks of a file
+	// from the backend in parallel instead of one stream.
+	ReadChunkStreams int `yaml:"read_chunk_streams"`
 }
 
 type MountCache struct {
@@ -291,6 +298,9 @@ func (c *Config) applyDefaults() {
 	if c.Cache.BufferSize == "" {
 		c.Cache.BufferSize = "16M"
 	}
+	if c.Cache.NFSReadAhead == "" {
+		c.Cache.NFSReadAhead = "16M"
+	}
 	if c.Cache.Debounce == 0 {
 		c.Cache.Debounce = Duration(time.Second)
 	}
@@ -403,6 +413,20 @@ func (c *Config) Validate() error {
 		for j, b := range c.Mounts {
 			if i != j && a.Path != "" && b.Path != "" && a.Path != b.Path && within(b.Path, a.Path) {
 				add("mount %s is nested inside mount %s; mounts may share parent folders but not nest", b.Path, a.Path)
+			}
+		}
+	}
+
+	if n, err := ParseSize(c.Cache.NFSReadAhead); err != nil || n < 4096 {
+		add("cache.nfs_read_ahead %q must be a size of at least 4K", c.Cache.NFSReadAhead)
+	}
+	if c.Cache.ReadChunkStreams < 0 || c.Cache.ReadChunkStreams > 64 {
+		add("cache.read_chunk_streams must be between 0 and 64")
+	}
+	for _, m := range c.Mounts {
+		if m.Cache.PrefetchMaxSize != "" {
+			if _, err := ParseSize(m.Cache.PrefetchMaxSize); err != nil {
+				add("mount %s: cache.prefetch_max_size: %v", m.Path, err)
 			}
 		}
 	}
@@ -612,4 +636,29 @@ func (c *Config) MountsDigest() string {
 	b, _ := yaml.Marshal(restartRelevant{c.Server, c.S3, c.Notifications, c.Cache, c.Mounts})
 	h := sha256.Sum256(b)
 	return hex.EncodeToString(h[:])
+}
+
+// ParseSize parses sizes like 512K, 16M, 20G (also with i/iB/B suffixes).
+func ParseSize(v string) (int64, error) {
+	s := strings.ToUpper(strings.TrimSpace(v))
+	s = strings.TrimSuffix(strings.TrimSuffix(s, "B"), "I")
+	mult := int64(1)
+	switch {
+	case strings.HasSuffix(s, "K"):
+		mult = 1 << 10
+	case strings.HasSuffix(s, "M"):
+		mult = 1 << 20
+	case strings.HasSuffix(s, "G"):
+		mult = 1 << 30
+	case strings.HasSuffix(s, "T"):
+		mult = 1 << 40
+	}
+	if mult > 1 {
+		s = s[:len(s)-1]
+	}
+	var n float64
+	if _, err := fmt.Sscanf(s, "%g", &n); err != nil || n < 0 {
+		return 0, fmt.Errorf("bad size %q", v)
+	}
+	return int64(n * float64(mult)), nil
 }

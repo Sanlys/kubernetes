@@ -292,7 +292,7 @@ func (g *gateway) startInvalidation(ctx context.Context) {
 		}
 		var prefetch int64
 		if m.Cache.PrefetchMaxSize != "" {
-			prefetch = parseSize(m.Cache.PrefetchMaxSize)
+			prefetch, _ = config.ParseSize(m.Cache.PrefetchMaxSize)
 		}
 		inv := &invalidate.Invalidator{
 			Name: m.Path, RC: in.RC, Kicker: kicker, Debounce: g.cfg.Cache.Debounce.D(),
@@ -336,26 +336,6 @@ func (g *gateway) setRGW(bucket, state string) {
 	g.mu.Lock()
 	g.rgwOK[bucket] = state
 	g.mu.Unlock()
-}
-
-func parseSize(s string) int64 {
-	s = strings.TrimSpace(strings.ToUpper(s))
-	mult := int64(1)
-	for _, u := range []struct {
-		suf string
-		m   int64
-	}{{"G", 1 << 30}, {"M", 1 << 20}, {"K", 1 << 10}} {
-		if strings.HasSuffix(strings.TrimSuffix(strings.TrimSuffix(s, "B"), "I"), u.suf) {
-			s = strings.TrimSuffix(strings.TrimSuffix(strings.TrimSuffix(s, "B"), "I"), u.suf)
-			mult = u.m
-			break
-		}
-	}
-	var n float64
-	if _, err := fmt.Sscanf(s, "%g", &n); err != nil {
-		return 0
-	}
-	return int64(n * float64(mult))
 }
 
 func (g *gateway) routes() http.Handler {
