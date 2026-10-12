@@ -24,6 +24,11 @@ spec:
             enabled: false
           kubernetesCRD:
             enabled: true
+          # Gateway API next to the Ingresses; CRDs come from the gateway-api-crds app
+          kubernetesGateway:
+            enabled: true
+            # Lets HTTPRoutes here point at Traefik's internal services (api@internal)
+            crossProviderNamespaces: [traefik]
           # NGINX compatibility: serves the existing Ingresses and their
           # nginx.ingress.kubernetes.io annotations unchanged
           kubernetesIngressNGINX:
@@ -66,25 +71,51 @@ spec:
               enabled: true
               endpoint: tempo.monitoring.svc.cluster.local:4317
               insecure: true
-        # Read-only dashboard on the internal IP, TLS from cert-manager like every other app
+        # Chart Gateway "traefik-gateway". The HTTPS listener terminates TLS with a
+        # wildcard cert, so routes in any namespace only need a hostname.
+        gateway:
+          listeners:
+            web:
+              port: 8000
+              protocol: HTTP
+            websecure:
+              port: 8443
+              protocol: HTTPS
+              hostname: "*.k8s.lysakermoen.com"
+              namespacePolicy:
+                from: All
+              certificateRefs:
+                - name: k8s-wildcard-tls
+        # The dashboard is served by the HTTPRoute below instead
         ingressRoute:
           dashboard:
-            enabled: true
-            matchRule: Host(`traefik.k8s.lysakermoen.com`)
-            entryPoints: ["websecure"]
-            tls:
-              secretName: traefik-dashboard-tls
+            enabled: false
         extraObjects:
           - apiVersion: cert-manager.io/v1
             kind: Certificate
             metadata:
-              name: traefik-dashboard
+              name: k8s-wildcard
             spec:
-              secretName: traefik-dashboard-tls
-              dnsNames: ["traefik.k8s.lysakermoen.com"]
+              secretName: k8s-wildcard-tls
+              dnsNames: ["*.k8s.lysakermoen.com"]
               issuerRef:
                 kind: ClusterIssuer
                 name: letsencrypt-internal
+          # Read-only Traefik dashboard on the internal IP
+          - apiVersion: gateway.networking.k8s.io/v1
+            kind: HTTPRoute
+            metadata:
+              name: traefik-dashboard
+            spec:
+              parentRefs:
+                - name: traefik-gateway
+                  sectionName: websecure
+              hostnames: ["traefik.k8s.lysakermoen.com"]
+              rules:
+                - backendRefs:
+                    - group: traefik.io
+                      kind: TraefikService
+                      name: api@internal
           # Taken over from ingress-nginx-internal with an identical spec
           # (spec.controller is immutable). Prune=false keeps it alive while
           # it moves between the two apps in either direction.
@@ -102,4 +133,8 @@ spec:
     namespace: traefik
   syncPolicy:
     automated: { prune: true, selfHeal: true }
-    syncOptions: [CreateNamespace=true, ServerSideApply=true]
+    # Gateway API CRDs may land after this app on the first sync
+    syncOptions: [CreateNamespace=true, ServerSideApply=true, SkipDryRunOnMissingResource=true]
+    retry:
+      limit: 5
+      backoff: { duration: 30s, factor: 2, maxDuration: 5m }
