@@ -112,6 +112,17 @@ grafana:
       url: http://loki-gateway.monitoring.svc.cluster.local
       jsonData:
         maxLines: 1000
+        # Turns the trace_id in Traefik's JSON access log into a link to the trace
+        derivedFields:
+          - name: trace_id
+            matcherRegex: '"trace_id":"(\w+)"'
+            url: "$${__value.raw}"
+            datasourceUid: tempo
+    - name: Tempo
+      uid: tempo
+      type: tempo
+      access: proxy
+      url: http://tempo.monitoring.svc.cluster.local:3200
     - name: Dashboard1 # Required for ceph
       type: prometheus
       access: proxy

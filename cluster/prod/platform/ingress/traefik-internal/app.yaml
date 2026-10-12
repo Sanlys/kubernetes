@@ -55,6 +55,17 @@ spec:
           prometheus:
             serviceMonitor:
               enabled: true
+        # JSON to stdout; Alloy already ships every pod's logs to Loki
+        accessLog:
+          enabled: true
+          format: json
+        tracing:
+          otlp:
+            enabled: true
+            grpc:
+              enabled: true
+              endpoint: tempo.monitoring.svc.cluster.local:4317
+              insecure: true
         # Read-only dashboard on the internal IP, TLS from cert-manager like every other app
         ingressRoute:
           dashboard:

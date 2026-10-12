@@ -1,0 +1,27 @@
+tempo:
+  reportingEnabled: false
+  # Same retention as Loki
+  retention: 168h
+  storage:
+    trace:
+      backend: local
+      local:
+        path: /var/tempo/traces
+      wal:
+        path: /var/tempo/wal
+  # Traefik sends OTLP over gRPC (the chart keeps its default Jaeger receivers too)
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: "0.0.0.0:4317"
+        http:
+          endpoint: "0.0.0.0:4318"
+
+persistence:
+  enabled: true
+  storageClassName: rook-ceph-block-ssd
+  size: 20Gi
+
+serviceMonitor:
+  enabled: true
