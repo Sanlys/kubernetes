@@ -51,3 +51,22 @@ jobs:
       - uses: actions/checkout@v5
       - name: Check and unit-test the PrometheusRule
         run: services/smb-gateway/test/check-alerts.sh
+
+  # Streaming-read throughput through SMB -> NFS -> rclone -> S3 for a few
+  # read settings; results go to the run summary. Informational only.
+  bench:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/smb-gateway
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: services/smb-gateway
+          load: true
+          tags: smb-gateway:dev
+          cache-from: type=gha
+      - run: sudo modprobe nfs && sudo modprobe fuse
+      - run: ./test/bench.sh smb-gateway:dev 1024

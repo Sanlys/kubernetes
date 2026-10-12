@@ -133,6 +133,7 @@ func Args(c *config.Config, m *config.Mount, transport, confFile, cacheRoot, mou
 		"--buffer-size", cache.BufferSize,
 		"--dir-cache-time", c.DirCacheTime(m).String(),
 		"--transfers", "8",
+		"--vfs-read-chunk-streams", fmt.Sprint(cache.ReadChunkStreams),
 		"--uid", "1000", "--gid", "1000", "--umask", "002",
 		"--rc", "--rc-addr", fmt.Sprintf("127.0.0.1:%d", p.RC), "--rc-no-auth",
 		// INFO logs every upload, delete and cache eviction; JSON so the

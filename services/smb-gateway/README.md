@@ -236,6 +236,28 @@ rclone's HTTP traffic in this namespace, so its spans for S3 requests appear nex
 `test/check-alerts.sh` checks the rules with promtool and runs the unit tests in
 `test/alerts_test.yaml`. CI runs both.
 
+### Read performance
+
+A streamed file goes through four hops, and the dashboard's **Read path** row shows each one:
+
+- **SMB client → smbd.** Not instrumented: Alpine's Samba has no profiling counters.
+- **smbd → kernel NFS client → rclone.** `smbgw_nfs_*`, from `/proc/self/mountstats`: bytes,
+  operations, and rclone's average response time per NFS READ.
+- **rclone → S3.** `smbgw_rclone_transferred_bytes_total`.
+
+How to read it:
+
+- **Low READ size (128K) and low throughput.** The kernel's NFS readahead is too small.
+  Since Linux 5.4 the default is 128K, so a sequential reader waits on a 128K round trip at a
+  time. `cache.nfs_read_ahead` (default 16M) sets it per mount.
+- **High rclone response time while the backend is busy.** The data is cold and comes from
+  S3. `cache.read_chunk_streams` fetches several chunks of a file in parallel.
+- **Reads well above backend traffic.** Cache hits. A bigger `cache.max_size` only helps data
+  that's read again.
+
+`test/bench.sh` measures cold and warm streaming throughput for these settings (CI runs it
+and puts the table in the run summary).
+
 ### Releasing
 
 ```sh

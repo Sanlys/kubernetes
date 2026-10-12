@@ -29,15 +29,20 @@ notifications:
   token: CHANGEME-long-random-string   # openssl rand -hex 24
   # topic_ttl: 1h                      # how long RGW retries an undelivered event
 
-# Local cache (on the gateway's SSD PVC). Defaults per mount; the sum of all
-# max_size values should stay below the PVC size.
+# Local cache (on the gateway's 100Gi SSD PVC). max_size is PER MOUNT: give
+# the mounts you stream from most of it, and keep the sum of all mounts'
+# max_size (plus min_free_space) below the PVC size. A bigger cache only
+# helps things that are read again (re-watching, scrubbing back); the first
+# read of anything always comes from the backend.
 cache:
-  max_size: 20G
+  max_size: 5G             # default for mounts that don't set their own
   max_age: 7d
   # min_free_space: 2G
-  # write_back: 10s      # upload a file this long after the last write to it
-  # read_ahead: 64M
-  # debounce: 1s         # coalesce change events this long
+  # write_back: 10s        # upload a file this long after the last write to it
+  # read_ahead: 64M        # how far rclone fetches ahead of a reader
+  # debounce: 1s           # coalesce change events this long
+  # nfs_read_ahead: 16M    # kernel readahead on the NFS mounts (Linux default: 128K)
+  # read_chunk_streams: 0  # >0: fetch that many chunks of a file from S3 in parallel
 
 # Where things appear in the tree. Mounts can share parent folders
 # (/backups/...) but cannot be nested inside each other.
@@ -46,7 +51,7 @@ mounts:
     type: s3
     bucket: media-library
     cache:
-      max_size: 40G
+      max_size: 70G        # the streaming mount gets most of the PVC
 
   - path: /photos
     type: s3

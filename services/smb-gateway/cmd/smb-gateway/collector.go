@@ -3,12 +3,18 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"os"
 	"os/exec"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/sys/unix"
 
+	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/config"
 	"github.com/Sanlys/kubernetes/services/smb-gateway/internal/mounts"
 )
 
@@ -42,12 +48,24 @@ var (
 	dSessions      = desc("smbgw_smb_sessions", "Open SMB sessions by user and protocol dialect.", "user", "dialect")
 	dTcons         = desc("smbgw_smb_share_connections", "Open share connections by share.", "share")
 	dOpenFiles     = desc("smbgw_smb_open_files", "Files currently open over SMB.")
+
+	// Kernel NFS client <-> rclone, per loopback mount (/proc/self/mountstats).
+	dNFSOps     = desc("smbgw_nfs_ops_total", "NFS operations the kernel sent to rclone.", "mount", "op")
+	dNFSBytes   = desc("smbgw_nfs_bytes_total", "Bytes on the wire to/from rclone, by NFS operation.", "mount", "op", "direction")
+	dNFSRTT     = desc("smbgw_nfs_rtt_seconds_total", "Cumulative round-trip time (rclone's response time) per NFS operation.", "mount", "op")
+	dNFSExec    = desc("smbgw_nfs_exec_seconds_total", "Cumulative total time (queueing + round trip) per NFS operation, as seen by the reader.", "mount", "op")
+	dNFSTimeout = desc("smbgw_nfs_timeouts_total", "NFS operations that timed out and were retried.", "mount", "op")
+	dReadAhead  = desc("smbgw_nfs_read_ahead_bytes", "Kernel readahead in effect on the NFS mount.", "mount")
 )
+
+var nfsOps = map[string]bool{"READ": true, "WRITE": true, "COMMIT": true, "GETATTR": true, "SETATTR": true,
+	"LOOKUP": true, "ACCESS": true, "READDIRPLUS": true, "READDIR": true, "CREATE": true, "REMOVE": true,
+	"RENAME": true, "MKDIR": true, "RMDIR": true}
 
 func (c *collector) Describe(ch chan<- *prometheus.Desc) {
 	for _, d := range []*prometheus.Desc{dMountUp, dMountRestarts, dCacheBytes, dCacheFiles, dCacheErrored, dCacheOOS,
 		dUpQueued, dUpInProgress, dMetaDirs, dMetaFiles, dBytes, dTransfers, dErrors, dDeletes, dRenames,
-		dSmbdUp, dSessions, dTcons, dOpenFiles} {
+		dSmbdUp, dSessions, dTcons, dOpenFiles, dNFSOps, dNFSBytes, dNFSRTT, dNFSExec, dNFSTimeout, dReadAhead} {
 		ch <- d
 	}
 }
@@ -105,6 +123,8 @@ func (c *collector) Collect(ch chan<- prometheus.Metric) {
 		}(in)
 	}
 
+	c.collectNFS(gauge, counter)
+
 	smbdUp := c.g.smbdRunning()
 	if smbdUp {
 		c.collectSmbstatus(ctx, gauge)
@@ -156,4 +176,37 @@ func b2f(b bool) float64 {
 		return 1
 	}
 	return 0
+}
+
+func (c *collector) collectNFS(gauge, counter func(*prometheus.Desc, float64, ...string)) {
+	f, err := os.Open("/proc/self/mountstats")
+	if err != nil {
+		return
+	}
+	stats := mounts.ParseMountstats(f)
+	f.Close()
+	for _, in := range c.g.instances {
+		if in.Transport != config.TransportNFS {
+			continue
+		}
+		m := in.M.Path
+		for op, s := range stats[in.MountPoint] {
+			if !nfsOps[op] {
+				continue
+			}
+			counter(dNFSOps, s.Ops, m, op)
+			counter(dNFSBytes, s.BytesSent, m, op, "sent")
+			counter(dNFSBytes, s.BytesRecv, m, op, "received")
+			counter(dNFSRTT, s.RTTMs/1000, m, op)
+			counter(dNFSExec, s.ExecMs/1000, m, op)
+			counter(dNFSTimeout, s.Timeouts, m, op)
+		}
+		var st unix.Stat_t
+		if unix.Stat(in.MountPoint, &st) == nil {
+			b, err := os.ReadFile(fmt.Sprintf("/sys/class/bdi/%d:%d/read_ahead_kb", unix.Major(uint64(st.Dev)), unix.Minor(uint64(st.Dev))))
+			if kb, perr := strconv.ParseFloat(strings.TrimSpace(string(b)), 64); err == nil && perr == nil {
+				gauge(dReadAhead, kb*1024, m)
+			}
+		}
+	}
 }

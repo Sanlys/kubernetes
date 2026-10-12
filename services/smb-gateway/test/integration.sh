@@ -335,6 +335,11 @@ for m in 'smbgw_mount_up{mount="/media"' 'smbgw_events_total{kind="changed",moun
          'smbgw_rclone_uploads_queued{mount="/media"}' 'smbgw_smbd_up 1' 'smbgw_events_total{kind="changed",mount="/syncthing",source="syncthing"}'; do
   grep -qF "$m" <<<"$metrics" || fail "metric missing: $m"
 done
+if [ "$TRANSPORT" = nfs ]; then
+  for m in 'smbgw_nfs_ops_total{mount="/media",op="READ"}' 'smbgw_nfs_read_ahead_bytes{mount="/media"} 1.6777216e+07'; do
+    grep -qF "$m" <<<"$metrics" || fail "metric missing: $m"
+  done
+fi
 pass "metrics exported"
 
 spans=""

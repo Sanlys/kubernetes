@@ -329,7 +329,31 @@ func (in *Instance) mountNFS() error {
 	if err := unix.Mount("127.0.0.1:/", in.MountPoint, "nfs", flags, opts); err != nil {
 		return fmt.Errorf("mount nfs at %s: %w", in.MountPoint, err)
 	}
+	in.setReadAhead()
 	return nil
+}
+
+// setReadAhead raises the NFS mount's kernel readahead (128K by default
+// since Linux 5.4), so a sequential reader like a video player gets data
+// prefetched from rclone in large requests instead of waiting on 128K
+// round trips. It is set on the mount's backing device info in sysfs.
+func (in *Instance) setReadAhead() {
+	ra, err := config.ParseSize(in.cfg.Cache.NFSReadAhead)
+	if err != nil {
+		return
+	}
+	var st unix.Stat_t
+	if err := unix.Stat(in.MountPoint, &st); err != nil {
+		in.log.Warn("nfs readahead: stat failed", "err", err)
+		return
+	}
+	p := fmt.Sprintf("/sys/class/bdi/%d:%d/read_ahead_kb", unix.Major(uint64(st.Dev)), unix.Minor(uint64(st.Dev)))
+	old, _ := os.ReadFile(p)
+	if err := os.WriteFile(p, []byte(fmt.Sprint(ra/1024)), 0o644); err != nil {
+		in.log.Warn("nfs readahead: could not set it, keeping the kernel default", "path", p, "err", err)
+		return
+	}
+	in.log.Info("nfs readahead set", "kb", ra/1024, "was_kb", strings.TrimSpace(string(old)))
 }
 
 func (in *Instance) supervise(ctx context.Context) {
