@@ -63,17 +63,27 @@ alloy:
         // Remove once traces show up.
         trace_printer = "text"
 
+        // Keep the set of processes small. Beyla attaches to each one in turn, and
+        // when attaching takes over 20s its pipeline panics and takes Alloy down.
+        // Instrumenting every process (Ceph daemons, CSI sidecars, a new process
+        // per Postgres connection) did exactly that.
         discovery {
+          // Only processes that listen on a port, i.e. servers
           instrument {
+            open_ports = "1-65535"
             kubernetes {
               namespace = "*"
             }
           }
-          // Platform pieces, and apps that already send their own traces
+          // Platform pieces, storage, and apps that already send their own traces
           exclude_instrument {
             kubernetes {
-              namespace = "{kube-system,monitoring,traefik,argocd,cert-manager,cnpg-system,kubevirt,kyverno,local-path-storage,metallb-system,tekton*,snapshots,windows11-vm,frpc,ingress-internal,ingress-public}"
+              namespace = "{kube-system,monitoring,traefik,argocd,cert-manager,cnpg-system,database,rook-ceph,harbor,kubevirt,kyverno,local-path-storage,metallb-system,tekton*,snapshots,windows11-vm,frpc,ingress-internal,ingress-public}"
             }
+          }
+          // Databases fork a process per connection; app-side SQL client spans still show the queries
+          exclude_instrument {
+            exe_path = "{*postgres*,*mariadb*,*mysqld*,*redis-server*,*valkey-server*}"
           }
         }
 
