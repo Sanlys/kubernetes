@@ -96,7 +96,12 @@ spec:
                 erasureCoded:
                   dataChunks: 2
                   codingChunks: 1
-                deviceClass: hdd
+                # No deviceClass: the live pool's CRUSH rule (rule_id 11) has
+                # always taken from the unrestricted "default" root, not
+                # "default~hdd". Declaring deviceClass: hdd here only made
+                # Rook 1.21's EC-profile reconcile try (and fail) to force an
+                # override Ceph gates behind --yes-i-really-mean-it, for a
+                # constraint that was never actually enforced.
                 parameters:
                   bulk: "true"
               preservePoolsOnDelete: true
