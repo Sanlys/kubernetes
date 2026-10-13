@@ -178,7 +178,7 @@ spec:
         # inside it) if this drifts - mismatched libc/library versions
         # between the two trees is the main way this could break.
         - name: install-nfs-utils
-          image: alpine:3.20
+          image: alpine:3.24
           command:
             - sh
             - -c
