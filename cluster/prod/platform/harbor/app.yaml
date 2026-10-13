@@ -63,7 +63,10 @@ spec:
     - kind: Secret
       name: harbor-registry-htpasswd
       jsonPointers:
-        - /data/REGISTRY_HTPASSWD
+        # Ignoring the whole object: it's the only key under /data, and
+        # ignoring just /data/REGISTRY_HTPASSWD leaves a residual "data: {}"
+        # diff once that one field is stripped from the comparison.
+        - /data
     # Cascading effect of the above: these Deployments embed sha256
     # checksums of the secrets in a pod template annotation to trigger
     # restarts on real secret changes. Since the secrets above never
