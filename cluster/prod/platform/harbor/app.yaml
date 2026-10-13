@@ -40,6 +40,53 @@ spec:
       name: harbor-trivy
       jsonPointers:
         - /spec/volumeClaimTemplates/0/metadata/creationTimestamp
+    # These secrets are regenerated with fresh random values by the chart
+    # on every render (no lookup reuse succeeds in Argo's render context),
+    # so selfHeal was rotating them and bouncing core/jobservice/registry
+    # on every reconcile. harbor-core's token CA (tls.crt/tls.key) is
+    # unconditionally regenerated via genCA with no lookup fallback at all.
+    - kind: Secret
+      name: harbor-core
+      jsonPointers:
+        - /data/CSRF_KEY
+        - /data/secret
+        - /data/tls.crt
+        - /data/tls.key
+    - kind: Secret
+      name: harbor-jobservice
+      jsonPointers:
+        - /data/JOBSERVICE_SECRET
+    - kind: Secret
+      name: harbor-registry
+      jsonPointers:
+        - /data/REGISTRY_HTTP_SECRET
+    - kind: Secret
+      name: harbor-registry-htpasswd
+      jsonPointers:
+        - /data/REGISTRY_HTPASSWD
+    # Cascading effect of the above: these Deployments embed sha256
+    # checksums of the secrets in a pod template annotation to trigger
+    # restarts on real secret changes. Since the secrets above never
+    # stabilize, these checksums never stabilize either.
+    - group: apps
+      kind: Deployment
+      name: harbor-core
+      jsonPointers:
+        - /spec/template/metadata/annotations/checksum~1secret
+        - /spec/template/metadata/annotations/checksum~1secret-jobservice
+    - group: apps
+      kind: Deployment
+      name: harbor-jobservice
+      jsonPointers:
+        - /spec/template/metadata/annotations/checksum~1secret
+        - /spec/template/metadata/annotations/checksum~1secret-core
+    - group: apps
+      kind: Deployment
+      name: harbor-registry
+      jsonPointers:
+        - /spec/template/metadata/annotations/checksum~1secret
+        - /spec/template/metadata/annotations/checksum~1secret-core
+        - /spec/template/metadata/annotations/checksum~1secret-jobservice
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     syncOptions:
