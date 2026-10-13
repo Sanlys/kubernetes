@@ -20,6 +20,26 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: harbor
+  # volumeClaimTemplates[].metadata.creationTimestamp is a known Kubernetes
+  # JSON-marshaling quirk (metav1.Time's MarshalJSON emits "null" for a zero
+  # value regardless of omitempty) on nested embedded objects; the chart
+  # never declares it, so it's a permanent phantom diff, not real drift.
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      name: harbor-redis
+      jsonPointers:
+        - /spec/volumeClaimTemplates/0/metadata/creationTimestamp
+    - group: apps
+      kind: StatefulSet
+      name: harbor-database
+      jsonPointers:
+        - /spec/volumeClaimTemplates/0/metadata/creationTimestamp
+    - group: apps
+      kind: StatefulSet
+      name: harbor-trivy
+      jsonPointers:
+        - /spec/volumeClaimTemplates/0/metadata/creationTimestamp
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     syncOptions:

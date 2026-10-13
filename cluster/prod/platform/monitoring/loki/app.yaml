@@ -20,6 +20,14 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
+  # volumeClaimTemplates[].metadata.creationTimestamp: known Kubernetes
+  # JSON-marshaling quirk on nested embedded objects, not real drift.
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      name: loki
+      jsonPointers:
+        - /spec/volumeClaimTemplates/0/metadata/creationTimestamp
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     syncOptions:

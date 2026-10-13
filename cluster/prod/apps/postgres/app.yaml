@@ -80,6 +80,18 @@ spec:
       kind: Pooler
       managedFieldsManagers:
         - manager
+    # relabelings[].action defaults to "replace" server-side; the chart's
+    # rendered PodMonitor omits it, causing a perpetual phantom diff.
+    - group: monitoring.coreos.com
+      kind: PodMonitor
+      name: cnpg-central-cluster-pooler-rw-podmonitor
+      jsonPointers:
+        - /spec/podMetricsEndpoints/0/relabelings/0/action
+    - group: monitoring.coreos.com
+      kind: PodMonitor
+      name: cnpg-central-cluster-pooler-ro-podmonitor
+      jsonPointers:
+        - /spec/podMetricsEndpoints/0/relabelings/0/action
 
   syncPolicy:
     automated:

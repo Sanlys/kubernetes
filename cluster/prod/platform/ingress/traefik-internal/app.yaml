@@ -131,6 +131,23 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: traefik
+  # Gateway API's SecretObjectReference/ParentReference group+kind default
+  # server-side (group:"", kind:Secret / group:gateway.networking.k8s.io,
+  # kind:Gateway) when omitted; our manifests omit them, so these are
+  # permanent phantom diffs, not real drift.
+  ignoreDifferences:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: traefik-gateway
+      jsonPointers:
+        - /spec/listeners/1/tls/certificateRefs/0/group
+        - /spec/listeners/1/tls/certificateRefs/0/kind
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: traefik-dashboard
+      jsonPointers:
+        - /spec/parentRefs/0/group
+        - /spec/parentRefs/0/kind
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     # Gateway API CRDs may land after this app on the first sync
