@@ -23,6 +23,8 @@ spec:
         kyverno-api:
           labels:
             app.kubernetes.io/managed-by: argocd
+          annotations:
+            app.kubernetes.io/managed-by: argocd
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno
