@@ -148,6 +148,11 @@ spec:
       jsonPointers:
         - /spec/parentRefs/0/group
         - /spec/parentRefs/0/kind
+        # backendRefs[].weight defaults to 1 when omitted; rules[].matches
+        # defaults to a catch-all PathPrefix "/" when the rule declares no
+        # matches at all. Our manifest declares neither.
+        - /spec/rules/0/backendRefs/0/weight
+        - /spec/rules/0/matches
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     # Gateway API CRDs may land after this app on the first sync
