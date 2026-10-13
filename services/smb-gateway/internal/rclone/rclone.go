@@ -108,6 +108,9 @@ func Args(c *config.Config, m *config.Mount, transport, confFile, cacheRoot, mou
 			// kernel mount without the clients getting stale handles.
 			"--nfs-cache-type", "disk",
 			"--nfs-cache-dir", fmt.Sprintf("%s/nfs-handles/%s", cacheRoot, m.ID),
+			// Every NFS READ opens and closes the file; keep it (and its
+			// read-ahead downloader) alive across pauses between READs.
+			"--vfs-handle-caching", "1m",
 		)
 	} else {
 		args = append(args, "mount", RemotePath(m), mountpoint,

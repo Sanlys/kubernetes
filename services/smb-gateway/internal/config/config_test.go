@@ -17,10 +17,10 @@ func TestExampleConfigIsValid(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := map[string]string{
-		"/media":             TransportNFS,
-		"/photos":            TransportNFS,
+		"/media":             TransportFUSE,
+		"/photos":            TransportFUSE,
 		"/backups/syncthing": TransportFUSE,
-		"/syncthing":         TransportNFS,
+		"/syncthing":         TransportFUSE,
 	}
 	for _, m := range c.Mounts {
 		if w, ok := want[m.Path]; ok && c.ResolveTransport(m) != w {

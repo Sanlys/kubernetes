@@ -39,7 +39,7 @@ cache:
   max_age: 7d
   # min_free_space: 2G
   # write_back: 10s        # upload a file this long after the last write to it
-  # read_ahead: 64M        # how far rclone fetches ahead of a reader
+  # read_ahead: 512M       # how far rclone fetches ahead of a reader (~1 min of 4K video)
   # debounce: 1s           # coalesce change events this long
   # nfs_read_ahead: 16M    # kernel readahead on the NFS mounts (Linux default: 128K)
   # read_chunk_streams: 0  # >0: fetch that many chunks of a file from S3 in parallel
@@ -66,7 +66,7 @@ mounts:
     bucket: tools-game-mgr
     # prefix: some/sub/folder   # expose only part of a bucket
     # preserve_modtime: true    # keep client mtimes (costs a HEAD per file on listing)
-    # transport: fuse           # override the automatic nfs/fuse choice
+    # transport: nfs            # default fuse; see README "NFS or FUSE under Samba"
 
   # restic is always read-only and always FUSE. Shows /snapshots, /hosts,
   # /tags, /ids like `restic mount`.
