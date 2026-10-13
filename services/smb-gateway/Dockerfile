@@ -1,6 +1,6 @@
 # Base images are build args only so a local build can swap in mirrors;
 # CI builds with the defaults.
-ARG GO_IMAGE=golang:1.26-alpine
+ARG GO_IMAGE=golang:1.27-alpine
 ARG ALPINE_IMAGE=alpine:3.24
 ARG RCLONE_IMAGE=rclone/rclone:1.75.2
 ARG RESTIC_IMAGE=restic/restic:0.19.1
