@@ -60,122 +60,82 @@ spec:
                 port:
                   number: 5055
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: qbittorrent
   namespace: media
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-internal
 spec:
-  ingressClassName: internal
-  tls:
-    - hosts: ["qbittorrent.k8s.lysakermoen.com"]
-      secretName: qbittorrent-internal-tls
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: websecure
+  hostnames: ["qbittorrent.k8s.lysakermoen.com"]
   rules:
-    - host: qbittorrent.k8s.lysakermoen.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: qbittorrent
-                port:
-                  number: 8080
+    - backendRefs:
+        - name: qbittorrent
+          port: 8080
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: sonarr
   namespace: media
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-internal
 spec:
-  ingressClassName: internal
-  tls:
-    - hosts: ["sonarr.k8s.lysakermoen.com"]
-      secretName: sonarr-internal-tls
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: websecure
+  hostnames: ["sonarr.k8s.lysakermoen.com"]
   rules:
-    - host: sonarr.k8s.lysakermoen.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: sonarr
-                port:
-                  number: 8989
+    - backendRefs:
+        - name: sonarr
+          port: 8989
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: radarr
   namespace: media
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-internal
 spec:
-  ingressClassName: internal
-  tls:
-    - hosts: ["radarr.k8s.lysakermoen.com"]
-      secretName: radarr-internal-tls
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: websecure
+  hostnames: ["radarr.k8s.lysakermoen.com"]
   rules:
-    - host: radarr.k8s.lysakermoen.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: radarr
-                port:
-                  number: 7878
+    - backendRefs:
+        - name: radarr
+          port: 7878
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: prowlarr
   namespace: media
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-internal
 spec:
-  ingressClassName: internal
-  tls:
-    - hosts: ["prowlarr.k8s.lysakermoen.com"]
-      secretName: prowlarr-internal-tls
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: websecure
+  hostnames: ["prowlarr.k8s.lysakermoen.com"]
   rules:
-    - host: prowlarr.k8s.lysakermoen.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: prowlarr
-                port:
-                  number: 9696
+    - backendRefs:
+        - name: prowlarr
+          port: 9696
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: bazarr
   namespace: media
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-internal
 spec:
-  ingressClassName: internal
-  tls:
-    - hosts: ["bazarr.k8s.lysakermoen.com"]
-      secretName: bazarr-internal-tls
+  parentRefs:
+    - name: traefik-gateway
+      namespace: traefik
+      sectionName: websecure
+  hostnames: ["bazarr.k8s.lysakermoen.com"]
   rules:
-    - host: bazarr.k8s.lysakermoen.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: bazarr
-                port:
-                  number: 6767
+    - backendRefs:
+        - name: bazarr
+          port: 6767
