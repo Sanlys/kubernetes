@@ -34,6 +34,40 @@ spec:
           network:
             connections:
               requireMsgr2: true
+        cephBlockPools:
+          - name: ceph-blockpool
+            spec:
+              failureDomain: host
+              replicated:
+                size: 3
+            storageClass:
+              enabled: true
+              name: ceph-block
+              annotations:
+                argocd.argoproj.io/sync-options: Replace=true,Force=true
+              labels: {}
+              isDefault: true
+              reclaimPolicy: Delete
+              allowVolumeExpansion: true
+              volumeBindingMode: "Immediate"
+              mountOptions: []
+              allowedTopologies: []
+              parameters:
+                imageFormat: "2"
+                imageFeatures: layering
+                csi.storage.k8s.io/provisioner-secret-name: rook-csi-rbd-provisioner
+                csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
+                csi.storage.k8s.io/controller-expand-secret-name: rook-csi-rbd-provisioner
+                csi.storage.k8s.io/controller-expand-secret-namespace: rook-ceph
+                csi.storage.k8s.io/controller-publish-secret-name: rook-csi-rbd-provisioner
+                csi.storage.k8s.io/controller-publish-secret-namespace: rook-ceph
+                csi.storage.k8s.io/node-stage-secret-name: rook-csi-rbd-node
+                csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
+                csi.storage.k8s.io/controller-modify-secret-name: rook-csi-rbd-provisioner
+                csi.storage.k8s.io/controller-modify-secret-namespace: rook-ceph
+                csi.storage.k8s.io/node-publish-secret-name: rook-csi-rbd-node
+                csi.storage.k8s.io/node-publish-secret-namespace: rook-ceph
+                csi.storage.k8s.io/fstype: ext4
         toolbox:
           enabled: true
         monitoring:
