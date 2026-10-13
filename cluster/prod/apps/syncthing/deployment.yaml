@@ -65,7 +65,7 @@ spec:
               memory: 256Mi
 
         - name: rclone-sync
-          image: rclone/rclone:1.68
+          image: rclone/rclone:1.75
           env:
             - name: BUCKET_NAME
               valueFrom:
