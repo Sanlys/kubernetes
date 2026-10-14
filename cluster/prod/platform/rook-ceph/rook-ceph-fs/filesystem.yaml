@@ -20,6 +20,13 @@ spec:
       deviceClass: hdd
       replicated:
         size: 3
+      # Without this, pg_autoscaler treats the pool as "might stay small"
+      # and leaves it at pg_num=1 indefinitely regardless of actual size -
+      # this pool holds 1.7TB+ and grows continuously. bulk tells the
+      # autoscaler to size pg_num for that from the start, same as the RGW
+      # bucket data pool in rook-ceph-cluster/app.yaml.
+      parameters:
+        bulk: "true"
   preserveFilesystemOnDelete: true
   metadataServer:
     activeCount: 1
