@@ -4,7 +4,10 @@ metadata:
   name: syncthing
   namespace: syncthing
 spec:
-  replicas: 1
+  # Temporarily 0 while migrating syncthing-pvc -> syncthing-pvc-rwx (CephFS):
+  # stopped so the final incremental rsync pass has a quiescent source.
+  # Restore to 1 once that pass is done.
+  replicas: 0
   strategy:
     type: Recreate
   selector:
