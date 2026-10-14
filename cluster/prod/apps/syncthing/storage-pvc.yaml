@@ -30,4 +30,8 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 175Gi
+      # Was 175Gi, same as the usage was already at 90% (157.1G/175G) right
+      # after cutover - not caused by the migration, just inherited from
+      # syncthing-pvc. CephFS supports online expansion, so grown here
+      # instead of waiting for KubePersistentVolumeFillingUp's 4-day ETA.
+      storage: 300Gi
