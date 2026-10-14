@@ -76,8 +76,11 @@ spec:
             periodSeconds: 10
             failureThreshold: 6
           resources:
-            requests: { cpu: "50m", memory: "128Mi" }
-            limits: { memory: "128Mi" }
+            # Was 128Mi: OOMKilled repeatedly (107 restarts) since idle RSS
+            # alone sits around 104Mi, leaving no room for search bursts.
+            # radarr/sonarr in this same namespace both use 512Mi.
+            requests: { cpu: "50m", memory: "512Mi" }
+            limits: { memory: "512Mi" }
       volumes:
         - name: config
           persistentVolumeClaim:
