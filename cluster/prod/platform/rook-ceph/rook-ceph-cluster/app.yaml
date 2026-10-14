@@ -31,6 +31,12 @@ spec:
           dashboard:
             enabled: true
             ssl: false
+            # Rook forcibly syncs mgr/dashboard/PROMETHEUS_API_HOST to this
+            # field on every reconcile, resetting it to empty if unset here -
+            # that's why `ceph dashboard set-prometheus-api-host` alone never
+            # stuck.
+            prometheusEndpoint: http://monitoring-kube-prometheus-prometheus.monitoring.svc:9090
+            prometheusEndpointSSLVerify: false
           network:
             connections:
               requireMsgr2: true
