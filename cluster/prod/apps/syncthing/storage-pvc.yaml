@@ -11,3 +11,23 @@ spec:
   resources:
     requests:
       storage: 175Gi
+---
+# RWX replacement for syncthing-pvc: CephFS instead of RBD, so
+# restic-backup no longer needs podAffinity to the syncthing Deployment
+# just to avoid an RWO multi-attach conflict - that CronJob has no
+# activeDeadlineSeconds, so a stuck Pending run under Forbid never
+# self-heals. syncthing-pvc (RBD) is kept around, unused, as a rollback
+# option until this is confirmed solid.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: syncthing-pvc-rwx
+  namespace: syncthing
+spec:
+  storageClassName: rook-cephfs
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 175Gi

@@ -11,3 +11,21 @@ spec:
   resources:
     requests:
       storage: 180Gi
+---
+# RWX replacement for archmirror-pvc: CephFS instead of RBD, so mirror-sync
+# no longer needs podAffinity to the mirror Deployment just to avoid an
+# RWO multi-attach conflict. archmirror-pvc (RBD) is kept around, unused,
+# as a rollback option until this is confirmed solid.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: archmirror-pvc-rwx
+  namespace: mirror
+spec:
+  storageClassName: rook-cephfs
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 180Gi

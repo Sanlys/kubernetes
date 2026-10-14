@@ -17,6 +17,24 @@ spec:
     requests:
       storage: 50Gi
 ---
+# RWX replacement for iso-pvc: CephFS instead of RBD, so iso-sync no longer
+# needs podAffinity to the iso-nginx Deployment just to avoid an RWO
+# multi-attach conflict. iso-pvc (RBD) is kept around, unused, as a
+# rollback option until this is confirmed solid.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: iso-pvc-rwx
+  namespace: tobbeos
+spec:
+  storageClassName: rook-cephfs
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
