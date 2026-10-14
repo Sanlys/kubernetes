@@ -69,8 +69,6 @@ metadata:
   namespace: tobbeos
 spec:
   replicas: 1
-  # Recreate, not RollingUpdate: the RWO PVC can only attach to one node, so a
-  # surge pod landing elsewhere hits Multi-Attach and the rollout hangs.
   strategy:
     type: Recreate
   selector:
@@ -104,7 +102,7 @@ spec:
                 path: nginx.conf
         - name: iso-storage
           persistentVolumeClaim:
-            claimName: iso-pvc
+            claimName: iso-pvc-rwx
 ---
 apiVersion: v1
 kind: Service
@@ -130,19 +128,12 @@ spec:
   suspend: false
   jobTemplate:
     spec:
-      # Kill a run that's stuck (e.g. Pending because the pod it must co-locate
-      # with is down) so it can't block every later run under Forbid.
+      # iso-pvc-rwx is CephFS (RWX): this no longer needs to co-locate with
+      # the iso-nginx Deployment's pod, so a stuck node can't block it.
       activeDeadlineSeconds: 7200
       template:
         spec:
           restartPolicy: OnFailure
-          affinity:
-            podAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
-                    matchLabels:
-                      app: iso-nginx
-                  topologyKey: kubernetes.io/hostname
           containers:
             - name: iso-sync
               image: curlimages/curl:8.22.0
@@ -217,4 +208,4 @@ spec:
           volumes:
             - name: iso-storage
               persistentVolumeClaim:
-                claimName: iso-pvc
+                claimName: iso-pvc-rwx

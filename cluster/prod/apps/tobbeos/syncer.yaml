@@ -8,23 +8,16 @@ spec:
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
-      # Kill a run that's stuck (e.g. Pending because the pod it must co-locate
-      # with is down) so it can't block every later run under Forbid.
+      # tobbeos-pvc-rwx is CephFS (RWX): this no longer needs to co-locate
+      # with the tobbeos Deployment's pod, so a stuck node can't block it.
       activeDeadlineSeconds: 1200
       template:
         spec:
           restartPolicy: OnFailure
-          affinity:
-            podAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
-                    matchLabels:
-                      app: tobbeos
-                  topologyKey: kubernetes.io/hostname
           volumes:
             - name: tobbeos
               persistentVolumeClaim:
-                claimName: tobbeos-pvc
+                claimName: tobbeos-pvc-rwx
           containers:
             - name: git-sync
               image: alpine/git:v2.54.0
