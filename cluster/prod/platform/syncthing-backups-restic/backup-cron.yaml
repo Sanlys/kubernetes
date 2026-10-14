@@ -8,15 +8,14 @@ spec:
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
+      # syncthing-pvc-rwx is CephFS (RWX): this no longer needs to co-locate
+      # with the syncthing Deployment's pod, so a stuck node can't block it.
+      # This CronJob had no activeDeadlineSeconds at all before, so a stuck
+      # Pending run would've blocked every subsequent 15-minute run forever
+      # under Forbid - 1800s (2x the schedule interval) as a safety net.
+      activeDeadlineSeconds: 1800
       template:
         spec:
-          affinity:
-            podAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-              - labelSelector:
-                  matchLabels:
-                    app: syncthing
-                topologyKey: kubernetes.io/hostname
           containers:
           - name: restic
             image: restic/restic:0.19.1@sha256:136600b6ff6843d61d355f7f71f460a166429f35de6fd11b568fece3c9a4d510
@@ -39,7 +38,7 @@ spec:
           volumes:
           - name: syncthing-data
             persistentVolumeClaim:
-              claimName: syncthing-pvc
+              claimName: syncthing-pvc-rwx
           - name: cache
             persistentVolumeClaim:
               claimName: restic-cache
