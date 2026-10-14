@@ -136,7 +136,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: iso-sync
-              image: curlimages/curl:8.22.0
+              image: curlimages/curl:8.23.0
               securityContext:
                 runAsUser: 0
                 runAsGroup: 0
