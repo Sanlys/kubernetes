@@ -9,24 +9,17 @@ spec:
   successfulJobsHistoryLimit: 0
   jobTemplate:
     spec:
-      # Kill a run that's stuck (e.g. Pending because the pod it must co-locate
-      # with is down) so it can't block every later run under Forbid.
+      # archmirror-pvc-rwx is CephFS (RWX): this no longer needs to co-locate
+      # with the mirror Deployment's pod, so a stuck node can't block it.
       # rsync resumes where it left off, so cutting a long run short is safe.
       activeDeadlineSeconds: 18000
       template:
         spec:
           restartPolicy: OnFailure
-          affinity:
-            podAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
-                    matchLabels:
-                      app: mirror
-                  topologyKey: kubernetes.io/hostname
           volumes:
             - name: archmirror
               persistentVolumeClaim:
-                claimName: archmirror-pvc
+                claimName: archmirror-pvc-rwx
             - name: mirror-script
               configMap:
                 name: mirror-script

@@ -8,8 +8,6 @@ spec:
   replicas: 1
   selector:
     matchLabels: { app: mirror }
-  # Recreate, not RollingUpdate: the RWO PVC can only attach to one node, so a
-  # surge pod landing elsewhere hits Multi-Attach and the rollout hangs.
   strategy:
     type: Recreate
   template:
@@ -42,7 +40,7 @@ spec:
       volumes:
         - name: archmirror
           persistentVolumeClaim:
-            claimName: archmirror-pvc
+            claimName: archmirror-pvc-rwx
         - name: nginx-conf
           configMap:
             name: mirror-nginx
