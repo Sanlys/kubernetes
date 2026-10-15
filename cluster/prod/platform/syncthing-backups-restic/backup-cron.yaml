@@ -10,10 +10,17 @@ spec:
     spec:
       # syncthing-pvc-rwx is CephFS (RWX): this no longer needs to co-locate
       # with the syncthing Deployment's pod, so a stuck node can't block it.
-      # This CronJob had no activeDeadlineSeconds at all before, so a stuck
-      # Pending run would've blocked every subsequent 15-minute run forever
-      # under Forbid - 1800s (2x the schedule interval) as a safety net.
-      activeDeadlineSeconds: 1800
+      # That same RWX move is what introduced CephFS MDS capability
+      # contention with Syncthing's own long-lived session (it holds caps
+      # across nearly the whole tree from continuous live-sync activity) -
+      # under the old RWO/RBD setup there was no MDS/cap layer at all, so
+      # this didn't happen. Confirmed via live correlation during a run:
+      # OSDs and RGW show nothing during the stalls, local disk/network on
+      # the backup pod are idle too - the delay is cap-negotiation with
+      # Syncthing's session, not storage congestion. 1800s (2x the 15-min
+      # schedule) wasn't enough headroom for that; 3600s matches the
+      # longest observed successful run (52m) with margin.
+      activeDeadlineSeconds: 3600
       template:
         spec:
           containers:
