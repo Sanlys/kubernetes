@@ -26,6 +26,11 @@ spec:
             - /cache
             - --host
             - syncthing
+            # Temporary: every run has hit the 30-min deadline since the
+            # media-fs pg_num change, with no clear infra-side cause found
+            # by inspecting Ceph directly. --verbose=2 prints per-file
+            # progress so the next run's logs show exactly where time goes.
+            - --verbose=2
             envFrom:
             - secretRef:
                 name: restic-credentials
