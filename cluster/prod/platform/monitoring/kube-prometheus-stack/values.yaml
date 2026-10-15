@@ -105,6 +105,19 @@ prometheus:
               storage: 20Gi
 
 grafana:
+  # Without this the chart generates its own random admin-password Secret
+  # on every render. ArgoCD's Helm integration does client-side `helm
+  # template` (no --dry-run=server), so the chart's `lookup()` call that's
+  # meant to preserve an existing secret across upgrades always returns
+  # empty - meaning every sync (even unrelated ones, like a chart version
+  # bump) silently resets the login. grafana-admin-secret.enc.yaml holds a
+  # stable credential instead; applied out-of-band like this repo's other
+  # secret.enc.yaml files (see syncthing-backups-restic's directory.exclude
+  # for the pattern - this app has no git-path source to exclude it from).
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
   grafana.ini:
     security:
       allow_embedding: true
