@@ -17,10 +17,16 @@ spec:
       # this didn't happen. Confirmed via live correlation during a run:
       # OSDs and RGW show nothing during the stalls, local disk/network on
       # the backup pod are idle too - the delay is cap-negotiation with
-      # Syncthing's session, not storage congestion. 1800s (2x the 15-min
-      # schedule) wasn't enough headroom for that; 3600s matches the
-      # longest observed successful run (52m) with margin.
-      activeDeadlineSeconds: 3600
+      # Syncthing's session, not storage congestion.
+      #
+      # No activeDeadlineSeconds: both 1800s and 3600s got killed mid-run
+      # without finishing. The contention is bursty, not a hang - every
+      # observed run kept making forward progress, just unevenly - so
+      # instead of guessing at a bigger number, let it run unbounded and
+      # see where it actually lands. This does reopen the original risk a
+      # deadline was meant to prevent: a genuinely stuck Pending run would
+      # block every future scheduled run forever under concurrencyPolicy:
+      # Forbid, since nothing would kill it.
       template:
         spec:
           containers:
