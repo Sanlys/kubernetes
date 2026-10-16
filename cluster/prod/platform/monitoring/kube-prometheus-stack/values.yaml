@@ -85,6 +85,11 @@ prometheus:
         hosts:
           - prometheus.k8s.lysakermoen.com
   prometheusSpec:
+    # Chart default is 10d. 17.06Gi used at 10d scales to ~53Gi of raw data
+    # at 31d (retention time is the only input to TSDB size here - no
+    # retentionSize cap); sized storage below for headroom on that, not on
+    # the original 20Gi.
+    retention: 31d
     # Query API spans. Sampling is parent-based, so only requests that arrive
     # with a sampled trace (through Traefik) are recorded.
     tracingConfig:
@@ -102,11 +107,12 @@ prometheus:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              # 20Gi was running at ~87% with only time-based (10d) retention
-              # and no size cap - as more gets monitored the same window just
-              # keeps eating more bytes, so a small bump just hits the same
-              # wall again soon. Ceph has room to spare; size for headroom.
-              storage: 50Gi
+              # 20Gi was running at ~87% with only 10d retention and no size
+              # cap - as more gets monitored the same window just keeps
+              # eating more bytes, so a small bump just hits the same wall
+              # again soon. Ceph has room to spare; size for real headroom
+              # on the ~53Gi expected at the new 31d retention above.
+              storage: 100Gi
 
 grafana:
   # Without this the chart generates its own random admin-password Secret
