@@ -237,7 +237,18 @@ func run(cfgFile, cacheRoot, listen string, log *slog.Logger) error {
 // containing them) on a tmpfs.
 func (g *gateway) buildTree() error {
 	_ = unix.Unmount(treeRoot, unix.MNT_DETACH)
-	if err := unix.Mount("tmpfs", treeRoot, "tmpfs", unix.MS_NOSUID|unix.MS_NODEV, "mode=0755,size=1m"); err != nil {
+	// size is a cap, not a reservation - tmpfs only backs the pages it
+	// actually uses, and nothing real is ever written directly under
+	// treeRoot, only empty directories. But this is also the statvfs() a
+	// client sees as the SHARE'S OWN capacity whenever it queries free
+	// space at a share's root - which for any share rooted here (e.g.
+	// "files", spanning every mount) is treeRoot itself, not whichever
+	// real mount a given file lives under. A client that pre-checks free
+	// space before copying (macOS's Finder does) sees ~1m free and
+	// refuses large files outright, even though the actual destination
+	// mount has plenty of room - confirmed: a plain `cp` through the same
+	// kernel SMB mount, which does no such preflight check, succeeds.
+	if err := unix.Mount("tmpfs", treeRoot, "tmpfs", unix.MS_NOSUID|unix.MS_NODEV, "mode=0755,size=10t"); err != nil {
 		return fmt.Errorf("mounting tree tmpfs: %w", err)
 	}
 	for _, m := range g.cfg.Mounts {
