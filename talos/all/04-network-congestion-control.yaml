@@ -1,0 +1,15 @@
+# The default qdisc (pfifo_fast) is a plain priority FIFO with no active
+# queue management: it queues until full, then tail-drops. Under a
+# saturated link that forces TCP's loss-based congestion control (cubic)
+# into a sawtooth - ramp up until something drops, collapse, ramp back up -
+# rather than settling smoothly at the available rate. fq_codel targets
+# queuing delay directly (bufferbloat) instead of just queue length, and
+# fair-queues per flow so one bulk transfer can't starve another on the
+# same link. bbr models bandwidth/RTT instead of needing a loss event to
+# find the right rate, smoothing the ramp on the sending side. Confirmed
+# bbr is already available in this kernel (tcp_available_congestion_control
+# includes it) before adding this.
+machine:
+  sysctls:
+    net.core.default_qdisc: fq_codel
+    net.ipv4.tcp_congestion_control: bbr
