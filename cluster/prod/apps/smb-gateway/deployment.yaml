@@ -32,7 +32,7 @@ spec:
           # this yourself, then point this at the real digest:
           #   docker build -t harbor.k8s.lysakermoen.com/library/smb-gateway:v0.1.0 services/smb-gateway
           #   docker push harbor.k8s.lysakermoen.com/library/smb-gateway:v0.1.0
-          image: harbor.k8s.lysakermoen.com/library/smb-gateway:v0.1.5
+          image: harbor.k8s.lysakermoen.com/library/smb-gateway:v0.1.6
           imagePullPolicy: IfNotPresent
           args: ["run"]
           # mount(2) for the loopback NFS mounts, /dev/fuse for FUSE.

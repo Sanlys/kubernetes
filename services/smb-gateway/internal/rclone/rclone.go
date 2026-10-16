@@ -72,8 +72,23 @@ func WriteConfig(c *config.Config, file string) error {
 			// Syncthing's sftp sidecar is an sftp-only chroot: no shell to
 			// run md5sum in, so don't probe for one on every connection.
 			b.WriteString("shell_type = none\ndisable_hashcheck = true\nset_modtime = true\n")
-			// Fewer round trips per read/write; OpenSSH accepts this size.
-			b.WriteString("chunk_size = 255Ki\nconcurrency = 64\n")
+			// chunk_size must stay at rclone's own default (32Ki, the SFTP
+			// protocol's guaranteed packet-payload size). Raising it looks
+			// safe - the handshake accepts a bigger value, uploads work,
+			// and nothing logs an error - but reads of any file bigger than
+			// chunk_size come back silently wrong: same length, corrupted
+			// content, because real-world sftp servers (OpenSSH's included)
+			// cap how much they actually send per packet below what they
+			// advertise accepting. rclone's own serve-nfs/mount layer never
+			// runs the post-transfer size check that `rclone copy` does, so
+			// nothing surfaces the corruption - it just gets served over
+			// SMB. Confirmed directly against this cluster's syncthing-sftp
+			// (`rclone copyto` with chunk_size=255Ki: corrupted; with the
+			// default 32Ki: byte-identical). See rclone/rclone#6404 and
+			// rclone/rclone#6416 upstream - acknowledged, never code-fixed,
+			// only documented as unsafe. Do not raise this again without
+			// re-verifying against a real read of a multi-chunk file.
+			b.WriteString("chunk_size = 32Ki\nconcurrency = 64\n")
 			b.WriteString("known_hosts_file =\n\n")
 		}
 	}
