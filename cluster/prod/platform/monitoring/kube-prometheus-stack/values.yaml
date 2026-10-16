@@ -102,7 +102,11 @@ prometheus:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 20Gi
+              # 20Gi was running at ~87% with only time-based (10d) retention
+              # and no size cap - as more gets monitored the same window just
+              # keeps eating more bytes, so a small bump just hits the same
+              # wall again soon. Ceph has room to spare; size for headroom.
+              storage: 50Gi
 
 grafana:
   # Without this the chart generates its own random admin-password Secret
