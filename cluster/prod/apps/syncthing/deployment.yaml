@@ -58,11 +58,15 @@ spec:
             - name: data
               mountPath: /home/user/upload
           resources:
+            # 256Mi OOMKilled repeatedly under smb-gateway's syncthing mount
+            # (concurrency = 64 SFTP connections) - confirmed via matching
+            # OOMKilled timestamps against the gateway's "connection lost"
+            # copy failures. Each kill drops every in-flight transfer.
             requests:
               cpu: 50m
-              memory: 256Mi
+              memory: 1Gi
             limits:
-              memory: 256Mi
+              memory: 1Gi
 
         - name: rclone-sync
           image: rclone/rclone:1.75
