@@ -20,7 +20,18 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
+  # Gateway API's ParentReference group+kind default server-side when
+  # omitted; our manifest omits them, so this is a permanent phantom diff,
+  # not real drift - same issue as traefik-internal's own Gateway/HTTPRoute.
+  ignoreDifferences:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: alloy
+      jsonPointers:
+        - /spec/parentRefs/0/group
+        - /spec/parentRefs/0/kind
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     syncOptions:
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
