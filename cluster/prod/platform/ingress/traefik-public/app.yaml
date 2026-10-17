@@ -99,12 +99,15 @@ spec:
                 from: All
               certificateRefs:
                 - name: public-wildcard-tls
-        # Dashboard reachable only via the INTERNAL gateway (see the
-        # Service/HTTPRoute in extraObjects below) - never via this
-        # instance's own public Gateway/Service, which is on the internet.
+        # This IngressRoute only binds to the "traefik" entrypoint (8080),
+        # which ports.traefik.expose.default (left false, see below) keeps
+        # out of the public LoadBalancer Service entirely - enabling it here
+        # doesn't expose anything externally, it just gives the Service/
+        # HTTPRoute below (which proxy into that same port) something to
+        # actually reach.
         ingressRoute:
           dashboard:
-            enabled: false
+            enabled: true
         extraObjects:
           # ports.traefik.expose.default would add 8080 to the same
           # LoadBalancer Service already sitting on the public IP - this
