@@ -99,6 +99,21 @@ spec:
                 from: All
               certificateRefs:
                 - name: public-wildcard-tls
+            # harbor.k8s.lysakermoen.com doesn't match *.lysakermoen.com
+            # (two labels before the base domain) but needs to stay on the
+            # public IP regardless - same port, different hostname is a
+            # valid Gateway API listener combination. Reuses the internal
+            # wildcard cert via the ReferenceGrant below rather than issuing
+            # a second cert for the exact same domain.
+            harbor:
+              port: 8443
+              protocol: HTTPS
+              hostname: "harbor.k8s.lysakermoen.com"
+              namespacePolicy:
+                from: All
+              certificateRefs:
+                - name: k8s-wildcard-tls
+                  namespace: traefik
         # This IngressRoute only binds to the "traefik" entrypoint (8080),
         # which ports.traefik.expose.default (left false, see below) keeps
         # out of the public LoadBalancer Service entirely - enabling it here
@@ -109,6 +124,23 @@ spec:
           dashboard:
             enabled: true
         extraObjects:
+          # Lets the "harbor" listener above reference a Secret living in
+          # the traefik namespace instead of this release's own namespace -
+          # ReferenceGrant must live in the namespace being referenced.
+          - apiVersion: gateway.networking.k8s.io/v1beta1
+            kind: ReferenceGrant
+            metadata:
+              name: traefik-public-harbor-listener
+              namespace: traefik
+            spec:
+              from:
+                - group: gateway.networking.k8s.io
+                  kind: Gateway
+                  namespace: traefik-public
+              to:
+                - group: ""
+                  kind: Secret
+                  name: k8s-wildcard-tls
           # ports.traefik.expose.default would add 8080 to the same
           # LoadBalancer Service already sitting on the public IP - this
           # dedicated ClusterIP Service keeps the dashboard off that path
@@ -172,6 +204,8 @@ spec:
       jsonPointers:
         - /spec/listeners/1/tls/certificateRefs/0/group
         - /spec/listeners/1/tls/certificateRefs/0/kind
+        - /spec/listeners/2/tls/certificateRefs/0/group
+        - /spec/listeners/2/tls/certificateRefs/0/kind
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: traefik-public-dashboard
