@@ -62,9 +62,8 @@ spec:
                 readTimeout: 0
         service:
           type: LoadBalancer
-          # No fixed IP yet on purpose - this is the verification instance,
-          # reachable only via --resolve/manual testing until the cutover
-          # commit gives it 10.0.6.241 (taken from ingress-nginx-public).
+          spec:
+            loadBalancerIP: 10.0.6.241
         metrics:
           prometheus:
             serviceMonitor:
@@ -116,10 +115,18 @@ spec:
               issuerRef:
                 kind: ClusterIssuer
                 name: letsencrypt-public
-          # The "public" IngressClass is NOT taken over here yet - it's
-          # still owned by ingress-nginx-public's own chart. It moves over
-          # (same Prune=false pattern traefik-internal used) in the cutover
-          # commit, at the same time this Service gets the real 10.0.6.241.
+          # Taken over from ingress-nginx-public with an identical spec
+          # (spec.controller is immutable). Prune=false keeps it alive while
+          # it moves between the two apps in either direction - same pattern
+          # traefik-internal used for the "internal" class.
+          - apiVersion: networking.k8s.io/v1
+            kind: IngressClass
+            metadata:
+              name: public
+              annotations:
+                argocd.argoproj.io/sync-options: Prune=false
+            spec:
+              controller: k8s.io/ingress-nginx-public
   destination:
     server: https://kubernetes.default.svc
     namespace: traefik-public

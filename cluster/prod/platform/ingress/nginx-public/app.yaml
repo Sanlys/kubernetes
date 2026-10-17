@@ -12,14 +12,15 @@ spec:
     helm:
       values: |
         controller:
-          ingressClass: public
+          # Legacy: kept running for rollback while Traefik serves "public"
+          watchIngressWithoutClass: false
+          ingressClass: legacy-public
           ingressClassResource:
-            name: public
-            controllerValue: k8s.io/ingress-nginx-public
+            name: legacy-public
+            controllerValue: k8s.io/ingress-nginx-legacy-public
             default: false
           service:
             type: LoadBalancer
-            loadBalancerIP: 10.0.6.241
           metrics:
             enabled: true
             serviceMonitor:
