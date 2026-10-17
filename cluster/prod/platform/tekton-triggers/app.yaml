@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tekton-triggers
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    # Vendored for the same reason as tekton-pipelines - already-resolved
+    # official release (v0.34.0, release.yaml + interceptors.yaml, both
+    # required together per upstream docs) for the exact version already
+    # running, adopted as-is.
+    repoURL: https://github.com/Sanlys/kubernetes.git
+    targetRevision: main
+    path: cluster/prod/platform/tekton-triggers
+    directory:
+      exclude: "app.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tekton-pipelines
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true, SkipDryRunOnMissingResource=true]
+    retry:
+      limit: 5
+      backoff: { duration: 15s, factor: 2, maxDuration: 3m }

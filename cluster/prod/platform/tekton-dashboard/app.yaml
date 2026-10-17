@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tekton-dashboard
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    # Vendored for the same reason as tekton-pipelines/tekton-triggers -
+    # already-resolved official release (v0.63.1, release-full.yaml - the
+    # read-write variant, matching the live Deployment's --read-only=false)
+    # for the exact version already running, adopted as-is. httproute.yaml
+    # replaces the old hand-added, untracked Ingress.
+    repoURL: https://github.com/Sanlys/kubernetes.git
+    targetRevision: main
+    path: cluster/prod/platform/tekton-dashboard
+    directory:
+      exclude: "app.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tekton-pipelines
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true, SkipDryRunOnMissingResource=true]
+    retry:
+      limit: 5
+      backoff: { duration: 15s, factor: 2, maxDuration: 3m }

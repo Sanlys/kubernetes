@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tekton-pipelines
+  namespace: argocd
+  annotations:
+    # Pipelines' CRDs must exist before Triggers/Dashboard reference them.
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  source:
+    # Vendored, not pointed at tektoncd/pipeline.git directly - that repo's
+    # raw manifests use ko:// image placeholders only resolved by Tekton's
+    # own release build; this is the already-resolved official release.yaml
+    # for the exact version already running (v1.6.0), adopted as-is.
+    repoURL: https://github.com/Sanlys/kubernetes.git
+    targetRevision: main
+    path: cluster/prod/platform/tekton-pipelines
+    directory:
+      exclude: "app.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tekton-pipelines
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    # CRDs and the CRs/webhooks that depend on them ship in the same file.
+    syncOptions: [CreateNamespace=true, SkipDryRunOnMissingResource=true]
+    retry:
+      limit: 5
+      backoff: { duration: 15s, factor: 2, maxDuration: 3m }
