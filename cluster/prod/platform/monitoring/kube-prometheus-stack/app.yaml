@@ -30,12 +30,20 @@ spec:
       jsonPointers:
         - /spec/parentRefs/0/group
         - /spec/parentRefs/0/kind
+        - /spec/rules/0/backendRefs/0/group
+        - /spec/rules/0/backendRefs/0/kind
+        - /spec/rules/0/backendRefs/0/weight
+        - /spec/rules/0/matches
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: alertmanager
       jsonPointers:
         - /spec/parentRefs/0/group
         - /spec/parentRefs/0/kind
+        - /spec/rules/0/backendRefs/0/group
+        - /spec/rules/0/backendRefs/0/kind
+        - /spec/rules/0/backendRefs/0/weight
+        - /spec/rules/0/matches
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     syncOptions:
