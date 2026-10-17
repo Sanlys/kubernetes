@@ -32,7 +32,7 @@ spec:
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     # CRDs and the CRs/webhooks that depend on them ship in the same file.
-    syncOptions: [CreateNamespace=true, SkipDryRunOnMissingResource=true]
+    syncOptions: [CreateNamespace=true, SkipDryRunOnMissingResource=true, ServerSideApply=true]
     retry:
       limit: 5
       backoff: { duration: 15s, factor: 2, maxDuration: 3m }
