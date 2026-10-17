@@ -1,17 +1,6 @@
 alertmanager:
   ingress:
-    enabled: true
-    ingressClassName: internal
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-internal
-    hosts:
-      - alertmanager.k8s.lysakermoen.com
-    paths:
-      - /
-    tls:
-      - secretName: alertmanager-k8s-lysakermoen-com
-        hosts:
-          - alertmanager.k8s.lysakermoen.com
+    enabled: false
   config:
     global:
       resolve_timeout: 5m
@@ -72,18 +61,7 @@ kubeEtcd:
 
 prometheus:
   ingress:
-    enabled: true
-    ingressClassName: internal
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-internal
-    hosts:
-      - prometheus.k8s.lysakermoen.com
-    paths:
-      - /
-    tls:
-      - secretName: prometheus-k8s-lysakermoen-com
-        hosts:
-          - prometheus.k8s.lysakermoen.com
+    enabled: false
   prometheusSpec:
     # Chart default is 10d. 17.06Gi used at 10d scales to ~53Gi of raw data
     # at 31d (retention time is the only input to TSDB size here - no
@@ -164,3 +142,35 @@ grafana:
 
 kubeProxy:
   enabled: false
+
+extraManifests:
+  - apiVersion: gateway.networking.k8s.io/v1
+    kind: HTTPRoute
+    metadata:
+      name: prometheus
+      namespace: monitoring
+    spec:
+      parentRefs:
+        - name: traefik-gateway
+          namespace: traefik
+          sectionName: websecure
+      hostnames: ["prometheus.k8s.lysakermoen.com"]
+      rules:
+        - backendRefs:
+            - name: monitoring-kube-prometheus-prometheus
+              port: 9090
+  - apiVersion: gateway.networking.k8s.io/v1
+    kind: HTTPRoute
+    metadata:
+      name: alertmanager
+      namespace: monitoring
+    spec:
+      parentRefs:
+        - name: traefik-gateway
+          namespace: traefik
+          sectionName: websecure
+      hostnames: ["alertmanager.k8s.lysakermoen.com"]
+      rules:
+        - backendRefs:
+            - name: monitoring-kube-prometheus-alertmanager
+              port: 9093

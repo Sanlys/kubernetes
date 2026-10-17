@@ -121,17 +121,10 @@ spec:
                     memory: "1Gi"
                 instances: 2
                 priorityClassName: system-cluster-critical
-        ingress:
-          dashboard:
-            ingressClassName: internal
-            annotations:
-              cert-manager.io/cluster-issuer: letsencrypt-internal
-            host:
-              name: ceph.k8s.lysakermoen.com
-            tls:
-              - hosts:
-                - ceph.k8s.lysakermoen.com
-                secretName: ceph-k8s-lysakermoen-com
+        # HTTPRoute for the dashboard lives in rook-ceph-rgw-ingress's
+        # directory instead - this chart has no extraObjects/extraManifests
+        # equivalent to inject one directly.
+        ingress: {}
 
   destination:
     server: https://kubernetes.default.svc

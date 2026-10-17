@@ -56,15 +56,20 @@ alloy:
       }
 
 ingress:
-  enabled: true
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-internal
-  ingressClassName: internal
-  # The chart defaults to the Faro receiver port (12347), which the Service doesn't expose; point at the UI instead
-  faroPort: 12345
-  hosts:
-   - alloy.k8s.lysakermoen.com
-  tls:
-    - secretName: alloy-internal-tls
-      hosts:
-        - alloy.k8s.lysakermoen.com
+  enabled: false
+
+extraObjects:
+  - apiVersion: gateway.networking.k8s.io/v1
+    kind: HTTPRoute
+    metadata:
+      name: alloy
+    spec:
+      parentRefs:
+        - name: traefik-gateway
+          namespace: traefik
+          sectionName: websecure
+      hostnames: ["alloy.k8s.lysakermoen.com"]
+      rules:
+        - backendRefs:
+            - name: alloy
+              port: 12345
