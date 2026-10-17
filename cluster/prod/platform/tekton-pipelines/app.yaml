@@ -24,11 +24,22 @@ spec:
   # Unlike most kinds, ArgoCD doesn't auto-strip status on CustomResource-
   # Definition - acceptedNames/conditions/storedVersions are server-managed
   # and show as permanent phantom diffs otherwise.
+  #
+  # The 6 CRDs with a v1beta1<->v1 conversion webhook (pipelines,
+  # pipelineruns, tasks, taskruns, customruns, stepactions) also need their
+  # conversion.webhook.clientConfig ignored: tekton-pipelines-webhook (its
+  # own controller, Knative-derived) actively patches caBundle/service.path/
+  # service.port on these at runtime, independent of the static release.yaml
+  # - fighting Argo's selfHeal over it would just be a permanent reconcile
+  # war, possibly flapping caBundle empty mid-fight.
   ignoreDifferences:
     - group: apiextensions.k8s.io
       kind: CustomResourceDefinition
       jsonPointers:
         - /status
+        - /spec/conversion/webhook/clientConfig/caBundle
+        - /spec/conversion/webhook/clientConfig/service/path
+        - /spec/conversion/webhook/clientConfig/service/port
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     # CRDs and the CRs/webhooks that depend on them ship in the same file.
