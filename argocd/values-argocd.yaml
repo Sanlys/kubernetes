@@ -20,13 +20,31 @@ repoServer:
 server:
   replicas: 2
   ingress:
+    enabled: false
+  # Server multiplexes REST and real gRPC (the native argocd CLI, unless
+  # told --grpc-web) on one port - httproute alone isn't enough for the
+  # CLI, so both are enabled against the same gateway/hostname. Chart
+  # marks Gateway API support here EXPERIMENTAL.
+  httproute:
     enabled: true
-    ingressClassName: internal
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-internal
-    extraTls:
-      - hosts:
-        - argocd.k8s.lysakermoen.com
-        secretName: argocd-k8s-lysakermoen-com
+    parentRefs:
+      - name: traefik-gateway
+        namespace: traefik
+        sectionName: websecure
+    hostnames:
+      - argocd.k8s.lysakermoen.com
+  grpcroute:
+    enabled: true
+    parentRefs:
+      - name: traefik-gateway
+        namespace: traefik
+        sectionName: websecure
+    hostnames:
+      - argocd.k8s.lysakermoen.com
+    # Chart's own default rule (method.type: Exact with no service/method
+    # name) looks like an invalid GRPCRouteMethodMatch - this is a plain
+    # catch-all instead, same as every HTTPRoute elsewhere in this repo.
+    rules:
+      - {}
 redis:
   enabled: true
