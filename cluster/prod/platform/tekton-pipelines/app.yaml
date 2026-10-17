@@ -40,6 +40,13 @@ spec:
         - /spec/conversion/webhook/clientConfig/caBundle
         - /spec/conversion/webhook/clientConfig/service/path
         - /spec/conversion/webhook/clientConfig/service/port
+        # names.listKind defaults to kind+"List" server-side when the
+        # manifest omits it (this one does); preserveUnknownFields is a
+        # deprecated top-level field the apiserver stops echoing back once
+        # a CRD uses schema-level x-kubernetes-preserve-unknown-fields -
+        # both permanent phantom diffs, not real drift.
+        - /spec/names/listKind
+        - /spec/preserveUnknownFields
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     # CRDs and the CRs/webhooks that depend on them ship in the same file.

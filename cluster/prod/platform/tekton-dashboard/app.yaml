@@ -26,6 +26,27 @@ spec:
       kind: CustomResourceDefinition
       jsonPointers:
         - /status
+        # Same server-defaulting phantom diffs as tekton-pipelines' CRDs:
+        # names.listKind/singular default from kind when omitted,
+        # conversion defaults to {strategy: None} when omitted,
+        # preserveUnknownFields stops being echoed back once a CRD uses
+        # schema-level x-kubernetes-preserve-unknown-fields.
+        - /spec/names/listKind
+        - /spec/names/singular
+        - /spec/conversion
+        - /spec/preserveUnknownFields
+    # Same Gateway API ParentReference/BackendRef defaulting as every other
+    # hand-written HTTPRoute today - only shows up once ServerSideApply is on.
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: tekton-dashboard
+      jsonPointers:
+        - /spec/parentRefs/0/group
+        - /spec/parentRefs/0/kind
+        - /spec/rules/0/backendRefs/0/group
+        - /spec/rules/0/backendRefs/0/kind
+        - /spec/rules/0/backendRefs/0/weight
+        - /spec/rules/0/matches
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     syncOptions: [CreateNamespace=true, SkipDryRunOnMissingResource=true, ServerSideApply=true]
