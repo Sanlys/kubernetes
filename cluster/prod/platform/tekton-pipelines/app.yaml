@@ -21,6 +21,14 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: tekton-pipelines
+  # Unlike most kinds, ArgoCD doesn't auto-strip status on CustomResource-
+  # Definition - acceptedNames/conditions/storedVersions are server-managed
+  # and show as permanent phantom diffs otherwise.
+  ignoreDifferences:
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      jsonPointers:
+        - /status
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     # CRDs and the CRs/webhooks that depend on them ship in the same file.

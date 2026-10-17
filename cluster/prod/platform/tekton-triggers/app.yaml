@@ -20,6 +20,13 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: tekton-pipelines
+  # Same CRD-status phantom diff as tekton-pipelines - preemptive here even
+  # though it hasn't shown up yet.
+  ignoreDifferences:
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      jsonPointers:
+        - /status
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     syncOptions: [CreateNamespace=true, SkipDryRunOnMissingResource=true]
