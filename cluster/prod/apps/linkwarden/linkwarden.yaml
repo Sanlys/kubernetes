@@ -318,28 +318,18 @@ spec:
           persistentVolumeClaim:
             claimName: linkwarden-data
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: linkwarden
   namespace: linkwarden
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-public
-    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
 spec:
-  ingressClassName: public
-  tls:
-    - hosts:
-        - linkwarden.lysakermoen.com
-      secretName: linkwarden-tls
+  parentRefs:
+    - name: traefik-public-gateway
+      namespace: traefik-public
+      sectionName: websecure
+  hostnames: ["linkwarden.lysakermoen.com"]
   rules:
-    - host: linkwarden.lysakermoen.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: linkwarden
-                port:
-                  number: 3000
+    - backendRefs:
+        - name: linkwarden
+          port: 3000

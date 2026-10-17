@@ -1,56 +1,41 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: tobbeos-public
   namespace: tobbeos
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-public
 spec:
-  ingressClassName: public
-  tls:
-    - hosts: [ "tobbeos.lysakermoen.com" ]
-      secretName: tobbeos-public-tls
+  parentRefs:
+    - name: traefik-public-gateway
+      namespace: traefik-public
+      sectionName: websecure
+  hostnames: ["tobbeos.lysakermoen.com"]
   rules:
-    - host: tobbeos.lysakermoen.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: tobbeos
-                port:
-                  number: 80
-          - path: /iso
-            pathType: Prefix
-            backend:
-              service:
-                name: iso-nginx
-                port:
-                  number: 80
+    # More specific path first - Gateway API implementations should pick
+    # the longest-prefix match regardless of order, but listing it first
+    # keeps this readable without relying on that.
+    - matches:
+        - path: { type: PathPrefix, value: /iso }
+      backendRefs:
+        - name: iso-nginx
+          port: 80
+    - backendRefs:
+        - name: tobbeos
+          port: 80
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: tos-redirect
   namespace: tobbeos
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-public
-    nginx.ingress.kubernetes.io/permanent-redirect: "https://tobbeos.lysakermoen.com"
 spec:
-  ingressClassName: public
-  tls:
-    - hosts:
-        - tos.lysakermoen.com
-      secretName: tos-tls
+  parentRefs:
+    - name: traefik-public-gateway
+      namespace: traefik-public
+      sectionName: websecure
+  hostnames: ["tos.lysakermoen.com"]
   rules:
-    - host: tos.lysakermoen.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service: # Not relevant, will never be reached
-                name: iso-nginx
-                port:
-                  number: 80
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            hostname: tobbeos.lysakermoen.com
+            statusCode: 301
