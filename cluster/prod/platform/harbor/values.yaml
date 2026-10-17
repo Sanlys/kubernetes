@@ -5,6 +5,13 @@ expose:
   # stay reachable on the public IP), so it gets its own listener on
   # traefik-public's Gateway instead - see that Gateway's "harbor" listener.
   type: route
+  # Chart default (enabled: true, certSource: auto) generates a CA-download
+  # volume whose templating breaks when combined with expose.type: route -
+  # "may not specify more than 1 volume type" on harbor-core's Deployment.
+  # Moot anyway: Traefik's Gateway listener terminates TLS now, so Harbor
+  # itself never needs to know about a cert.
+  tls:
+    enabled: false
   route:
     hosts:
       - harbor.k8s.lysakermoen.com
@@ -14,7 +21,6 @@ expose:
         sectionName: harbor
         group: gateway.networking.k8s.io
         kind: Gateway
-      #  secretName: notary-tls
 
 externalURL: https://harbor.k8s.lysakermoen.com
 
