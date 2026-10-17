@@ -99,12 +99,44 @@ spec:
                 from: All
               certificateRefs:
                 - name: public-wildcard-tls
-        # No dashboard HTTPRoute here - unlike traefik-internal's, this one
-        # would be reachable from the internet.
+        # Dashboard reachable only via the INTERNAL gateway (see the
+        # Service/HTTPRoute in extraObjects below) - never via this
+        # instance's own public Gateway/Service, which is on the internet.
         ingressRoute:
           dashboard:
             enabled: false
         extraObjects:
+          # ports.traefik.expose.default would add 8080 to the same
+          # LoadBalancer Service already sitting on the public IP - this
+          # dedicated ClusterIP Service keeps the dashboard off that path
+          # entirely, only reachable via the HTTPRoute below.
+          - apiVersion: v1
+            kind: Service
+            metadata:
+              name: traefik-public-dashboard
+            spec:
+              type: ClusterIP
+              selector:
+                app.kubernetes.io/name: traefik
+                app.kubernetes.io/instance: traefik-public-traefik-public
+              ports:
+                - name: traefik
+                  port: 8080
+                  targetPort: traefik
+          - apiVersion: gateway.networking.k8s.io/v1
+            kind: HTTPRoute
+            metadata:
+              name: traefik-public-dashboard
+            spec:
+              parentRefs:
+                - name: traefik-gateway
+                  namespace: traefik
+                  sectionName: websecure
+              hostnames: ["traefik-public.k8s.lysakermoen.com"]
+              rules:
+                - backendRefs:
+                    - name: traefik-public-dashboard
+                      port: 8080
           - apiVersion: cert-manager.io/v1
             kind: Certificate
             metadata:
@@ -137,6 +169,16 @@ spec:
       jsonPointers:
         - /spec/listeners/1/tls/certificateRefs/0/group
         - /spec/listeners/1/tls/certificateRefs/0/kind
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: traefik-public-dashboard
+      jsonPointers:
+        - /spec/parentRefs/0/group
+        - /spec/parentRefs/0/kind
+        - /spec/rules/0/backendRefs/0/group
+        - /spec/rules/0/backendRefs/0/kind
+        - /spec/rules/0/backendRefs/0/weight
+        - /spec/rules/0/matches
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     syncOptions: [CreateNamespace=true, ServerSideApply=true, SkipDryRunOnMissingResource=true]
