@@ -1,0 +1,138 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik-public
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://traefik.github.io/charts
+    chart: traefik
+    targetRevision: 42.0.0
+    helm:
+      values: |
+        deployment:
+          replicas: 2
+        podDisruptionBudget:
+          enabled: true
+          maxUnavailable: 1
+        ingressClass:
+          enabled: false
+        providers:
+          kubernetesIngress:
+            enabled: false
+          kubernetesCRD:
+            enabled: true
+          kubernetesGateway:
+            enabled: true
+            # Scoped to its own Gateway only - see the matching comment on
+            # traefik-internal's app.yaml for why this matters with two
+            # Traefik instances in the cluster.
+            gateways:
+              - name: traefik-public-gateway
+                namespace: traefik-public
+          # NGINX compatibility: serves the existing public Ingresses and
+          # their nginx.ingress.kubernetes.io annotations unchanged. Still
+          # pointed at ingress-nginx-public's "public" class/controller -
+          # nginx-public keeps owning that IngressClass object and keeps
+          # serving real traffic on 10.0.6.241 until the actual cutover.
+          # This instance runs in parallel on a throwaway IP so everything
+          # can be verified before anything is switched over.
+          kubernetesIngressNGINX:
+            enabled: true
+            controllerClass: k8s.io/ingress-nginx-public
+            ingressClass: public
+            ingressClassByName: true
+            watchIngressWithoutClass: false
+            publishService:
+              enabled: true
+        ports:
+          web:
+            http:
+              redirections:
+                entryPoint:
+                  to: websecure
+                  scheme: https
+                  permanent: true
+          websecure:
+            transport:
+              respondingTimeouts:
+                # Same reasoning as traefik-internal: large S3/git/photo
+                # uploads shouldn't get cut off at Traefik v3's 60s default.
+                readTimeout: 0
+        service:
+          type: LoadBalancer
+          # No fixed IP yet on purpose - this is the verification instance,
+          # reachable only via --resolve/manual testing until the cutover
+          # commit gives it 10.0.6.241 (taken from ingress-nginx-public).
+        metrics:
+          prometheus:
+            serviceMonitor:
+              enabled: true
+        accessLog:
+          enabled: true
+          format: json
+        tracing:
+          otlp:
+            enabled: true
+            grpc:
+              enabled: true
+              endpoint: tempo.monitoring.svc.cluster.local:4317
+              insecure: true
+        # Chart GatewayClass "traefik-public" (distinct name from internal's
+        # "traefik" - each GatewayClass belongs to one controller instance,
+        # and the "gateways:" scoping above is what actually keeps the two
+        # instances from reconciling each other's Gateway regardless).
+        gatewayClass:
+          enabled: true
+          name: traefik-public
+        gateway:
+          name: traefik-public-gateway
+          listeners:
+            web:
+              port: 8000
+              protocol: HTTP
+            websecure:
+              port: 8443
+              protocol: HTTPS
+              hostname: "*.lysakermoen.com"
+              namespacePolicy:
+                from: All
+              certificateRefs:
+                - name: public-wildcard-tls
+        # No dashboard HTTPRoute here - unlike traefik-internal's, this one
+        # would be reachable from the internet.
+        ingressRoute:
+          dashboard:
+            enabled: false
+        extraObjects:
+          - apiVersion: cert-manager.io/v1
+            kind: Certificate
+            metadata:
+              name: public-wildcard
+            spec:
+              secretName: public-wildcard-tls
+              dnsNames: ["*.lysakermoen.com"]
+              issuerRef:
+                kind: ClusterIssuer
+                name: letsencrypt-public
+          # The "public" IngressClass is NOT taken over here yet - it's
+          # still owned by ingress-nginx-public's own chart. It moves over
+          # (same Prune=false pattern traefik-internal used) in the cutover
+          # commit, at the same time this Service gets the real 10.0.6.241.
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik-public
+  ignoreDifferences:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: traefik-public-gateway
+      jsonPointers:
+        - /spec/listeners/1/tls/certificateRefs/0/group
+        - /spec/listeners/1/tls/certificateRefs/0/kind
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true, ServerSideApply=true, SkipDryRunOnMissingResource=true]
+    retry:
+      limit: 5
+      backoff: { duration: 30s, factor: 2, maxDuration: 5m }

@@ -29,6 +29,13 @@ spec:
             enabled: true
             # Lets HTTPRoutes here point at Traefik's internal services (api@internal)
             crossProviderNamespaces: [traefik]
+            # Without this, this instance also reconciles traefik-public's
+            # Gateway (and vice versa) since both match controllerName
+            # traefik.io/gateway-controller by default - two instances would
+            # otherwise race to serve each other's routes.
+            gateways:
+              - name: traefik-gateway
+                namespace: traefik
           # NGINX compatibility: serves the existing Ingresses and their
           # nginx.ingress.kubernetes.io annotations unchanged
           kubernetesIngressNGINX:
