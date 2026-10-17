@@ -202,8 +202,10 @@ spec:
       kind: Gateway
       name: traefik-public-gateway
       jsonPointers:
-        - /spec/listeners/1/tls/certificateRefs/0/group
-        - /spec/listeners/1/tls/certificateRefs/0/kind
+        # Listener array order is alphabetical by name (harbor, web,
+        # websecure), not declaration order - harbor=0, websecure=2.
+        - /spec/listeners/0/tls/certificateRefs/0/group
+        - /spec/listeners/0/tls/certificateRefs/0/kind
         - /spec/listeners/2/tls/certificateRefs/0/group
         - /spec/listeners/2/tls/certificateRefs/0/kind
     - group: gateway.networking.k8s.io
