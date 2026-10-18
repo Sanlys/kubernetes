@@ -1,0 +1,23 @@
+# Ingress only from traefik-public (linkwarden.yaml's HTTPRoute only
+# attaches there, no internal route). Selecting this pod for ingress
+# switches it from default-allow to default-deny-except-listed - same
+# mechanism as s3-vfs-proxy/smb-gateway. meilisearch/postgres (same
+# namespace) aren't selected by any policy, so they stay reachable from
+# linkwarden unaffected.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-traefik-public-only
+  namespace: linkwarden
+spec:
+  endpointSelector:
+    matchLabels:
+      app: linkwarden
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: traefik-public
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP

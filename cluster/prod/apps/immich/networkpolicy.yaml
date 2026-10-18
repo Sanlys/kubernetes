@@ -1,0 +1,47 @@
+# immich-server: ingress only from traefik-public (ingress.yaml only
+# attaches there, no internal route).
+#
+# immich-machine-learning: not exposed via any HTTPRoute at all - only
+# immich-server calls it, in-namespace. Locking it to that one sibling
+# closes it off as a pivot target for anything else in the cluster, since
+# otherwise it'd stay open to every pod everywhere (selecting
+# immich-server alone wouldn't touch it - each endpoint's default-allow/
+# deny switches independently per Cilium's per-selection behaviour).
+#
+# postgres/redis (same namespace) aren't selected by any policy, so they
+# stay reachable from immich-server unaffected.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-traefik-public-only
+  namespace: immich
+spec:
+  endpointSelector:
+    matchLabels:
+      app: immich-server
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: traefik-public
+      toPorts:
+        - ports:
+            - port: "2283"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-immich-server-only
+  namespace: immich
+spec:
+  endpointSelector:
+    matchLabels:
+      app: immich-machine-learning
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: immich-server
+      toPorts:
+        - ports:
+            - port: "3003"
+              protocol: TCP

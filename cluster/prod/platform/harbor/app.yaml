@@ -17,6 +17,13 @@ spec:
     - repoURL: https://github.com/Sanlys/kubernetes.git
       targetRevision: main
       ref: values
+    # Lateral-movement baseline (CiliumNetworkPolicy) - lives in its own
+    # directory rather than alongside values.yaml so it renders as plain
+    # manifests on top of the chart instead of just being a values
+    # reference source like the entry above.
+    - repoURL: https://github.com/Sanlys/kubernetes.git
+      targetRevision: main
+      path: cluster/prod/platform/harbor/network-policy
   destination:
     server: https://kubernetes.default.svc
     namespace: harbor

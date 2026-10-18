@@ -1,0 +1,44 @@
+# Only harbor-core and harbor-portal are ever hit directly by Traefik
+# (harbor-route's rules: /api,/service,/v2,/c -> core, everything else ->
+# portal) - registry/jobservice/database/redis/exporter/trivy are only
+# reached internally by core itself and aren't selected by any policy
+# here, so they stay reachable from it unaffected. Selecting a pod for
+# ingress switches it from default-allow to default-deny-except-listed -
+# same mechanism as s3-vfs-proxy/smb-gateway.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-traefik-public-only-core
+  namespace: harbor
+spec:
+  endpointSelector:
+    matchLabels:
+      app: harbor
+      component: core
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: traefik-public
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-traefik-public-only-portal
+  namespace: harbor
+spec:
+  endpointSelector:
+    matchLabels:
+      app: harbor
+      component: portal
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: traefik-public
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
