@@ -14,3 +14,10 @@ spec:
     disabled: false
   dashboard:
     readonly: false
+  # Default (disabled: false with no keep/keep-since/resources set) fails
+  # the operator's own admission webhook ("expected exactly one, got
+  # neither: pruner.keep, pruner.keep-since" + missing pruner.resources).
+  # Not needed here regardless - nothing worth pruning on an unused test
+  # install.
+  pruner:
+    disabled: true
