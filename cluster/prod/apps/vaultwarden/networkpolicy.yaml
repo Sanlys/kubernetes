@@ -1,0 +1,32 @@
+# Ingress only from the two Traefik instances that actually front it (see
+# ingresses.yaml). Selecting these pods for ingress switches them from
+# default-allow to default-deny-except-listed - same mechanism as
+# s3-vfs-proxy/smb-gateway, no separate default-deny policy needed.
+#
+# The vaultwarden Service is still type: LoadBalancer with its own IP
+# (10.0.6.201) predating the HTTPRoutes in front of it - this policy cuts
+# that path off too, since traffic arriving there doesn't carry a
+# Traefik/cluster pod identity. That IP already appeared to be unreachable
+# before this policy existed, consistent with it being dead leftover from
+# before Ingress/HTTPRoute was added in front (same pattern as the
+# ingress-nginx-public leftover) - flagged for the user to confirm, not
+# assumed.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-traefik-only
+  namespace: vaultwarden
+spec:
+  endpointSelector:
+    matchLabels:
+      app: vaultwarden
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: traefik
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: traefik-public
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
