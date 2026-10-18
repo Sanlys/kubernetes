@@ -8,4 +8,7 @@ spec:
   - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi
+      # 1Gi was running at 98% and caused one backup run to fail outright
+      # ("no space left on device" mid-snapshot) - restic's local metadata
+      # cache grows with the repo's object count over time.
+      storage: 5Gi
