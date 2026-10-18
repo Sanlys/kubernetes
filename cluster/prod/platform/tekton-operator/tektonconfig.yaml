@@ -30,3 +30,10 @@ spec:
   result:
     disabled: true
     is_external_db: false
+  # Also part of profile: all by default - Pipelines-as-Code (GitHub/GitLab
+  # webhook-driven CI triggers), same "wasn't there before, not needed on
+  # an unused install" reasoning.
+  platforms:
+    kubernetes:
+      pipelinesAsCode:
+        enable: false
