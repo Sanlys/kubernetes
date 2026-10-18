@@ -114,16 +114,36 @@ spec:
               certificateRefs:
                 - name: k8s-wildcard-tls
                   namespace: traefik
-        # This IngressRoute only binds to the "traefik" entrypoint (8080),
-        # which ports.traefik.expose.default (left false, see below) keeps
-        # out of the public LoadBalancer Service entirely - enabling it here
-        # doesn't expose anything externally, it just gives the Service/
-        # HTTPRoute below (which proxy into that same port) something to
-        # actually reach.
+        # The chart's own dashboard IngressRoute only matches
+        # PathPrefix(`/dashboard`)||PathPrefix(`/api`) - root "/" never
+        # reaches api@internal, so it 404s instead of getting the redirect
+        # traefik-internal's dashboard gets at root. Replaced below with a
+        # catch-all IngressRoute instead, same shape as traefik-internal's
+        # own HTTPRoute-to-api@internal wiring.
         ingressRoute:
           dashboard:
-            enabled: true
+            enabled: false
         extraObjects:
+          # Binds to the "traefik" entrypoint (8080), which
+          # ports.traefik.expose.default (left false, see below) keeps out
+          # of the public LoadBalancer Service entirely - this doesn't
+          # expose anything externally, it just gives the Service/HTTPRoute
+          # below (which proxy into that same port) a full catch-all to
+          # reach, letting api@internal's own handler deal with paths
+          # (including its root->/dashboard/ redirect) exactly like
+          # traefik-internal's dashboard does.
+          - apiVersion: traefik.io/v1alpha1
+            kind: IngressRoute
+            metadata:
+              name: traefik-public-dashboard
+            spec:
+              entryPoints: ["traefik"]
+              routes:
+                - kind: Rule
+                  match: "PathPrefix(`/`)"
+                  services:
+                    - kind: TraefikService
+                      name: api@internal
           # Lets the "harbor" listener above reference a Secret living in
           # the traefik namespace instead of this release's own namespace -
           # ReferenceGrant must live in the namespace being referenced.
