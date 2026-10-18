@@ -21,3 +21,12 @@ spec:
   # install.
   pruner:
     disabled: true
+  # profile: all installs these two too by default - Chains (supply-chain
+  # attestation signing) and Results (a whole extra Postgres + PVC just to
+  # store completed run records). Neither existed in the previous vendored
+  # setup and there's nothing here worth that overhead on an unused install.
+  chain:
+    disabled: true
+  result:
+    disabled: true
+    is_external_db: false
