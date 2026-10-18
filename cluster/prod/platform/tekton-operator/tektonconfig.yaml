@@ -1,0 +1,16 @@
+# The one CR that tells the operator what to install. It handles fetching
+# the matched Pipeline/Triggers/Dashboard version set itself (embedded in
+# its own release, not vendored manifests here) - this replaces the three
+# separate hand-vendored apps (tekton-pipelines/tekton-triggers/tekton-
+# dashboard) that Renovate kept trying to patch one image at a time.
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  profile: all
+  targetNamespace: tekton-pipelines
+  trigger:
+    disabled: false
+  dashboard:
+    readonly: false

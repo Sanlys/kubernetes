@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tekton-operator
+  namespace: argocd
+spec:
+  project: default
+  source:
+    # Vendored - tektoncd/operator's own git repo uses ko:// image
+    # placeholders only resolved by its release build, same reason
+    # tekton-pipelines/tekton-triggers/tekton-dashboard were vendored
+    # before this replaced them. Unlike those three, upgrading this one
+    # file is enough going forward - the operator bundles the matched
+    # Pipeline/Triggers/Dashboard payload internally and reconciles it
+    # via TektonInstallerSet CRs it creates itself from tektonconfig.yaml,
+    # so there's no separate per-component manifest to keep in sync here.
+    repoURL: https://github.com/Sanlys/kubernetes.git
+    targetRevision: main
+    path: cluster/prod/platform/tekton-operator
+    directory:
+      exclude: "app.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tekton-operator
+  # Same two issues as the old vendored tekton apps' CRDs: large schemas
+  # exceed kubectl's last-applied-configuration annotation size limit
+  # (needs ServerSideApply), and status/names.listKind/names.singular/
+  # conversion/preserveUnknownFields all default or get dropped
+  # server-side, showing as permanent phantom diffs otherwise.
+  ignoreDifferences:
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      jsonPointers:
+        - /status
+        - /spec/names/listKind
+        - /spec/names/singular
+        - /spec/conversion
+        - /spec/preserveUnknownFields
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true, SkipDryRunOnMissingResource=true, ServerSideApply=true]
+    retry:
+      limit: 5
+      backoff: { duration: 15s, factor: 2, maxDuration: 3m }
