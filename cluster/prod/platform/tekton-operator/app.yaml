@@ -36,6 +36,18 @@ spec:
         - /spec/names/singular
         - /spec/conversion
         - /spec/preserveUnknownFields
+    # Same Gateway API ParentReference/BackendRef defaulting as every other
+    # hand-written HTTPRoute elsewhere in this repo.
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: tekton-dashboard
+      jsonPointers:
+        - /spec/parentRefs/0/group
+        - /spec/parentRefs/0/kind
+        - /spec/rules/0/backendRefs/0/group
+        - /spec/rules/0/backendRefs/0/kind
+        - /spec/rules/0/backendRefs/0/weight
+        - /spec/rules/0/matches
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     syncOptions: [CreateNamespace=true, SkipDryRunOnMissingResource=true, ServerSideApply=true]
