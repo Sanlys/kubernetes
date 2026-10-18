@@ -48,3 +48,13 @@ server:
       - {}
 redis:
   enabled: true
+# The only ApplicationSet in use (tenants) - worth HA. The chart's
+# `replicas` alone doesn't add leader election (unlike controller/server/
+# repoServer, which already handle multiple replicas natively) - without
+# --enable-leader-election, two replicas would both try to reconcile the
+# same generators at once. The binary supports the flag; the chart just
+# doesn't template it, hence extraArgs.
+applicationSet:
+  replicas: 2
+  extraArgs:
+    - --enable-leader-election
