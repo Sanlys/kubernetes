@@ -5,8 +5,8 @@ metadata:
   namespace: nginx-custom-image
   labels: { app: nginx-from-harbor }
 spec:
-  type: LoadBalancer
-  externalTrafficPolicy: Local
+  # Was type: LoadBalancer with its own IP, predating the HTTPRoutes in
+  # ingresses.yaml - dead weight once Traefik took over routing.
   selector: { app: nginx-from-harbor }
   ports:
     - name: http

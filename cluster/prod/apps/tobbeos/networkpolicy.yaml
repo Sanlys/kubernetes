@@ -1,0 +1,41 @@
+# tobbeos is public-only (tobbeos-public/tos-redirect in ingresses.yaml
+# only attach to traefik-public, no internal route) - so only that one
+# namespace is allowed. iso-nginx (isos.yaml) backs the /iso path on the
+# same HTTPRoute and needs its own rule since it's a separate pod.
+# Selecting these pods for ingress switches them from default-allow to
+# default-deny-except-listed - same mechanism as s3-vfs-proxy/smb-gateway.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-traefik-public-only
+  namespace: tobbeos
+spec:
+  endpointSelector:
+    matchLabels:
+      app: tobbeos
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: traefik-public
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-traefik-public-only-iso-nginx
+  namespace: tobbeos
+spec:
+  endpointSelector:
+    matchLabels:
+      app: iso-nginx
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: traefik-public
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP

@@ -5,8 +5,8 @@ metadata:
   namespace: tobbeos
   labels: { app: tobbeos }
 spec:
-  type: LoadBalancer
-  externalTrafficPolicy: Local
+  # Was type: LoadBalancer with its own IP, predating the HTTPRoutes in
+  # ingresses.yaml - dead weight once Traefik took over routing.
   selector: { app: tobbeos }
   ports:
     - name: http

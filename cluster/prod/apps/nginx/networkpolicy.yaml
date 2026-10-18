@@ -1,0 +1,24 @@
+# Ingress only from the two Traefik instances that front it (see
+# ingresses.yaml). Selecting these pods for ingress switches them from
+# default-allow to default-deny-except-listed - same mechanism as
+# s3-vfs-proxy/smb-gateway. Port 8080, not the Service's 80 - Cilium
+# enforces on the actual container port the traffic lands on.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-traefik-only
+  namespace: nginx
+spec:
+  endpointSelector:
+    matchLabels:
+      app: nginx
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: traefik
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: traefik-public
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP

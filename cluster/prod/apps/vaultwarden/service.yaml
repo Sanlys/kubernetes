@@ -5,8 +5,10 @@ metadata:
   namespace: vaultwarden
   labels: { app: vaultwarden }
 spec:
-  type: LoadBalancer
-  externalTrafficPolicy: Local
+  # Was type: LoadBalancer with its own IP (10.0.6.201), predating the
+  # HTTPRoutes in ingresses.yaml - dead weight once Traefik took over
+  # routing, and already unreachable before this change. ClusterIP is all
+  # an HTTPRoute backendRef needs.
   selector: { app: vaultwarden }
   ports:
     - name: http
