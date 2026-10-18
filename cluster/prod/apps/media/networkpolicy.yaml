@@ -1,0 +1,30 @@
+# jellyfin is the only actually-public service in this namespace
+# (ingresses.yaml - jellyfin's HTTPRoute is the only one on
+# traefik-public; bazarr/jellyseerr/prowlarr/qbittorrent/radarr/sonarr
+# all stay on the internal-only traefik route and are left alone here -
+# locking those down means mapping all their interdependencies, which
+# isn't worth it for things that were never internet-facing).
+#
+# jellyseerr calls jellyfin's API directly in-namespace (see
+# jellyseerr.yaml) in addition to Traefik's own proxying, so it needs
+# its own allow entry here too, or it'd break the moment jellyfin's
+# ingress flips to default-deny-except-listed.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-traefik-public-and-jellyseerr
+  namespace: media
+spec:
+  endpointSelector:
+    matchLabels:
+      app: jellyfin
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: traefik-public
+        - matchLabels:
+            app: jellyseerr
+      toPorts:
+        - ports:
+            - port: "8096"
+              protocol: TCP
