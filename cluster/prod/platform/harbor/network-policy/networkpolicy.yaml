@@ -1,14 +1,27 @@
 # Only harbor-core and harbor-portal are ever hit directly by Traefik
 # (harbor-route's rules: /api,/service,/v2,/c -> core, everything else ->
-# portal) - registry/jobservice/database/redis/exporter/trivy are only
-# reached internally by core itself and aren't selected by any policy
-# here, so they stay reachable from it unaffected. Selecting a pod for
-# ingress switches it from default-allow to default-deny-except-listed -
-# same mechanism as s3-vfs-proxy/smb-gateway.
+# portal). Selecting a pod for ingress switches it from default-allow to
+# default-deny-except-listed - same mechanism as s3-vfs-proxy/smb-gateway.
+#
+# Port is 8080, not the Service's 80 - Cilium enforces on the real
+# backend port after Service DNAT (both core and portal's Service map
+# port 80 -> targetPort 8080). Got this wrong on the first pass here,
+# which briefly broke harbor's public UI/API entirely as well as
+# harbor-jobservice's rollout (below) - fixed by testing against the
+# Service's actual targetPort instead of assuming it matched the
+# external 80.
+#
+# harbor-core is also called internally by jobservice (config fetch on
+# startup), and by registry/trivy for notifications and scan callbacks -
+# same-namespace traffic that isn't going through Traefik at all. Found
+# this the hard way: jobservice's pod crash-looped once core's ingress
+# flipped to default-deny-except-listed and core-only-from-traefik-public
+# didn't cover it. Allowing all of harbor's own namespace closes that
+# gap without having to enumerate every internal caller individually.
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: allow-traefik-public-only-core
+  name: allow-traefik-public-and-intra-namespace-core
   namespace: harbor
 spec:
   endpointSelector:
@@ -19,9 +32,11 @@ spec:
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: traefik-public
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: harbor
       toPorts:
         - ports:
-            - port: "80"
+            - port: "8080"
               protocol: TCP
 ---
 apiVersion: cilium.io/v2
@@ -40,5 +55,5 @@ spec:
             k8s:io.kubernetes.pod.namespace: traefik-public
       toPorts:
         - ports:
-            - port: "80"
+            - port: "8080"
               protocol: TCP
