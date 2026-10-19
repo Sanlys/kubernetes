@@ -281,7 +281,8 @@
               "mode": "coords",
               "latitude": "lat",
               "longitude": "lon"
-            }
+            },
+            "tooltip": false
           },
           {
             "type": "markers",
@@ -350,7 +351,8 @@
               "mode": "coords",
               "latitude": "lat",
               "longitude": "lon"
-            }
+            },
+            "tooltip": false
           },
           {
             "type": "markers",
