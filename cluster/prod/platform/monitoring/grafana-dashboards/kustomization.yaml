@@ -48,6 +48,9 @@ configMapGenerator:
   - name: dashboard-hosts-overview
     files:
       - raw/hosts-overview.json
+  - name: dashboard-mirror-analytics
+    files:
+      - raw/mirror-analytics.json
   - name: dashboard-multi-cluster-overview
     files:
       - raw/multi-cluster-overview.json

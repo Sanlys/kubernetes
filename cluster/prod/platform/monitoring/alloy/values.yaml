@@ -1,4 +1,15 @@
 alloy:
+  # Was false - meant every one of the 6 DaemonSet replicas independently
+  # tailed and forwarded ALL ~580 containers cluster-wide via
+  # loki.source.kubernetes (the Kubernetes-API tailing method doesn't
+  # naturally shard by node the way file-based tailing would), so every
+  # log line in Loki was being stored 6x over. Needed as a real
+  # correctness fix anyway - without it the mirror pipeline's derived
+  # Prometheus counters below would be inflated 6x (once per replica).
+  # Each loki.source.kubernetes block also needs its own
+  # `clustering { enabled = true }` to actually participate.
+  clustering:
+    enabled: true
   configMap:
     content: |-
       logging {
@@ -47,16 +58,178 @@ alloy:
       loki.source.kubernetes "pod_logs" {
         targets    = discovery.relabel.pods.output
         forward_to = [loki.write.loki.receiver]
+        clustering {
+          enabled = true
+        }
       }
-      
+
       loki.source.kubernetes_events "events" {
         job_name   = "kubernetes-events"
         log_format = "logfmt"
         forward_to = [loki.write.loki.receiver]
       }
 
+      // --- mirror analytics (cluster/prod/apps/mirror) ---
+      // Two separate pipelines in the "mirror" namespace: the nginx
+      // container's JSON access logs (requests/bandwidth/GeoIP), and the
+      // mirror-sync CronJob's logs (sync freshness). Kept apart from the
+      // generic pod_logs pipeline above so GeoIP/metrics processing only
+      // ever runs against this one app's logs, not all 580 containers.
+
+      discovery.kubernetes "mirror_pods" {
+        role = "pod"
+        namespaces {
+          names = ["mirror"]
+        }
+      }
+
+      discovery.relabel "mirror_nginx" {
+        targets = discovery.kubernetes.mirror_pods.targets
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          action        = "keep"
+          regex         = "mirror"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+      }
+
+      loki.source.kubernetes "mirror_nginx_logs" {
+        targets    = discovery.relabel.mirror_nginx.output
+        forward_to = [loki.process.mirror_nginx.receiver]
+        clustering {
+          enabled = true
+        }
+      }
+
+      loki.process "mirror_nginx" {
+        stage.json {
+          expressions = {
+            remote_addr     = "remote_addr",
+            request_uri     = "request_uri",
+            status          = "status",
+            body_bytes_sent = "body_bytes_sent",
+          }
+        }
+
+        stage.geoip {
+          source  = "remote_addr"
+          db      = "/etc/alloy/geoip/dbip-country-lite.mmdb"
+          db_type = "country"
+        }
+
+        // Promoted to real Loki labels so the metrics below (which inherit
+        // their label set from active Loki labels, not raw extracted
+        // values) can be dimensioned by country/status. Bounded
+        // cardinality: ~250 countries x ~15 realistic status codes.
+        stage.labels {
+          values = {
+            status              = "",
+            geoip_country_code  = "",
+          }
+        }
+
+        stage.metrics {
+          metric.counter {
+            name        = "mirror_requests_total"
+            description = "Total requests served by the archlinux mirror"
+            match_all   = true
+            action      = "inc"
+          }
+
+          metric.counter {
+            name        = "mirror_bytes_total"
+            description = "Total response bytes served by the archlinux mirror"
+            source      = "body_bytes_sent"
+            action      = "add"
+          }
+        }
+
+        forward_to = [loki.write.loki.receiver]
+      }
+
+      discovery.relabel "mirror_sync" {
+        targets = discovery.kubernetes.mirror_pods.targets
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          action        = "keep"
+          regex         = "mirror-sync"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+      }
+
+      loki.source.kubernetes "mirror_sync_logs" {
+        targets    = discovery.relabel.mirror_sync.output
+        forward_to = [loki.process.mirror_sync.receiver]
+        clustering {
+          enabled = true
+        }
+      }
+
+      loki.process "mirror_sync" {
+        // mirror.sh echoes this marker line (see
+        // cluster/prod/apps/mirror/mirror-script.yaml) on every
+        // successful run, whether or not an actual rsync happened.
+        stage.regex {
+          expression = "MIRROR_LASTSYNC_EPOCH=(?P<epoch>\\d+)"
+        }
+
+        stage.metrics {
+          metric.gauge {
+            name        = "mirror_lastsync_epoch_seconds"
+            description = "Unix timestamp of the mirror's own lastsync file as of the last successful sync run"
+            source      = "epoch"
+            action      = "set"
+          }
+        }
+
+        forward_to = [loki.write.loki.receiver]
+      }
+
 ingress:
   enabled: false
+
+controller:
+  volumes:
+    extra:
+      - name: geoip-db
+        persistentVolumeClaim:
+          claimName: geoip-db
+
+mounts:
+  extra:
+    - name: geoip-db
+      mountPath: /etc/alloy/geoip
+      readOnly: true
 
 extraObjects:
   - apiVersion: gateway.networking.k8s.io/v1

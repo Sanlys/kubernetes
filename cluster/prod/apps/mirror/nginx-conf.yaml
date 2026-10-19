@@ -8,6 +8,23 @@ data:
     events {}
 
     http {
+        # JSON access log for the Alloy pipeline to parse (GeoIP enrichment
+        # + Prometheus metrics - see cluster/prod/platform/monitoring/alloy).
+        # Pure logging change - doesn't touch how requests are actually
+        # served below.
+        log_format json_combined escape=json
+          '{'
+            '"time":"$time_iso8601",'
+            '"remote_addr":"$remote_addr",'
+            '"request_method":"$request_method",'
+            '"request_uri":"$request_uri",'
+            '"status":"$status",'
+            '"body_bytes_sent":"$body_bytes_sent",'
+            '"http_referer":"$http_referer",'
+            '"http_user_agent":"$http_user_agent"'
+          '}';
+        access_log /dev/stdout json_combined;
+
         server {
             listen 80;
             server_name _;

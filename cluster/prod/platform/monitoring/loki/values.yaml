@@ -16,7 +16,12 @@ loki:
   storage:
     type: filesystem
   limits_config:
-    retention_period: 168h
+    # Was 168h (7d) - too short for monthly mirror analytics (unique
+    # visitor counts need to query raw logs over the full window, bounded
+    # by retention). Current usage is ~18.5GB at 7d, so 40d projects to
+    # roughly ~105GB - PVC bumped below to 150Gi for headroom. Trivial
+    # against the ~47TB free in the Ceph pool.
+    retention_period: 960h
   compactor:
     retention_enabled: true
     working_directory: /var/loki/compactor
@@ -29,7 +34,7 @@ singleBinary:
   persistence:
     enabled: true
     storageClass: rook-ceph-block-ssd
-    size: 40Gi
+    size: 150Gi
 
 # Zero out all scalable/distributed components
 backend:
