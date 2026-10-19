@@ -293,7 +293,7 @@
           "id": "calculateField",
           "options": {
             "mode": "unary",
-            "unary": { "operator": "ln", "fieldName": "Value" },
+            "unary": { "operator": "ln", "fieldName": "Value #A" },
             "replaceFields": false
           }
         }
@@ -308,7 +308,7 @@
               "src": "public/maps/countries-alpha2.geojson",
               "idField": "geoip_country_code",
               "dataStyle": {
-                "color": { "field": "ln(Value)" },
+                "color": { "field": "ln(Value #A)" },
                 "opacity": 0.8
               },
               "style": { "opacity": 0 },
@@ -344,7 +344,7 @@
           "id": "calculateField",
           "options": {
             "mode": "unary",
-            "unary": { "operator": "ln", "fieldName": "Value" },
+            "unary": { "operator": "ln", "fieldName": "Value #A" },
             "replaceFields": false
           }
         }
@@ -359,7 +359,7 @@
               "src": "public/maps/countries-alpha2.geojson",
               "idField": "geoip_country_code",
               "dataStyle": {
-                "color": { "field": "ln(Value)" },
+                "color": { "field": "ln(Value #A)" },
                 "opacity": 0.8
               },
               "style": { "opacity": 0 },
@@ -373,7 +373,7 @@
         "defaults": { "unit": "bytes", "color": { "mode": "continuous-BlYlRd" } },
         "overrides": [
           {
-            "matcher": { "id": "byName", "options": "ln(Value)" },
+            "matcher": { "id": "byName", "options": "ln(Value #A)" },
             "properties": [{ "id": "unit", "value": "none" }, { "id": "decimals", "value": 2 }]
           }
         ]
