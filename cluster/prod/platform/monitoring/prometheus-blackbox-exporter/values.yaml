@@ -86,8 +86,6 @@ serviceMonitor:
       url: https://radarr.k8s.lysakermoen.com
     - name: "sonarr-internal"
       url: https://sonarr.k8s.lysakermoen.com
-    - name: "minecraft-map-internal"
-      url: https://daurmcmap.k8s.lysakermoen.com
     - name: "alertmanager-internal"
       url: https://alertmanager.k8s.lysakermoen.com
     - name: "alloy-internal"
