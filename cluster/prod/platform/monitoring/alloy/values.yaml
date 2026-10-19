@@ -234,6 +234,14 @@ alloy:
 ingress:
   enabled: false
 
+# Was never scraped at all - confirmed live, zero "alloy" job in
+# Prometheus despite the mirror pipeline correctly generating
+# loki_process_custom_mirror_* metrics on Alloy's own /metrics the whole
+# time. Needed for the dashboard (and anything else derived via
+# stage.metrics) to actually reach Prometheus.
+serviceMonitor:
+  enabled: true
+
 controller:
   volumes:
     extra:
