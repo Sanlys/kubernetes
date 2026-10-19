@@ -282,12 +282,30 @@
               "latitude": "lat",
               "longitude": "lon"
             }
+          },
+          {
+            "type": "markers",
+            "name": "Hover values",
+            "config": {
+              "style": {
+                "color": { "fixed": "white" },
+                "size": { "fixed": 4 },
+                "opacity": 0.15
+              },
+              "showLegend": false
+            },
+            "location": {
+              "mode": "coords",
+              "latitude": "lat",
+              "longitude": "lon"
+            },
+            "tooltip": true
           }
         ],
         "view": { "id": "zero", "lat": 0, "lon": 0, "zoom": 1 }
       },
       "fieldConfig": {
-        "defaults": { "color": { "mode": "continuous-greens" } },
+        "defaults": {},
         "overrides": []
       }
     },
@@ -333,12 +351,30 @@
               "latitude": "lat",
               "longitude": "lon"
             }
+          },
+          {
+            "type": "markers",
+            "name": "Hover values",
+            "config": {
+              "style": {
+                "color": { "fixed": "white" },
+                "size": { "fixed": 4 },
+                "opacity": 0.15
+              },
+              "showLegend": false
+            },
+            "location": {
+              "mode": "coords",
+              "latitude": "lat",
+              "longitude": "lon"
+            },
+            "tooltip": true
           }
         ],
         "view": { "id": "zero", "lat": 0, "lon": 0, "zoom": 1 }
       },
       "fieldConfig": {
-        "defaults": { "unit": "bytes", "color": { "mode": "continuous-greens" } },
+        "defaults": { "unit": "bytes" },
         "overrides": []
       }
     },
