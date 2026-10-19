@@ -17,6 +17,11 @@ spec:
             k8s:io.kubernetes.pod.namespace: traefik
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: traefik-public
+        # mirror-freshness-check (freshness-check.yaml) curls /lastsync
+        # directly off this Service - same namespace, so no namespace label
+        # needed here, unlike the two cross-namespace Traefik rules above.
+        - matchLabels:
+            app: mirror-freshness-check
       toPorts:
         - ports:
             - port: "80"

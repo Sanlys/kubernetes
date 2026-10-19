@@ -174,26 +174,33 @@ alloy:
           values = ["http_user_agent"]
         }
 
+        // db_type "city" (not "country") - same free DB-IP tier, returns
+        // every country field "country" did plus an approximate city
+        // centroid lat/lon, which the dashboard's heatmap panels plot
+        // directly (location.mode "coords") instead of a per-country dot.
+        // One lookup covers both the country tables and the heatmap.
         stage.geoip {
           source  = "remote_addr"
-          db      = "/var/lib/alloy-geoip/dbip-country-lite.mmdb"
-          db_type = "country"
+          db      = "/var/lib/alloy-geoip/dbip-city-lite.mmdb"
+          db_type = "city"
         }
 
         // Promoted to real Loki labels so the metrics below (which inherit
         // their label set from active Loki labels, not raw extracted
-        // values) can be dimensioned by country/status. Bounded
-        // cardinality: ~250 countries x ~15 realistic status codes.
-        // geoip_country_name rides along from the same lookup (db_type
-        // "country" already returns it for free) - kept alongside the code
-        // rather than instead of it: the code is what the dashboard's
-        // geomap panels match against Grafana's built-in gazetteer, the
-        // name is what the table panels display instead of a 2-letter code.
+        // values) can be dimensioned by country/city/status. Bounded
+        // cardinality: city resolution only adds as many distinct values as
+        // there are actual cities DB-IP resolves real traffic to - still a
+        // finite, fairly small set in practice, nothing like per-IP
+        // cardinality. geoip_country_code is what the Top Countries tables
+        // display; lat/lon (renamed from the verbose geoip_location_*
+        // extracted names) are what the heatmap panels plot.
         stage.labels {
           values = {
             status              = "",
             geoip_country_code  = "",
             geoip_country_name  = "",
+            lat                 = "geoip_location_latitude",
+            lon                 = "geoip_location_longitude",
           }
         }
 
@@ -227,10 +234,15 @@ alloy:
       discovery.relabel "mirror_sync" {
         targets = discovery.kubernetes.mirror_pods.targets
 
+        // mirror-freshness-check (cluster/prod/apps/mirror/freshness-check.yaml)
+        // curls the live /lastsync endpoint directly instead of mirror-sync
+        // echoing its own file read into job logs - avoids depending on
+        // Kubernetes-API log tailing ever catching the sync job's
+        // short-lived pod, and actually proves nginx is serving the file.
         rule {
           source_labels = ["__meta_kubernetes_pod_container_name"]
           action        = "keep"
-          regex         = "mirror-sync"
+          regex         = "mirror-freshness-check"
         }
 
         rule {

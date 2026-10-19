@@ -252,81 +252,105 @@
     },
     {
       "type": "geomap",
-      "title": "Requests by Country",
+      "title": "Requests Heatmap",
+      "description": "City-level (DB-IP City-Lite centroid, approximate) heatmap - intensity is request volume, no size/threshold encoding.",
       "id": 31,
       "gridPos": { "h": 10, "w": 12, "x": 0, "y": 26 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (geoip_country_code) (increase(loki_process_custom_mirror_requests_total{geoip_country_code!=\"\"}[$__range]))",
+          "expr": "sum by (lat, lon) (increase(loki_process_custom_mirror_requests_total{lat!=\"\", lon!=\"\"}[$__range]))",
           "refId": "A",
           "instant": true,
           "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              { "targetField": "lat", "destinationType": "number" },
+              { "targetField": "lon", "destinationType": "number" }
+            ]
+          }
         }
       ],
       "options": {
         "basemap": { "type": "carto" },
         "layers": [
           {
-            "type": "markers",
+            "type": "heatmap",
             "config": {
-              "style": {
-                "color": { "field": "Value", "fixed": "dark-green" },
-                "size": { "field": "Value", "fixed": 5, "min": 2, "max": 30 },
-                "opacity": 0.8
-              },
-              "showLegend": true
+              "weight": { "field": "Value", "min": 0, "max": 1 },
+              "radius": 8,
+              "blur": 18
             },
             "location": {
-              "mode": "lookup",
-              "lookup": "geoip_country_code",
-              "gazetteer": "public/gazetteer/countries.json"
+              "mode": "coords",
+              "latitude": "lat",
+              "longitude": "lon"
             }
           }
         ],
         "view": { "id": "zero", "lat": 0, "lon": 0, "zoom": 1 }
       },
-      "fieldConfig": { "defaults": {}, "overrides": [] }
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "continuous-greens" } },
+        "overrides": []
+      }
     },
     {
       "type": "geomap",
-      "title": "Bandwidth by Country",
+      "title": "Bandwidth Heatmap",
+      "description": "City-level (DB-IP City-Lite centroid, approximate) heatmap - intensity is bytes served, no size/threshold encoding.",
       "id": 32,
       "gridPos": { "h": 10, "w": 12, "x": 12, "y": 26 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (geoip_country_code) (increase(loki_process_custom_mirror_bytes_total{geoip_country_code!=\"\"}[$__range]))",
+          "expr": "sum by (lat, lon) (increase(loki_process_custom_mirror_bytes_total{lat!=\"\", lon!=\"\"}[$__range]))",
           "refId": "A",
           "instant": true,
           "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              { "targetField": "lat", "destinationType": "number" },
+              { "targetField": "lon", "destinationType": "number" }
+            ]
+          }
         }
       ],
       "options": {
         "basemap": { "type": "carto" },
         "layers": [
           {
-            "type": "markers",
+            "type": "heatmap",
             "config": {
-              "style": {
-                "color": { "field": "Value", "fixed": "dark-green" },
-                "size": { "field": "Value", "fixed": 5, "min": 2, "max": 30 },
-                "opacity": 0.8
-              },
-              "showLegend": true
+              "weight": { "field": "Value", "min": 0, "max": 1 },
+              "radius": 8,
+              "blur": 18
             },
             "location": {
-              "mode": "lookup",
-              "lookup": "geoip_country_code",
-              "gazetteer": "public/gazetteer/countries.json"
+              "mode": "coords",
+              "latitude": "lat",
+              "longitude": "lon"
             }
           }
         ],
         "view": { "id": "zero", "lat": 0, "lon": 0, "zoom": 1 }
       },
-      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] }
+      "fieldConfig": {
+        "defaults": { "unit": "bytes", "color": { "mode": "continuous-greens" } },
+        "overrides": []
+      }
     },
     {
       "type": "table",

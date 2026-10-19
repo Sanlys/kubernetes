@@ -1,7 +1,9 @@
-# DB-IP's free Country-Lite database (CC-BY 4.0, .mmdb format, same binary
+# DB-IP's free City-Lite database (CC-BY 4.0, .mmdb format, same binary
 # format MaxMind uses - no account/license key needed, unlike MaxMind's own
-# GeoLite2, which started requiring signup). Only need country-level
-# granularity here, not city.
+# GeoLite2, which started requiring signup). City-Lite includes every
+# country-level field Country-Lite did (used for the Top Countries tables)
+# plus an approximate city centroid lat/lon (used for the traffic heatmap) -
+# one lookup covers both, no need to carry two separate databases.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -13,7 +15,11 @@ spec:
   storageClassName: rook-cephfs
   resources:
     requests:
-      storage: 200Mi
+      # Was 200Mi, sized for country-only (~5MB uncompressed). City-Lite is
+      # tens of MB, and the sync script briefly holds both the old file and
+      # a full temp download at once - trivial against the ~47TB free in
+      # the Ceph pool either way.
+      storage: 512Mi
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -24,8 +30,8 @@ data:
   sync.sh: |
     set -eu
     apk add --no-cache curl >/dev/null
-    DEST=/geoip/dbip-country-lite.mmdb
-    TMP=/geoip/.dbip-country-lite.mmdb.tmp
+    DEST=/geoip/dbip-city-lite.mmdb
+    TMP=/geoip/.dbip-city-lite.mmdb.tmp
 
     # DB-IP publishes a new file around the start of each month - this
     # month's release may not exist yet for the first day or two, so try
@@ -42,7 +48,7 @@ data:
         Y=$((Y - 1))
       fi
       YM=$(printf "%04d-%02d" "$Y" "$M")
-      URL="https://download.db-ip.com/free/dbip-country-lite-${YM}.mmdb.gz"
+      URL="https://download.db-ip.com/free/dbip-city-lite-${YM}.mmdb.gz"
       echo "Trying $URL"
       if curl -fsSL "$URL" -o "${TMP}.gz"; then
         gunzip -f "${TMP}.gz"
@@ -53,7 +59,7 @@ data:
       echo "Not found, trying previous month"
     done
 
-    echo "Failed to download any recent dbip-country-lite release" >&2
+    echo "Failed to download any recent dbip-city-lite release" >&2
     exit 1
 ---
 apiVersion: batch/v1

@@ -1,0 +1,47 @@
+# Checks the same /lastsync file mirror-sync itself writes (see syncer.yaml),
+# but over HTTP against the mirror's own Service instead of reading the file
+# off the shared PVC from inside the sync job - this is what Alloy used to
+# scrape out of the sync job's pod logs via Kubernetes-API log tailing,
+# which only worked at all once successfulJobsHistoryLimit left the pod
+# alive long enough to be discovered (see syncer.yaml). Hitting the Service
+# directly removes that timing dependency entirely and additionally proves
+# nginx is actually serving the current file, not just that it exists on
+# disk. Runs far more often than the 6h sync schedule since it's a single
+# cheap GET, giving the dashboard's freshness panel much finer granularity.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mirror-freshness-check
+  namespace: mirror
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 60
+      template:
+        metadata:
+          labels:
+            app: mirror-freshness-check
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: mirror-freshness-check
+              image: alpine:3.24.2
+              imagePullPolicy: IfNotPresent
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -e
+                  apk add --no-cache curl
+                  # Grepped by the Alloy pipeline for the dashboard's
+                  # sync-freshness panel - see cluster/prod/platform/monitoring/alloy.
+                  echo "MIRROR_LASTSYNC_EPOCH=$(curl -sf http://mirror.mirror.svc.cluster.local/lastsync)"
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 64Mi
