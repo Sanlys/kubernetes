@@ -10,6 +10,14 @@ alloy:
   # `clustering { enabled = true }` to actually participate.
   clustering:
     enabled: true
+  mounts:
+    extra:
+      - name: geoip-db
+        # Separate top-level path, not nested under /etc/alloy (where
+        # the config ConfigMap mounts) - avoids any ambiguity from
+        # layering two unrelated volume mounts on top of each other.
+        mountPath: /var/lib/alloy-geoip
+        readOnly: true
   configMap:
     content: |-
       logging {
@@ -128,7 +136,7 @@ alloy:
 
         stage.geoip {
           source  = "remote_addr"
-          db      = "/etc/alloy/geoip/dbip-country-lite.mmdb"
+          db      = "/var/lib/alloy-geoip/dbip-country-lite.mmdb"
           db_type = "country"
         }
 
@@ -224,12 +232,6 @@ controller:
       - name: geoip-db
         persistentVolumeClaim:
           claimName: geoip-db
-
-mounts:
-  extra:
-    - name: geoip-db
-      mountPath: /etc/alloy/geoip
-      readOnly: true
 
 extraObjects:
   - apiVersion: gateway.networking.k8s.io/v1
