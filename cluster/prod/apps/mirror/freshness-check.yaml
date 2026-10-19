@@ -37,8 +37,15 @@ spec:
                   set -e
                   apk add --no-cache curl
                   # Grepped by the Alloy pipeline for the dashboard's
-                  # sync-freshness panel - see cluster/prod/platform/monitoring/alloy.
+                  # sync-freshness panels - see
+                  # cluster/prod/platform/monitoring/alloy. lastsync is when
+                  # WE last finished a sync run; lastupdate is rsync'd
+                  # straight from upstream (see mirror-script.yaml) and
+                  # reflects when upstream itself last published - the two
+                  # legitimately differ by however stale we are relative to
+                  # upstream at sync time.
                   echo "MIRROR_LASTSYNC_EPOCH=$(curl -sf http://mirror.mirror.svc.cluster.local/lastsync)"
+                  echo "MIRROR_LASTUPDATE_EPOCH=$(curl -sf http://mirror.mirror.svc.cluster.local/lastupdate)"
               resources:
                 requests:
                   cpu: 10m

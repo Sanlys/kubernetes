@@ -147,18 +147,50 @@
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] } }
     },
     {
+      "type": "stat",
+      "title": "Time Since Upstream Update",
+      "id": 6,
+      "description": "From upstream's own lastupdate file (rsync'd straight through - see mirror-script.yaml), not our own sync timestamp - reflects how stale upstream itself is, separate from how recently we last synced.",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "time() - loki_process_custom_mirror_lastupdate_epoch_seconds",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 43200 },
+              { "color": "red", "value": 86400 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
       "type": "row",
       "title": "Traffic over time",
       "collapsed": false,
       "id": 10,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
       "panels": []
     },
     {
       "type": "timeseries",
       "title": "Requests",
       "id": 11,
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -174,7 +206,7 @@
       "type": "timeseries",
       "title": "Bandwidth",
       "id": 12,
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -191,14 +223,14 @@
       "title": "Status codes & top content",
       "collapsed": false,
       "id": 20,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
       "panels": []
     },
     {
       "type": "piechart",
       "title": "Status Code Breakdown",
       "id": 21,
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 15 },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 19 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -216,7 +248,7 @@
       "title": "Top Requested Paths",
       "id": 22,
       "description": "A rising count on a package name you don't expect, or a flood of 404s on one path, can indicate stale package lists on clients or a broken sync.",
-      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 15 },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 19 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
@@ -237,146 +269,88 @@
       "title": "Geography",
       "collapsed": false,
       "id": 30,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
       "panels": []
     },
     {
       "type": "geomap",
-      "title": "Requests Heatmap",
-      "description": "City-level (DB-IP City-Lite centroid, approximate) heatmap - intensity is request volume, no size/threshold encoding.",
+      "title": "Requests by Country",
+      "description": "Country-level choropleth - no overlap ambiguity like the per-city heatmap had, every country is its own hoverable shape.",
       "id": 31,
-      "gridPos": { "h": 20, "w": 12, "x": 0, "y": 24 },
+      "gridPos": { "h": 16, "w": 12, "x": 0, "y": 28 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (lat, lon) (increase(loki_process_custom_mirror_requests_total{lat!=\"\", lon!=\"\"}[$__range])) > 0",
+          "expr": "sum by (geoip_country_name) (increase(loki_process_custom_mirror_requests_total{geoip_country_name!=\"\"}[$__range])) > 0",
           "refId": "A",
           "instant": true,
           "format": "table"
-        }
-      ],
-      "transformations": [
-        {
-          "id": "convertFieldType",
-          "options": {
-            "conversions": [
-              { "targetField": "lat", "destinationType": "number" },
-              { "targetField": "lon", "destinationType": "number" }
-            ]
-          }
         }
       ],
       "options": {
         "basemap": { "type": "carto" },
         "layers": [
           {
-            "type": "heatmap",
+            "type": "dynamic-geojson",
+            "name": "Countries",
             "config": {
-              "weight": { "field": "Value", "min": 0.35, "max": 1 },
-              "radius": 14,
-              "blur": 12
-            },
-            "location": {
-              "mode": "coords",
-              "latitude": "lat",
-              "longitude": "lon"
-            },
-            "tooltip": false
-          },
-          {
-            "type": "markers",
-            "name": "Hover values",
-            "config": {
-              "style": {
-                "color": { "fixed": "white" },
-                "size": { "fixed": 20 },
-                "opacity": 0.3
+              "src": "public/maps/countries.geojson",
+              "idField": "geoip_country_name",
+              "dataStyle": {
+                "color": { "field": "Value" },
+                "opacity": 0.8
               },
-              "showLegend": false
-            },
-            "location": {
-              "mode": "coords",
-              "latitude": "lat",
-              "longitude": "lon"
-            },
-            "tooltip": true
+              "style": { "opacity": 0 },
+              "rules": []
+            }
           }
         ],
         "view": { "id": "zero", "lat": 0, "lon": 0, "zoom": 1 }
       },
       "fieldConfig": {
-        "defaults": {},
+        "defaults": { "color": { "mode": "continuous-BlYlRd" } },
         "overrides": []
       }
     },
     {
       "type": "geomap",
-      "title": "Bandwidth Heatmap",
-      "description": "City-level (DB-IP City-Lite centroid, approximate) heatmap - intensity is bytes served, no size/threshold encoding.",
+      "title": "Bandwidth by Country",
+      "description": "Country-level choropleth - no overlap ambiguity like the per-city heatmap had, every country is its own hoverable shape.",
       "id": 32,
-      "gridPos": { "h": 20, "w": 12, "x": 12, "y": 24 },
+      "gridPos": { "h": 16, "w": 12, "x": 12, "y": 28 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (lat, lon) (increase(loki_process_custom_mirror_bytes_total{lat!=\"\", lon!=\"\"}[$__range])) > 0",
+          "expr": "sum by (geoip_country_name) (increase(loki_process_custom_mirror_bytes_total{geoip_country_name!=\"\"}[$__range])) > 0",
           "refId": "A",
           "instant": true,
           "format": "table"
-        }
-      ],
-      "transformations": [
-        {
-          "id": "convertFieldType",
-          "options": {
-            "conversions": [
-              { "targetField": "lat", "destinationType": "number" },
-              { "targetField": "lon", "destinationType": "number" }
-            ]
-          }
         }
       ],
       "options": {
         "basemap": { "type": "carto" },
         "layers": [
           {
-            "type": "heatmap",
+            "type": "dynamic-geojson",
+            "name": "Countries",
             "config": {
-              "weight": { "field": "Value", "min": 0.35, "max": 1 },
-              "radius": 14,
-              "blur": 12
-            },
-            "location": {
-              "mode": "coords",
-              "latitude": "lat",
-              "longitude": "lon"
-            },
-            "tooltip": false
-          },
-          {
-            "type": "markers",
-            "name": "Hover values",
-            "config": {
-              "style": {
-                "color": { "fixed": "white" },
-                "size": { "fixed": 20 },
-                "opacity": 0.3
+              "src": "public/maps/countries.geojson",
+              "idField": "geoip_country_name",
+              "dataStyle": {
+                "color": { "field": "Value" },
+                "opacity": 0.8
               },
-              "showLegend": false
-            },
-            "location": {
-              "mode": "coords",
-              "latitude": "lat",
-              "longitude": "lon"
-            },
-            "tooltip": true
+              "style": { "opacity": 0 },
+              "rules": []
+            }
           }
         ],
         "view": { "id": "zero", "lat": 0, "lon": 0, "zoom": 1 }
       },
       "fieldConfig": {
-        "defaults": { "unit": "bytes" },
+        "defaults": { "unit": "bytes", "color": { "mode": "continuous-BlYlRd" } },
         "overrides": []
       }
     },

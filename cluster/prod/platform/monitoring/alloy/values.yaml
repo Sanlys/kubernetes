@@ -270,18 +270,31 @@ alloy:
       }
 
       loki.process "mirror_sync" {
-        // mirror.sh echoes this marker line (see
-        // cluster/prod/apps/mirror/mirror-script.yaml) on every
-        // successful run, whether or not an actual rsync happened.
+        // mirror-freshness-check (cluster/prod/apps/mirror/freshness-check.yaml)
+        // echoes these two marker lines every 5 minutes. lastsync is our
+        // own copy's timestamp; lastupdate is rsync'd straight from
+        // upstream and reflects when upstream itself last published -
+        // each line only matches one of the two regexes below, so only
+        // the matching gauge gets updated per line.
         stage.regex {
-          expression = "MIRROR_LASTSYNC_EPOCH=(?P<epoch>\\d+)"
+          expression = "MIRROR_LASTSYNC_EPOCH=(?P<epoch_sync>\\d+)"
+        }
+        stage.regex {
+          expression = "MIRROR_LASTUPDATE_EPOCH=(?P<epoch_update>\\d+)"
         }
 
         stage.metrics {
           metric.gauge {
             name        = "mirror_lastsync_epoch_seconds"
             description = "Unix timestamp of the mirror's own lastsync file as of the last successful sync run"
-            source      = "epoch"
+            source      = "epoch_sync"
+            action      = "set"
+          }
+
+          metric.gauge {
+            name        = "mirror_lastupdate_epoch_seconds"
+            description = "Unix timestamp of upstream's own lastupdate file as of the last successful sync run"
+            source      = "epoch_update"
             action      = "set"
           }
         }
