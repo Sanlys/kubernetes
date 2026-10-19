@@ -152,13 +152,16 @@ alloy:
         }
 
         stage.metrics {
-          // Alloy prepends "loki_process_custom_" by default when prefix
-          // isn't set - found this live, after the dashboard queries
-          // (written against the plain names) kept showing no data even
-          // though the pipeline was working correctly the whole time.
+          // Alloy prepends "loki_process_custom_" by default - documented
+          // default is that literal string, and prefix = "" does NOT
+          // override it back to empty (confirmed live: set it, redeployed
+          // with a full pod restart, name didn't change). Not fighting an
+          // undocumented quirk - the real exposed names are
+          // loki_process_custom_mirror_requests_total /
+          // loki_process_custom_mirror_bytes_total, and the dashboard
+          // queries against those, not the plain names.
           metric.counter {
             name        = "mirror_requests_total"
-            prefix      = ""
             description = "Total requests served by the archlinux mirror"
             match_all   = true
             action      = "inc"
@@ -166,7 +169,6 @@ alloy:
 
           metric.counter {
             name        = "mirror_bytes_total"
-            prefix      = ""
             description = "Total response bytes served by the archlinux mirror"
             source      = "body_bytes_sent"
             action      = "add"
@@ -220,7 +222,6 @@ alloy:
         stage.metrics {
           metric.gauge {
             name        = "mirror_lastsync_epoch_seconds"
-            prefix      = ""
             description = "Unix timestamp of the mirror's own lastsync file as of the last successful sync run"
             source      = "epoch"
             action      = "set"
