@@ -291,7 +291,7 @@
               "style": {
                 "color": { "fixed": "white" },
                 "size": { "fixed": 35 },
-                "opacity": 0.08
+                "opacity": 0.3
               },
               "showLegend": false
             },
@@ -361,7 +361,7 @@
               "style": {
                 "color": { "fixed": "white" },
                 "size": { "fixed": 35 },
-                "opacity": 0.08
+                "opacity": 0.3
               },
               "showLegend": false
             },
