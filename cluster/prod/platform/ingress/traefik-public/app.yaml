@@ -68,17 +68,18 @@ spec:
             # (ClientHost) before this was discovered. frpc's TCP proxy for
             # "web" now sends transport.proxyProtocolVersion = "v2".
             #
-            # Deliberately scoped to frpc's one pod IP, not the whole pod
-            # CIDR - anything hitting this entrypoint directly over the LAN
-            # (the 10.0.6.240/.241 path blackbox-exporter's internal/
-            # external-local probes and ad-hoc testing both use) doesn't
-            # send a Proxy Protocol header, and a CIDR-wide trust would
-            # make Traefik expect one from them too. frpc is a stable,
-            # rarely-restarted single-replica Deployment - if its pod IP
-            # ever changes, this needs updating to match.
+            # Whole pod CIDR, not frpc's specific pod IP - first attempt
+            # pinned the exact IP and broke on frpc's very next restart
+            # (pod IPs are ephemeral). Confirmed Traefik's proxyProtocol
+            # handling is lenient: a trusted IP connecting *without* a PP
+            # header just falls back to treating it as a normal connection,
+            # no error - so this is safe even though other things on the
+            # pod network (blackbox-exporter's internal/external-local
+            # probes, ad-hoc testing) also reach this entrypoint directly
+            # without ever sending one.
             proxyProtocol:
               trustedIPs:
-                - 10.244.9.28/32
+                - 10.244.0.0/16
         service:
           type: LoadBalancer
           spec:
