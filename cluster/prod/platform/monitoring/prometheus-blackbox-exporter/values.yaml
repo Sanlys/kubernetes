@@ -1,3 +1,28 @@
+# Was already collecting probe_success for every target below with
+# nothing ever alerting on it - Grafana showed it, nobody got paged.
+prometheusRule:
+  enabled: true
+  rules:
+    - alert: ProbeFailed
+      expr: probe_success == 0
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Blackbox probe failed for {{ $labels.target }}"
+        description: "Synthetic HTTP(S) check against {{ $labels.instance }} (target {{ $labels.target }}) has been failing for more than 5 minutes."
+    # blackbox_exporter emits this for every HTTPS probe automatically -
+    # a cross-check independent of cert-manager's own metrics (catches a
+    # cert that renewed in the Secret but never actually got served, not
+    # just cert-manager's view of its own Certificate objects).
+    - alert: ProbeTLSCertExpiringSoon
+      expr: probe_ssl_earliest_cert_expiry - time() < 14 * 86400
+      for: 1h
+      labels:
+        severity: warning
+      annotations:
+        summary: "TLS cert for {{ $labels.target }} expires in less than 14 days"
+        description: "The certificate served at {{ $labels.instance }} (target {{ $labels.target }}) expires in under 14 days."
 serviceMonitor:
   enabled: true
   selfMonitor:
@@ -27,3 +52,77 @@ serviceMonitor:
     - name: "syncthing-internal"
       url: https://syncthing.k8s.lysakermoen.com
       hostname: syncthing.k8s.lysakermoen.com
+    # Everything below: one check per app on its real-world hostname (not
+    # the full external/internal/external-local triple above) - full
+    # coverage across every HTTPRoute in the cluster, public and
+    # internal-only alike, rather than just the handful that already had
+    # synthetic checks. tos-redirect (tobbeos) is excluded - it's a pure
+    # RequestRedirect with no backend to actually probe.
+    - name: "actual-internal"
+      url: https://actual.k8s.lysakermoen.com
+    - name: "argocd-internal"
+      url: https://argocd.k8s.lysakermoen.com
+    - name: "forgejo-public"
+      url: https://git.lysakermoen.com
+    - name: "harbor-public"
+      url: https://harbor.k8s.lysakermoen.com
+    - name: "hubble-ui-internal"
+      url: https://hubble.k8s.lysakermoen.com
+    - name: "immich-public"
+      url: https://immich.lysakermoen.com
+    - name: "linkwarden-public"
+      url: https://linkwarden.lysakermoen.com
+    - name: "bazarr-internal"
+      url: https://bazarr.k8s.lysakermoen.com
+    - name: "jellyfin-public"
+      url: https://jellyfin.lysakermoen.com
+    - name: "jellyseerr-internal"
+      url: https://jellyseerr.k8s.lysakermoen.com
+    - name: "prowlarr-internal"
+      url: https://prowlarr.k8s.lysakermoen.com
+    - name: "qbittorrent-internal"
+      url: https://qbittorrent.k8s.lysakermoen.com
+    - name: "radarr-internal"
+      url: https://radarr.k8s.lysakermoen.com
+    - name: "sonarr-internal"
+      url: https://sonarr.k8s.lysakermoen.com
+    - name: "minecraft-map-internal"
+      url: https://daurmcmap.k8s.lysakermoen.com
+    - name: "alertmanager-internal"
+      url: https://alertmanager.k8s.lysakermoen.com
+    - name: "alloy-internal"
+      url: https://alloy.k8s.lysakermoen.com
+    - name: "grafana-internal"
+      url: https://grafana.k8s.lysakermoen.com
+    - name: "prometheus-internal"
+      url: https://prometheus.k8s.lysakermoen.com
+    - name: "nginx-custom-internal"
+      url: https://nginx-custom.k8s.lysakermoen.com
+    - name: "nginx-custom-public"
+      url: https://nginx-custom.lysakermoen.com
+    - name: "photoprism-public"
+      url: https://photoprism.lysakermoen.com
+    - name: "ceph-dashboard-internal"
+      url: https://ceph.k8s.lysakermoen.com
+    - name: "s3-internal"
+      url: https://s3.k8s.lysakermoen.com
+    - name: "s3-public"
+      url: https://s3.lysakermoen.com
+    - name: "tekton-dashboard-internal"
+      url: https://tekton.k8s.lysakermoen.com
+    - name: "tobbeos-public"
+      url: https://tobbeos.lysakermoen.com
+    - name: "game-mgr-public"
+      url: https://games.lysakermoen.com
+    - name: "tools-hello-internal"
+      url: https://hello.k8s.lysakermoen.com
+    - name: "tools-webhello-internal"
+      url: https://webhello.k8s.lysakermoen.com
+    - name: "tools-idp-internal"
+      url: https://idp.k8s.lysakermoen.com
+    - name: "tools-portal-internal"
+      url: https://portal.k8s.lysakermoen.com
+    - name: "traefik-public-dashboard-internal"
+      url: https://traefik-public.k8s.lysakermoen.com
+    - name: "traefik-internal-dashboard-internal"
+      url: https://traefik.k8s.lysakermoen.com

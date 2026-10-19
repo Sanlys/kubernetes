@@ -9,6 +9,55 @@ configs:
     otlp.insecure: true
 controller:
   replicas: 2
+  # Was completely unmonitored - no ServiceMonitor at all, so an
+  # Application silently stuck OutOfSync/Degraded (a bad manifest, a
+  # stuck sync, self-heal failing to converge) produced no alert of any
+  # kind. First two rules are the chart's own documented example content
+  # (commented out by default in its values.yaml) - ArgoAppUnhealthy is
+  # the one addition beyond that, since health status (Degraded/Missing)
+  # is a more urgent signal than sync status alone and 12h is too long a
+  # wait for that.
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+    rules:
+      enabled: true
+      spec:
+        - alert: ArgoAppMissing
+          expr: |
+            absent(argocd_app_info) == 1
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: "[Argo CD] No reported applications"
+            description: >
+              Argo CD has not reported any applications data for the past 15 minutes which
+              means that it must be down or not functioning properly.
+        - alert: ArgoAppNotSynced
+          expr: |
+            argocd_app_info{sync_status!="Synced"} == 1
+          for: 12h
+          labels:
+            severity: warning
+          annotations:
+            summary: "[{{ $labels.name }}] Application not synchronized"
+            description: >
+              The application {{ $labels.name }} has not been synchronized for over
+              12 hours which means that the state of this cluster has drifted away from
+              the state inside Git.
+        - alert: ArgoAppUnhealthy
+          expr: |
+            argocd_app_info{health_status=~"Degraded|Missing|Unknown"} == 1
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "[{{ $labels.name }}] Application unhealthy"
+            description: >
+              The application {{ $labels.name }} has reported health status
+              {{ $labels.health_status }} for over 30 minutes.
 repoServer:
   replicas: 2
   volumes:
