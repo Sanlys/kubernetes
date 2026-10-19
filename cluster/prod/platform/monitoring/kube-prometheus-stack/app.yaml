@@ -17,6 +17,14 @@ spec:
     - repoURL: https://github.com/Sanlys/kubernetes.git
       targetRevision: main
       ref: values
+    # Just the alpha-2 countries.geojson ConfigMap (see extra/'s own
+    # comment) - mounted into Grafana below via extraConfigmapMounts.
+    # Separate directory source rather than inlining 250KB of JSON into
+    # values.yaml's extraManifests list.
+    - repoURL: https://github.com/Sanlys/kubernetes.git
+      targetRevision: main
+      path: cluster/prod/platform/monitoring/kube-prometheus-stack/extra
+      directory: {}
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

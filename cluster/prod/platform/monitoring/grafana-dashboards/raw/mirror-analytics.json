@@ -259,7 +259,7 @@
         }
       ],
       "fieldConfig": { "defaults": {}, "overrides": [] },
-      "options": { "sortBy": [{ "displayName": "Value", "desc": true }] },
+      "options": { "sortBy": [{ "displayName": "Value #A", "desc": true }] },
       "transformations": [
         { "id": "organize", "options": { "excludeByName": { "Time": true } } }
       ]
@@ -282,7 +282,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (geoip_country_name) (increase(loki_process_custom_mirror_requests_total{geoip_country_name!=\"\"}[$__range])) > 0",
+          "expr": "sum by (geoip_country_code) (increase(loki_process_custom_mirror_requests_total{geoip_country_code!=\"\"}[$__range])) > 0",
           "refId": "A",
           "instant": true,
           "format": "table"
@@ -295,8 +295,8 @@
             "type": "dynamic-geojson",
             "name": "Countries",
             "config": {
-              "src": "public/maps/countries.geojson",
-              "idField": "geoip_country_name",
+              "src": "public/maps/countries-alpha2.geojson",
+              "idField": "geoip_country_code",
               "dataStyle": {
                 "color": { "field": "Value" },
                 "opacity": 0.8
@@ -323,7 +323,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (geoip_country_name) (increase(loki_process_custom_mirror_bytes_total{geoip_country_name!=\"\"}[$__range])) > 0",
+          "expr": "sum by (geoip_country_code) (increase(loki_process_custom_mirror_bytes_total{geoip_country_code!=\"\"}[$__range])) > 0",
           "refId": "A",
           "instant": true,
           "format": "table"
@@ -336,8 +336,8 @@
             "type": "dynamic-geojson",
             "name": "Countries",
             "config": {
-              "src": "public/maps/countries.geojson",
-              "idField": "geoip_country_name",
+              "src": "public/maps/countries-alpha2.geojson",
+              "idField": "geoip_country_code",
               "dataStyle": {
                 "color": { "field": "Value" },
                 "opacity": 0.8
@@ -412,7 +412,7 @@
         }
       ],
       "fieldConfig": { "defaults": {}, "overrides": [] },
-      "options": { "sortBy": [{ "displayName": "Value", "desc": true }] },
+      "options": { "sortBy": [{ "displayName": "Value #A", "desc": true }] },
       "transformations": [
         { "id": "organize", "options": { "excludeByName": { "Time": true } } }
       ]

@@ -117,6 +117,17 @@ grafana:
   sidecar:
     datasources:
       watchMethod: "SLEEP"
+  # Alpha-2-keyed countries.geojson (see kube-prometheus-stack/extra/'s own
+  # ConfigMap and its comment) alongside Grafana's own built-in alpha-3
+  # file, for the mirror-analytics dashboard's choropleth panels - they
+  # join on geoip_country_code (alpha-2), which Grafana's shipped
+  # public/maps/countries.geojson can't match (it keys by alpha-3).
+  extraConfigmapMounts:
+    - name: countries-alpha2-geojson
+      configMap: grafana-countries-geojson
+      mountPath: /usr/share/grafana/public/maps/countries-alpha2.geojson
+      subPath: countries-alpha2.geojson
+      readOnly: true
   additionalDataSources:
     - name: Loki
       type: loki
