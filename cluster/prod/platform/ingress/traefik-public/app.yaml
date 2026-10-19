@@ -60,6 +60,25 @@ spec:
                 # Same reasoning as traefik-internal: large S3/git/photo
                 # uploads shouldn't get cut off at Traefik v3's 60s default.
                 readTimeout: 0
+            # Real internet traffic arrives via frpc (cluster/prod/platform/
+            # frpc - frps on an Oracle VPS tunnels to frpc in-cluster, which
+            # connects to this entrypoint directly). Without this, every
+            # single external visitor/bot/client showed up here as frpc's
+            # own pod IP - confirmed live via Traefik's own access log
+            # (ClientHost) before this was discovered. frpc's TCP proxy for
+            # "web" now sends transport.proxyProtocolVersion = "v2".
+            #
+            # Deliberately scoped to frpc's one pod IP, not the whole pod
+            # CIDR - anything hitting this entrypoint directly over the LAN
+            # (the 10.0.6.240/.241 path blackbox-exporter's internal/
+            # external-local probes and ad-hoc testing both use) doesn't
+            # send a Proxy Protocol header, and a CIDR-wide trust would
+            # make Traefik expect one from them too. frpc is a stable,
+            # rarely-restarted single-replica Deployment - if its pod IP
+            # ever changes, this needs updating to match.
+            proxyProtocol:
+              trustedIPs:
+                - 10.244.9.28/32
         service:
           type: LoadBalancer
           spec:
