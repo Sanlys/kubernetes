@@ -288,6 +288,17 @@
           "format": "table"
         }
       ],
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "unary",
+            "unary": { "operator": "ln", "fieldName": "Value" },
+            "alias": "ValueLog",
+            "replaceFields": false
+          }
+        }
+      ],
       "options": {
         "basemap": { "type": "carto" },
         "layers": [
@@ -298,7 +309,7 @@
               "src": "public/maps/countries-alpha2.geojson",
               "idField": "geoip_country_code",
               "dataStyle": {
-                "color": { "field": "Value" },
+                "color": { "field": "ValueLog" },
                 "opacity": 0.8
               },
               "style": { "opacity": 0 },
@@ -329,6 +340,17 @@
           "format": "table"
         }
       ],
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "unary",
+            "unary": { "operator": "ln", "fieldName": "Value" },
+            "alias": "ValueLog",
+            "replaceFields": false
+          }
+        }
+      ],
       "options": {
         "basemap": { "type": "carto" },
         "layers": [
@@ -339,7 +361,7 @@
               "src": "public/maps/countries-alpha2.geojson",
               "idField": "geoip_country_code",
               "dataStyle": {
-                "color": { "field": "Value" },
+                "color": { "field": "ValueLog" },
                 "opacity": 0.8
               },
               "style": { "opacity": 0 },
@@ -351,7 +373,12 @@
       },
       "fieldConfig": {
         "defaults": { "unit": "bytes", "color": { "mode": "continuous-BlYlRd" } },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "ValueLog" },
+            "properties": [{ "id": "unit", "value": "none" }, { "id": "decimals", "value": 2 }]
+          }
+        ]
       }
     },
     {
