@@ -250,7 +250,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (lat, lon) (increase(loki_process_custom_mirror_requests_total{lat!=\"\", lon!=\"\"}[$__range]))",
+          "expr": "sum by (lat, lon) (increase(loki_process_custom_mirror_requests_total{lat!=\"\", lon!=\"\"}[$__range])) > 0",
           "refId": "A",
           "instant": true,
           "format": "table"
@@ -320,7 +320,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (lat, lon) (increase(loki_process_custom_mirror_bytes_total{lat!=\"\", lon!=\"\"}[$__range]))",
+          "expr": "sum by (lat, lon) (increase(loki_process_custom_mirror_bytes_total{lat!=\"\", lon!=\"\"}[$__range])) > 0",
           "refId": "A",
           "instant": true,
           "format": "table"
@@ -389,7 +389,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "topk(20, sum by (geoip_country_name) (increase(loki_process_custom_mirror_requests_total{geoip_country_name!=\"\"}[$__range])))",
+          "expr": "topk(20, sum by (geoip_country_name) (increase(loki_process_custom_mirror_requests_total{geoip_country_name!=\"\"}[$__range])) > 0)",
           "refId": "A",
           "instant": true,
           "format": "table"
@@ -410,7 +410,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "topk(20, sum by (geoip_country_name) (increase(loki_process_custom_mirror_bytes_total{geoip_country_name!=\"\"}[$__range])))",
+          "expr": "topk(20, sum by (geoip_country_name) (increase(loki_process_custom_mirror_bytes_total{geoip_country_name!=\"\"}[$__range])) > 0)",
           "refId": "A",
           "instant": true,
           "format": "table"
