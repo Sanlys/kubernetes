@@ -67,7 +67,14 @@
           "instant": true
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 }, "overrides": [] },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] } }
     },
     {
@@ -84,7 +91,14 @@
           "instant": true
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "bytes", "decimals": 1 }, "overrides": [] },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "decimals": 1,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] } }
     },
     {
@@ -96,12 +110,19 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
-          "expr": "count(count by (remote_addr) (count_over_time({namespace=\"mirror\", container=\"mirror\"} | json [$__range])))",
+          "expr": "count(count by (remote_addr) (count_over_time({namespace=\"mirror\", container=\"mirror\"} | json | __error__=\"\" [$__range])))",
           "refId": "A",
           "queryType": "instant"
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 }, "overrides": [] },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] } }
     },
     {
@@ -193,7 +214,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (status) (increase(loki_process_custom_mirror_requests_total[$__range]))",
+          "expr": "sum by (status) (increase(loki_process_custom_mirror_requests_total{status!=\"\"}[$__range]))",
           "refId": "A",
           "instant": true,
           "legendFormat": "{{status}}"
@@ -211,7 +232,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
-          "expr": "topk(20, sum by (request_uri) (count_over_time({namespace=\"mirror\", container=\"mirror\"} | json [$__range])))",
+          "expr": "topk(20, sum by (request_uri) (count_over_time({namespace=\"mirror\", container=\"mirror\"} | json | __error__=\"\" [$__range])))",
           "refId": "A",
           "queryType": "instant"
         }
@@ -238,7 +259,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (geoip_country_code) (increase(loki_process_custom_mirror_requests_total[$__range]))",
+          "expr": "sum by (geoip_country_code) (increase(loki_process_custom_mirror_requests_total{geoip_country_code!=\"\"}[$__range]))",
           "refId": "A",
           "instant": true,
           "format": "table"
@@ -273,7 +294,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum by (geoip_country_code) (increase(loki_process_custom_mirror_bytes_total[$__range]))",
+          "expr": "sum by (geoip_country_code) (increase(loki_process_custom_mirror_bytes_total{geoip_country_code!=\"\"}[$__range]))",
           "refId": "A",
           "instant": true,
           "format": "table"
@@ -308,7 +329,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "topk(20, sum by (geoip_country_code) (increase(loki_process_custom_mirror_requests_total[$__range])))",
+          "expr": "topk(20, sum by (geoip_country_code) (increase(loki_process_custom_mirror_requests_total{geoip_country_code!=\"\"}[$__range])))",
           "refId": "A",
           "instant": true,
           "format": "table"
@@ -328,7 +349,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "topk(20, sum by (geoip_country_code) (increase(loki_process_custom_mirror_bytes_total[$__range])))",
+          "expr": "topk(20, sum by (geoip_country_code) (increase(loki_process_custom_mirror_bytes_total{geoip_country_code!=\"\"}[$__range])))",
           "refId": "A",
           "instant": true,
           "format": "table"
@@ -349,7 +370,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
-          "expr": "topk(20, count by (geoip_country_code) (count by (geoip_country_code, remote_addr) (count_over_time({namespace=\"mirror\", container=\"mirror\"} | json [$__range]))))",
+          "expr": "topk(20, count by (geoip_country_code) (count by (geoip_country_code, remote_addr) (count_over_time({namespace=\"mirror\", container=\"mirror\", geoip_country_code!=\"\"} | json | __error__=\"\" [$__range]))))",
           "refId": "A",
           "queryType": "instant"
         }

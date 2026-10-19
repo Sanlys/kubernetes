@@ -38,6 +38,16 @@ alloy:
       discovery.relabel "pods" {
         targets = discovery.kubernetes.pods.targets
 
+        // mirror's own dedicated pipeline below also forwards everything
+        // it keeps to loki.write - without this, every mirror log line
+        // was being stored twice (once raw here, once processed there),
+        // silently doubling any Loki query result for that namespace.
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          action        = "drop"
+          regex         = "mirror"
+        }
+
         rule {
           source_labels = ["__meta_kubernetes_namespace"]
           target_label  = "namespace"
@@ -125,13 +135,43 @@ alloy:
       }
 
       loki.process "mirror_nginx" {
+        // drop_malformed: nginx's own startup banner line ("Configuration
+        // complete; ready for start up") isn't JSON - without this it was
+        // flowing through with no status/bytes extracted, showing up as
+        // an unlabeled "requests_total" series and polluting the status
+        // breakdown with an empty-status slice.
         stage.json {
           expressions = {
             remote_addr     = "remote_addr",
             request_uri     = "request_uri",
             status          = "status",
             body_bytes_sent = "body_bytes_sent",
+            http_user_agent = "http_user_agent",
           }
+          drop_malformed = true
+        }
+
+        // kube-probe hits nginx directly every 10-20s (readiness/liveness,
+        // bypassing Traefik entirely) and Blackbox-Exporter probes several
+        // mirror targets every ~30s - neither is a real visitor, and
+        // together they were the majority of what "Total Requests" was
+        // actually counting. user_agent is promoted only long enough to
+        // match on, then dropped again below so it never becomes a
+        // Prometheus label (unbounded cardinality risk otherwise).
+        stage.labels {
+          values = {
+            http_user_agent = "",
+          }
+        }
+
+        stage.match {
+          selector             = "{http_user_agent=~\".*kube-probe.*|.*Blackbox-Exporter.*\"}"
+          action               = "drop"
+          drop_counter_reason  = "synthetic_monitoring"
+        }
+
+        stage.label_drop {
+          values = ["http_user_agent"]
         }
 
         stage.geoip {
