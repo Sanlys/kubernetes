@@ -290,8 +290,8 @@
             "config": {
               "style": {
                 "color": { "fixed": "white" },
-                "size": { "fixed": 35 },
-                "opacity": 0.3
+                "size": { "fixed": 9 },
+                "opacity": 0.6
               },
               "showLegend": false
             },
@@ -360,8 +360,8 @@
             "config": {
               "style": {
                 "color": { "fixed": "white" },
-                "size": { "fixed": 35 },
-                "opacity": 0.3
+                "size": { "fixed": 9 },
+                "opacity": 0.6
               },
               "showLegend": false
             },
