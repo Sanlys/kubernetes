@@ -245,7 +245,7 @@
       "title": "Requests Heatmap",
       "description": "City-level (DB-IP City-Lite centroid, approximate) heatmap - intensity is request volume, no size/threshold encoding.",
       "id": 31,
-      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 24 },
+      "gridPos": { "h": 20, "w": 12, "x": 0, "y": 24 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -289,8 +289,8 @@
             "config": {
               "style": {
                 "color": { "fixed": "white" },
-                "size": { "fixed": 4 },
-                "opacity": 0.15
+                "size": { "fixed": 35 },
+                "opacity": 0.08
               },
               "showLegend": false
             },
@@ -314,7 +314,7 @@
       "title": "Bandwidth Heatmap",
       "description": "City-level (DB-IP City-Lite centroid, approximate) heatmap - intensity is bytes served, no size/threshold encoding.",
       "id": 32,
-      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 24 },
+      "gridPos": { "h": 20, "w": 12, "x": 12, "y": 24 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -358,8 +358,8 @@
             "config": {
               "style": {
                 "color": { "fixed": "white" },
-                "size": { "fixed": 4 },
-                "opacity": 0.15
+                "size": { "fixed": 35 },
+                "opacity": 0.08
               },
               "showLegend": false
             },
@@ -382,7 +382,7 @@
       "type": "table",
       "title": "Top Countries by Requests",
       "id": 33,
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 34 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 44 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -403,7 +403,7 @@
       "type": "table",
       "title": "Top Countries by Bandwidth",
       "id": 34,
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 34 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 44 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -425,7 +425,7 @@
       "title": "Unique Visitors by Country",
       "id": 35,
       "description": "Bounded by Loki's 40d retention, same as the Unique Visitors stat above.",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 42 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 52 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
