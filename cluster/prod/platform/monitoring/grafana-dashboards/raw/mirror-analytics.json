@@ -43,21 +43,10 @@
       "panels": []
     },
     {
-      "type": "text",
-      "title": "",
-      "id": 100,
-      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 1 },
-      "options": {
-        "mode": "markdown",
-        "content": "Requests/bandwidth come from Alloy-derived Prometheus counters (31d retention). Unique visitors and top paths query raw logs in Loki directly (40d retention) - both are bounded by the dashboard time range above. \"Unique visitors\" = distinct source IPs, the standard proxy for this kind of analytics; it under/overcounts somewhat with NAT and dynamic IPs."
-      },
-      "fieldConfig": { "defaults": {}, "overrides": [] }
-    },
-    {
       "type": "stat",
       "title": "Total Requests",
       "id": 2,
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 3 },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -70,7 +59,7 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "decimals": 0,
+          "decimals": 3,
           "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
         },
         "overrides": []
@@ -81,7 +70,7 @@
       "type": "stat",
       "title": "Total Bandwidth",
       "id": 3,
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 3 },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -105,7 +94,7 @@
       "type": "stat",
       "title": "Unique Visitors",
       "id": 4,
-      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 3 },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
@@ -118,7 +107,7 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "decimals": 0,
+          "decimals": 3,
           "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
         },
         "overrides": []
@@ -130,7 +119,7 @@
       "title": "Time Since Last Sync",
       "id": 5,
       "description": "From the mirror's own lastsync file content, not just whether the CronJob ran - reflects actual data freshness.",
-      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 3 },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -162,14 +151,14 @@
       "title": "Traffic over time",
       "collapsed": false,
       "id": 10,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
       "panels": []
     },
     {
       "type": "timeseries",
       "title": "Requests",
       "id": 11,
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -185,7 +174,7 @@
       "type": "timeseries",
       "title": "Bandwidth",
       "id": 12,
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -202,14 +191,14 @@
       "title": "Status codes & top content",
       "collapsed": false,
       "id": 20,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
       "panels": []
     },
     {
       "type": "piechart",
       "title": "Status Code Breakdown",
       "id": 21,
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 17 },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 15 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -227,7 +216,7 @@
       "title": "Top Requested Paths",
       "id": 22,
       "description": "A rising count on a package name you don't expect, or a flood of 404s on one path, can indicate stale package lists on clients or a broken sync.",
-      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 17 },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 15 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
@@ -238,6 +227,7 @@
         }
       ],
       "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": { "sortBy": [{ "displayName": "Value", "desc": true }] },
       "transformations": [
         { "id": "organize", "options": { "excludeByName": { "Time": true } } }
       ]
@@ -247,7 +237,7 @@
       "title": "Geography",
       "collapsed": false,
       "id": 30,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
       "panels": []
     },
     {
@@ -255,7 +245,7 @@
       "title": "Requests Heatmap",
       "description": "City-level (DB-IP City-Lite centroid, approximate) heatmap - intensity is request volume, no size/threshold encoding.",
       "id": 31,
-      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 26 },
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 24 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -283,9 +273,9 @@
           {
             "type": "heatmap",
             "config": {
-              "weight": { "field": "Value", "min": 0, "max": 1 },
-              "radius": 8,
-              "blur": 18
+              "weight": { "field": "Value", "min": 0.35, "max": 1 },
+              "radius": 14,
+              "blur": 12
             },
             "location": {
               "mode": "coords",
@@ -306,7 +296,7 @@
       "title": "Bandwidth Heatmap",
       "description": "City-level (DB-IP City-Lite centroid, approximate) heatmap - intensity is bytes served, no size/threshold encoding.",
       "id": 32,
-      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 26 },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 24 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -334,9 +324,9 @@
           {
             "type": "heatmap",
             "config": {
-              "weight": { "field": "Value", "min": 0, "max": 1 },
-              "radius": 8,
-              "blur": 18
+              "weight": { "field": "Value", "min": 0.35, "max": 1 },
+              "radius": 14,
+              "blur": 12
             },
             "location": {
               "mode": "coords",
@@ -356,7 +346,7 @@
       "type": "table",
       "title": "Top Countries by Requests",
       "id": 33,
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 36 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 34 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -368,6 +358,7 @@
         }
       ],
       "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": { "sortBy": [{ "displayName": "Value", "desc": true }] },
       "transformations": [
         { "id": "organize", "options": { "excludeByName": { "Time": true } } }
       ]
@@ -376,7 +367,7 @@
       "type": "table",
       "title": "Top Countries by Bandwidth",
       "id": 34,
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 36 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 34 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
         {
@@ -388,6 +379,7 @@
         }
       ],
       "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "options": { "sortBy": [{ "displayName": "Value", "desc": true }] },
       "transformations": [
         { "id": "organize", "options": { "excludeByName": { "Time": true } } }
       ]
@@ -397,7 +389,7 @@
       "title": "Unique Visitors by Country",
       "id": 35,
       "description": "Bounded by Loki's 40d retention, same as the Unique Visitors stat above.",
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 44 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 42 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
@@ -408,6 +400,7 @@
         }
       ],
       "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": { "sortBy": [{ "displayName": "Value", "desc": true }] },
       "transformations": [
         { "id": "organize", "options": { "excludeByName": { "Time": true } } }
       ]
