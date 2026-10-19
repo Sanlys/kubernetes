@@ -184,10 +184,16 @@ alloy:
         // their label set from active Loki labels, not raw extracted
         // values) can be dimensioned by country/status. Bounded
         // cardinality: ~250 countries x ~15 realistic status codes.
+        // geoip_country_name rides along from the same lookup (db_type
+        // "country" already returns it for free) - kept alongside the code
+        // rather than instead of it: the code is what the dashboard's
+        // geomap panels match against Grafana's built-in gazetteer, the
+        // name is what the table panels display instead of a 2-letter code.
         stage.labels {
           values = {
             status              = "",
             geoip_country_code  = "",
+            geoip_country_name  = "",
           }
         }
 

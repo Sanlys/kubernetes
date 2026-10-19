@@ -6,7 +6,14 @@ metadata:
 spec:
   schedule: "31 */6 * * *"
   concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 0
+  # Was 0 - the pod was deleted the instant the Job succeeded, before Alloy's
+  # Kubernetes-API log tailing (loki.source.kubernetes, which can only tail
+  # pods that still exist) ever got a chance to discover and read it. Result:
+  # the mirror_lastsync_epoch_seconds gauge never got a single data point,
+  # ever, despite the pipeline being configured correctly. 1 keeps the pod
+  # around until the next run replaces it 6h later - plenty of time for
+  # Alloy's discovery loop (sub-minute) to catch it.
+  successfulJobsHistoryLimit: 1
   jobTemplate:
     spec:
       # archmirror-pvc-rwx is CephFS (RWX): this no longer needs to co-locate

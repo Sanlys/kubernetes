@@ -271,17 +271,21 @@
           {
             "type": "markers",
             "config": {
-              "data": { "value": "Value" },
-              "location": {
-                "mode": "lookup",
-                "lookup": "geoip_country_code",
-                "gazetteer": "countries"
+              "style": {
+                "color": { "field": "Value", "fixed": "dark-green" },
+                "size": { "field": "Value", "fixed": 5, "min": 2, "max": 30 },
+                "opacity": 0.8
               },
-              "size": { "fixed": 5, "min": 2, "max": 30 },
-              "color": { "mode": "value" }
+              "showLegend": true
+            },
+            "location": {
+              "mode": "lookup",
+              "lookup": "geoip_country_code",
+              "gazetteer": "public/gazetteer/countries.json"
             }
           }
-        ]
+        ],
+        "view": { "id": "zero", "lat": 0, "lon": 0, "zoom": 1 }
       },
       "fieldConfig": { "defaults": {}, "overrides": [] }
     },
@@ -306,17 +310,21 @@
           {
             "type": "markers",
             "config": {
-              "data": { "value": "Value" },
-              "location": {
-                "mode": "lookup",
-                "lookup": "geoip_country_code",
-                "gazetteer": "countries"
+              "style": {
+                "color": { "field": "Value", "fixed": "dark-green" },
+                "size": { "field": "Value", "fixed": 5, "min": 2, "max": 30 },
+                "opacity": 0.8
               },
-              "size": { "fixed": 5, "min": 2, "max": 30 },
-              "color": { "mode": "value" }
+              "showLegend": true
+            },
+            "location": {
+              "mode": "lookup",
+              "lookup": "geoip_country_code",
+              "gazetteer": "public/gazetteer/countries.json"
             }
           }
-        ]
+        ],
+        "view": { "id": "zero", "lat": 0, "lon": 0, "zoom": 1 }
       },
       "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] }
     },
@@ -329,7 +337,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "topk(20, sum by (geoip_country_code) (increase(loki_process_custom_mirror_requests_total{geoip_country_code!=\"\"}[$__range])))",
+          "expr": "topk(20, sum by (geoip_country_name) (increase(loki_process_custom_mirror_requests_total{geoip_country_name!=\"\"}[$__range])))",
           "refId": "A",
           "instant": true,
           "format": "table"
@@ -349,7 +357,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "topk(20, sum by (geoip_country_code) (increase(loki_process_custom_mirror_bytes_total{geoip_country_code!=\"\"}[$__range])))",
+          "expr": "topk(20, sum by (geoip_country_name) (increase(loki_process_custom_mirror_bytes_total{geoip_country_name!=\"\"}[$__range])))",
           "refId": "A",
           "instant": true,
           "format": "table"
@@ -370,7 +378,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
-          "expr": "topk(20, count by (geoip_country_code) (count by (geoip_country_code, remote_addr) (count_over_time({namespace=\"mirror\", container=\"mirror\", geoip_country_code!=\"\"} | json | __error__=\"\" [$__range]))))",
+          "expr": "topk(20, count by (geoip_country_name) (count by (geoip_country_name, remote_addr) (count_over_time({namespace=\"mirror\", container=\"mirror\", geoip_country_name!=\"\"} | json | __error__=\"\" [$__range]))))",
           "refId": "A",
           "queryType": "instant"
         }

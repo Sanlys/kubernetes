@@ -22,6 +22,16 @@ loki:
     # roughly ~105GB - PVC bumped below to 150Gi for headroom. Trivial
     # against the ~47TB free in the Ceph pool.
     retention_period: 960h
+    # Was the 500 default - the mirror dashboard's "Unique Visitors" panels
+    # do `count by (remote_addr) (...)` over raw logs (remote_addr isn't a
+    # Loki label, by design - unbounded cardinality - so it can't be a
+    # Prometheus metric dimension). That groupby needs one intermediate
+    # series per distinct IP in range *before* the outer count() collapses
+    # it to a single number, and real internet traffic produces more than
+    # 500 distinct IPs over any useful time range. Confirmed live: the panel
+    # errored with "maximum number of series (500) reached" only after the
+    # FRP Proxy Protocol fix started letting real external IPs through.
+    max_query_series: 5000
   compactor:
     retention_enabled: true
     working_directory: /var/loki/compactor
