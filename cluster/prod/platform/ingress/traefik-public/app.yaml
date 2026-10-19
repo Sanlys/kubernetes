@@ -64,6 +64,22 @@ spec:
           type: LoadBalancer
           spec:
             loadBalancerIP: 10.0.6.241
+            # Was Cluster (the default) - with classic kube-proxy
+            # (Cilium's kube-proxy-replacement is off here) a packet can
+            # get forwarded to a Traefik pod on a different node than the
+            # one MetalLB's L2 announcer elected, and that hop SNATs away
+            # the real client IP. Confirmed live: Traefik's own access
+            # logs only ever showed pod-CIDR IPs as ClientHost, even for
+            # genuine external traffic - no public app behind this
+            # Service has ever seen real visitor IPs. MetalLB is L2-mode
+            # here, which already funnels all traffic through one elected
+            # node regardless of this setting, so the practical cost is
+            # losing load distribution across the 2 replicas (only the
+            # one sharing a node with the active announcer gets traffic)
+            # in exchange for correct source IPs - failover still works,
+            # just via MetalLB re-electing a node (a few seconds) instead
+            # of kube-proxy's near-instant pod-level failover.
+            externalTrafficPolicy: Local
         metrics:
           prometheus:
             serviceMonitor:
