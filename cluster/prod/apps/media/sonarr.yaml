@@ -180,8 +180,15 @@ spec:
             timeoutSeconds: 25
             failureThreshold: 6
           resources:
-            requests: { cpu: "100m", memory: "512Mi" }
-            limits: { memory: "512Mi" }
+            # Was 512Mi - OOMKilled 6 times in ~30min (confirmed via
+            # containerStatuses.lastState.terminated.reason), crash-looping
+            # while running RSS sync alongside the rclone VFS cache's
+            # upload queue for several large files at once. The exec-probe
+            # "failed to open /proc/<pid>/ns" errors in the pod's events
+            # were a side effect of kubelet probing a container whose main
+            # process had just been OOM-killed, not a separate runtime bug.
+            requests: { cpu: "100m", memory: "1Gi" }
+            limits: { memory: "1Gi" }
       volumes:
         - name: config
           persistentVolumeClaim:
