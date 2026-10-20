@@ -30,13 +30,7 @@ metadata:
   name: sonarr
   namespace: media
 spec:
-  # Scaled to 0 - the rclone-NFS loopback (see postStart below) has a real
-  # EXCLUSIVE-create bug (rclone's NFSv3 server doesn't support it) that
-  # leaves destination files at 0 bytes and sends Sonarr into an OOM crash
-  # loop retrying forever. Investigating a Ceph-native NFS-Ganesha RGW
-  # export (rook-ceph-nfs/my-nfs, currently unused) as the real fix before
-  # scaling back up - see git log for context when this becomes 1 again.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
@@ -47,13 +41,6 @@ spec:
       labels:
         app: sonarr
     spec:
-      initContainers:
-        - name: copy-rclone-binary
-          image: rclone/rclone:1.75
-          command: ["sh", "-c", "cp \"$(command -v rclone)\" /shared-bin/rclone && chmod +x /shared-bin/rclone"]
-          volumeMounts:
-            - name: rclone-bin
-              mountPath: /shared-bin
       containers:
         - name: sonarr
           image: lscr.io/linuxserver/sonarr:4.0.20
@@ -64,11 +51,6 @@ spec:
               value: "1000"
             - name: TZ
               value: "Europe/Oslo"
-          envFrom:
-            - secretRef:
-                name: media-library-bucket
-            - configMapRef:
-                name: media-library-bucket
           ports:
             - containerPort: 8989
               name: http
@@ -86,9 +68,6 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
-            - name: rclone-bin
-              mountPath: /opt/rclone-bin
-              readOnly: true
             - name: dl
               mountPath: /dl
           lifecycle:
@@ -123,34 +102,29 @@ spec:
                     if [ ! -s /etc/protocols ]; then
                       printf 'ip\t0\tIP\nicmp\t1\tICMP\ntcp\t6\tTCP\nudp\t17\tUDP\n' > /etc/protocols
                     fi
-                    export RCLONE_CONFIG_CEPHBUCKET_TYPE=s3
-                    export RCLONE_CONFIG_CEPHBUCKET_PROVIDER=Ceph
-                    export RCLONE_CONFIG_CEPHBUCKET_ENV_AUTH=false
-                    export RCLONE_CONFIG_CEPHBUCKET_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
-                    export RCLONE_CONFIG_CEPHBUCKET_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
-                    export RCLONE_CONFIG_CEPHBUCKET_ENDPOINT="http://$BUCKET_HOST:$BUCKET_PORT"
-                    export RCLONE_CONFIG_CEPHBUCKET_REGION="$BUCKET_REGION"
                     mkdir -p /mnt/media
                     umount -l /mnt/media 2>/dev/null || true
-                    rpcbind 2>/dev/null || true
-                    # Loopback only (127.0.0.1) - never reachable off-pod.
-                    setsid /opt/rclone-bin/rclone serve nfs "cephbucket:$BUCKET_NAME" \
-                      --addr 127.0.0.1:2049 \
-                      --vfs-cache-mode writes \
-                      --dir-cache-time 1h \
-                      --uid 1000 --gid 1000 --umask 022 \
-                      --log-level INFO \
-                      > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
+                    # mounts the central nfs-gateway (see
+                    # platform/nfs-gateway) over the real network, inside
+                    # this pod's own netns so cluster DNS resolves
+                    # normally - unlike a kubelet-level native `nfs:`
+                    # volume, which mounts from the host's netns and
+                    # can't resolve in-cluster service DNS at all
+                    # (confirmed: "Name or service not known"). This same
+                    # vers=4.1,soft,sync,proto=tcp recipe is what's been
+                    # verified end to end against the gateway, including
+                    # genuinely out-of-order writes with a checksum
+                    # round-trip - don't change it without re-verifying.
                     mounted=0
                     for i in $(seq 1 30); do
-                      if mount -t nfs -o vers=3,tcp,nolock,port=2049,mountport=2049,soft 127.0.0.1:/ /mnt/media 2>/tmp/mount.err; then
+                      if mount -t nfs -o vers=4.1,soft,sync,proto=tcp nfs-gateway.nfs-gateway.svc.cluster.local:/media-library /mnt/media 2>/tmp/mount.err; then
                         mounted=1
                         break
                       fi
                       sleep 1
                     done
                     if [ "$mounted" -ne 1 ]; then
-                      echo "failed to mount rclone NFS export after 30s, last error:" >&2
+                      echo "failed to mount nfs-gateway export after 30s, last error:" >&2
                       cat /tmp/mount.err >&2
                       exit 1
                     fi
@@ -164,10 +138,10 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 12
-          # Liveness also checks the in-process rclone NFS mount: if rclone dies
-          # or the bucket backend wedges, the soft mount returns I/O errors
-          # forever and only a container restart (re-running postStart) fixes
-          # it. HTTP check uses curl/wget if the image has one.
+          # Liveness also checks the nfs-gateway mount: if the gateway pod
+          # dies or wedges, the soft mount returns I/O errors forever and
+          # only a container restart (re-running postStart) fixes it. HTTP
+          # check uses curl/wget if the image has one.
           livenessProbe:
             exec:
               command:
@@ -188,19 +162,17 @@ spec:
           resources:
             # Was 512Mi - OOMKilled 6 times in ~30min (confirmed via
             # containerStatuses.lastState.terminated.reason), crash-looping
-            # while running RSS sync alongside the rclone VFS cache's
-            # upload queue for several large files at once. The exec-probe
-            # "failed to open /proc/<pid>/ns" errors in the pod's events
-            # were a side effect of kubelet probing a container whose main
-            # process had just been OOM-killed, not a separate runtime bug.
+            # while running RSS sync alongside rclone's own VFS cache and
+            # upload queue (back when Sonarr ran its own rclone instance
+            # directly). That load moved out to nfs-gateway's single
+            # shared instance, so this is likely more headroom than
+            # needed now, but left as-is rather than re-tuning blind.
             requests: { cpu: "100m", memory: "1Gi" }
             limits: { memory: "1Gi" }
       volumes:
         - name: config
           persistentVolumeClaim:
             claimName: sonarr-config
-        - name: rclone-bin
-          emptyDir: {}
         - name: dl
           persistentVolumeClaim:
             claimName: qbittorrent-dl
