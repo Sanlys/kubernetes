@@ -47,31 +47,6 @@ spec:
     requests:
       storage: 5Gi
 ---
-# Sizing note: with --vfs-cache-mode writes (required behind an NFS
-# mount - the kernel NFS client issues WRITE RPCs at arbitrary offsets
-# via writeback, so the streaming --vfs-cache-mode off path is not
-# usable here), rclone stages a file IN FULL on this PVC before any of
-# it is uploaded to the bucket. So this size is a hard ceiling on the
-# largest single file that can be written through /mnt/media, and
-# --transfers above means several can be staging at once.
-#
-# 150Gi was under that ceiling: qbittorrent moved a ~154GiB file into
-# the bucket path, which claimed the whole PVC as it materialised,
-# blocked every other transfer behind it, and would have hit ENOSPC a
-# few GiB from the end. Keep this comfortably above the largest media
-# file that will pass through, not just above the current one.
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: qbittorrent-vfs-cache
-  namespace: media
-spec:
-  accessModes: ["ReadWriteOnce"]
-  storageClassName: rook-ceph-block-ssd
-  resources:
-    requests:
-      storage: 400Gi
----
 # RWX (CephFS, not RBD block) - sonarr/radarr each run as their own
 # separate pod and need to see this same real filesystem qbittorrent
 # downloads into, not just the bucket they get copied/served to. See
@@ -131,8 +106,8 @@ metadata:
 spec:
   replicas: 1
   # RollingUpdate would schedule a second pod before killing the old one -
-  # fatal for the RWO qbittorrent-config/qbittorrent-vfs-cache PVCs
-  # (Multi-Attach error), same reasoning as immich-server.
+  # fatal for the RWO qbittorrent-config PVC (Multi-Attach error), same
+  # reasoning as immich-server.
   strategy:
     type: Recreate
   selector:
@@ -144,16 +119,6 @@ spec:
         app: qbittorrent
     spec:
       initContainers:
-        # rclone binary is a static Go build, portable across distros - only
-        # the NFS client packages (installed at postStart below) need to
-        # come from the container's own distro. Same technique as
-        # immich-server; see cluster/prod/apps/immich/server.yaml.
-        - name: copy-rclone-binary
-          image: rclone/rclone:1.75
-          command: ["sh", "-c", "cp \"$(command -v rclone)\" /shared-bin/rclone && chmod +x /shared-bin/rclone"]
-          volumeMounts:
-            - name: rclone-bin
-              mountPath: /shared-bin
         # nfs-utils used to be installed in qbittorrent's own postStart
         # hook, but that runs after gluetun (sharing this pod's network
         # namespace) starts, so it raced gluetun's kill-switch firewall
@@ -278,16 +243,15 @@ spec:
             # it doesn't work - it has been renamed between major versions.
             - name: FIREWALL_INPUT_PORTS
               value: "8080,8888"
-            # Otherwise the kill-switch firewall also blocks the rclone
-            # mount's outbound traffic to the internal Ceph RGW bucket
-            # endpoint (BUCKET_HOST) - that's cluster-internal, not
-            # internet traffic, so it should never go through the tunnel
-            # anyway. This only decides which destinations skip the
-            # tunnel, not whether internet-bound traffic can leak, so
-            # covering all of RFC1918 10.0.0.0/8 instead of pinning the
-            # exact pod/service CIDR split is fine and one less thing to
-            # get wrong (pod CIDR is 10.244.0.0/16, but the service CIDR
-            # BUCKET_HOST's ClusterIP actually falls in wasn't 10.96/12).
+            # Otherwise the kill-switch firewall also blocks the postStart
+            # NFS mount's outbound traffic to nfs-gateway's ClusterIP -
+            # that's cluster-internal, not internet traffic, so it should
+            # never go through the tunnel anyway. This only decides which
+            # destinations skip the tunnel, not whether internet-bound
+            # traffic can leak, so covering all of RFC1918 10.0.0.0/8
+            # instead of pinning the exact pod/service CIDR split is fine
+            # and one less thing to get wrong (pod CIDR is 10.244.0.0/16,
+            # service CIDR is a separate 10.x range).
             - name: FIREWALL_OUTBOUND_SUBNETS
               value: "10.0.0.0/8"
             # gluetun otherwise hijacks DNS for the whole shared network
@@ -343,15 +307,10 @@ spec:
               value: "Europe/Oslo"
             - name: WEBUI_PORT
               value: "8080"
-          envFrom:
-            - secretRef:
-                name: media-library-bucket
-            - configMapRef:
-                name: media-library-bucket
           ports:
             - containerPort: 8080
               name: webui
-          # Bucket mount needs CAP_SYS_ADMIN for the mount(2) syscall; runs
+          # NFS mount needs CAP_SYS_ADMIN for the mount(2) syscall; runs
           # in-process (postStart) rather than a sidecar, since
           # cross-container mount propagation doesn't work on this
           # cluster's Talos nodes. Same technique as immich-server.
@@ -360,9 +319,6 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /config
-            - name: rclone-bin
-              mountPath: /opt/rclone-bin
-              readOnly: true
             # NFS client tools (mount.nfs and its runtime libraries),
             # built by the install-nfs-utils initContainer above. See the
             # comment there for why this moved out of postStart.
@@ -375,8 +331,6 @@ spec:
             # after an unclean shutdown.
             - name: custom-init
               mountPath: /custom-cont-init.d
-            - name: vfs-cache
-              mountPath: /rclone-cache
             - name: dl
               mountPath: /dl
           lifecycle:
@@ -407,107 +361,40 @@ spec:
                     if [ ! -s /etc/protocols ]; then
                       printf 'ip\t0\tIP\nicmp\t1\tICMP\ntcp\t6\tTCP\nudp\t17\tUDP\n' > /etc/protocols
                     fi
-                    export RCLONE_CONFIG_CEPHBUCKET_TYPE=s3
-                    export RCLONE_CONFIG_CEPHBUCKET_PROVIDER=Ceph
-                    export RCLONE_CONFIG_CEPHBUCKET_ENV_AUTH=false
-                    export RCLONE_CONFIG_CEPHBUCKET_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
-                    export RCLONE_CONFIG_CEPHBUCKET_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
-                    export RCLONE_CONFIG_CEPHBUCKET_ENDPOINT="http://$BUCKET_HOST:$BUCKET_PORT"
-                    export RCLONE_CONFIG_CEPHBUCKET_REGION="$BUCKET_REGION"
                     mkdir -p /mnt/media
                     umount -l /mnt/media 2>/dev/null || true
-                    rpcbind 2>/dev/null || true
-                    # vfs-cache-mode writes: only files actively being
-                    # written (i.e. mid-download) are cached on the local
-                    # PVC - reads of already-uploaded, untouched files skip
-                    # the cache entirely. Loopback only (127.0.0.1) - never
-                    # reachable off-pod.
+                    # mounts the central nfs-gateway (see
+                    # platform/nfs-gateway) over the real network - no
+                    # more rclone running in this pod at all, which also
+                    # retires the GOMEMLIMIT/page-cache OOM fight that
+                    # used to live here (rclone's heap is the gateway's
+                    # problem now, sized there) and the whole
+                    # qbittorrent-vfs-cache PVC (gone - the gateway has
+                    # its own shared cache sized for this exact workload,
+                    # see its own sizing comment).
                     #
-                    # --s3-chunk-size/--s3-upload-concurrency/--transfers
-                    # cap worst-case multipart upload buffering per chunk.
-                    # On their own, though, they don't stop a fast writer
-                    # (cp, qbittorrent, sonarr/radarr) from pushing data
-                    # into the VFS cache far faster than the throttled
-                    # upload can drain it - nothing was pushing back on
-                    # the writer, so the mismatch just piled up as page
-                    # cache until it hit this container's memory limit and
-                    # got OOM-killed (confirmed live: anon stayed flat
-                    # ~50MB and file_dirty stayed near zero during a
-                    # crash-inducing transfer - it was never the
-                    # multipart buffer or a writeback backlog, it was
-                    # unbounded clean page cache from the read side with
-                    # no cap upstream).
-                    #
-                    # Do NOT add --vfs-cache-max-size here without making
-                    # it larger than the largest single file that will be
-                    # written. With --vfs-cache-mode writes the whole
-                    # in-flight file is staged in --cache-dir, so a cap
-                    # below the file size cannot be satisfied by eviction
-                    # (the file is in use and not evictable) and shows up
-                    # as an I/O error to the writer instead. It also
-                    # bounds on-disk cache, not page cache, so it does
-                    # nothing for the OOM in any case. The qbittorrent-
-                    # vfs-cache PVC is 150Gi, which is itself the real
-                    # ceiling on single-file size through this path.
-                    #
-                    # GOMEMLIMIT is the actual memory fix. Go's GC is not
-                    # cgroup-aware: by default it sizes the heap against
-                    # what it believes is available system memory and lets
-                    # the heap roughly double over the live set before
-                    # collecting, so rclone will happily expand into this
-                    # container's memory.max and get OOM-killed. Raising
-                    # resources.limits.memory does not help - it just
-                    # gives the runtime more room to expand into before
-                    # GC pressure kicks in, which is why 2Gi and 4Gi
-                    # failed identically. This is a soft limit: the GC
-                    # gets more aggressive as it is approached rather
-                    # than failing allocations. Keep it well under
-                    # resources.limits.memory below, since the limit also
-                    # has to cover qbittorrent itself (~50-100MB
-                    # observed) and page cache for the CephFS read side,
-                    # the RBD cache-dir writes, and the NFS client.
-                    export GOMEMLIMIT=1600MiB
-                    export GODEBUG=gctrace=1
-                    setsid /opt/rclone-bin/rclone serve nfs "cephbucket:$BUCKET_NAME" \
-                      --addr 127.0.0.1:2049 \
-                      --vfs-cache-mode writes \
-                      --cache-dir /rclone-cache \
-                      --dir-cache-time 1h \
-                      --uid 1000 --gid 1000 --umask 022 \
-                      --log-level INFO \
-                      --s3-chunk-size 16M \
-                      --s3-upload-concurrency 2 \
-                      --transfers 4 \
-                      --buffer-size 16M \
-                      --vfs-write-back 5s \
-                      > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
+                    # rsize/wsize: the kernel NFS client issues many RPCs
+                    # in parallel, and each in-flight one is a buffer the
+                    # server has to hold - this still bounds this pod's
+                    # worst-case contribution to the gateway's memory
+                    # even though it's no longer this pod's own OOM risk.
+                    # timeo is tenths of a second: 1800 = 180s per
+                    # attempt. On a soft mount that means the writer gets
+                    # EIO rather than hanging if the gateway stalls -
+                    # which is what produced "cp: cannot stat ...: I/O
+                    # error" rather than a clean failure. Widened from
+                    # the default to give a throttled upload room to
+                    # finish an RPC.
                     mounted=0
                     for i in $(seq 1 30); do
-                      # rsize/wsize default to 1M here, and the kernel
-                      # NFS client issues many of those in parallel. Each
-                      # in-flight RPC is a buffer the userspace server
-                      # (rclone/go-nfs, in this same cgroup) has to hold,
-                      # so 1M x parallel writes is a multi-hundred-MB
-                      # amplifier on top of rclone's own heap. 256K cuts
-                      # that ~4x at negligible throughput cost for
-                      # sequential large-file writes, which are already
-                      # bounded by the S3 upload rate, not RPC size.
-                      #
-                      # timeo is in tenths of a second: 600 = 60s per
-                      # attempt, retrans=2. On a soft mount that means
-                      # the writer gets EIO rather than hanging if rclone
-                      # stalls - which is what produced
-                      # "cp: cannot stat ...: I/O error" rather than a
-                      # clean failure. Widened to give a throttled upload
-                      # room to finish an RPC.
-                      if mount -t nfs -o vers=3,tcp,nolock,port=2049,mountport=2049,soft,rsize=262144,wsize=262144,timeo=1800,retrans=3 127.0.0.1:/ /mnt/media 2>/tmp/mount.err; then
+                      if mount -t nfs -o vers=4.1,soft,sync,proto=tcp,rsize=262144,wsize=262144,timeo=1800,retrans=3 nfs-gateway.nfs-gateway.svc.cluster.local:/media-library /mnt/media 2>/tmp/mount.err; then
                         mounted=1
                         break
                       fi
                       sleep 1
                     done
                     if [ "$mounted" -ne 1 ]; then
-                      echo "failed to mount rclone NFS export after 30s, last error:" >&2
+                      echo "failed to mount nfs-gateway export after 30s, last error:" >&2
                       cat /tmp/mount.err >&2
                       exit 1
                     fi
@@ -534,10 +421,10 @@ spec:
           # already (see the stale-lockfile history: s6 respawned it
           # every ~2s on its own), so a liveness probe adds no recovery
           # capability - it only escalates "the WebUI did not answer" to
-          # "SIGKILL the whole container", which also kills the
-          # backgrounded rclone process, tears down the /mnt/media NFS
-          # mount, and discards all in-progress VFS cache staging. With
-          # a 150GiB+ file taking hours to stage and upload, any
+          # "SIGKILL the whole container", which also tears down the
+          # /mnt/media NFS mount and discards whatever in-flight transfer
+          # the gateway's cache was staging for this pod specifically.
+          # With a 150GiB+ file taking hours to stage and upload, any
           # transient stall under I/O load turned into a restart loop
           # that re-materialised the object from the bucket and started
           # over. The old probe made that near-certain: timeoutSeconds
@@ -567,27 +454,18 @@ spec:
             failureThreshold: 6
           resources:
             requests: { cpu: "200m", memory: "1Gi" }
-            # Back to 2Gi deliberately. Raising this was tested at 2Gi
-            # and 4Gi and failed identically, which is the signature of
-            # an allocator that expands to fill whatever it is given
-            # rather than a workload that needs more room - see the
-            # GOMEMLIMIT comment on the rclone invocation above. The
-            # bound now lives in GOMEMLIMIT (rclone's heap) and the NFS
-            # rsize/wsize (per-RPC buffering); this limit only needs to
-            # cover those plus qbittorrent itself and reclaimable page
-            # cache. If it still OOMs, get the kernel's own OOM report
-            # (talosctl dmesg, "memory cgroup out of memory") - it lists
-            # the RSS of every task at kill time, which distinguishes an
-            # rclone heap blowup from a page-cache/reclaim failure
-            # instead of guessing between them.
+            # Historically tuned to 3Gi to cover rclone's own heap
+            # (GOMEMLIMIT) plus page cache, back when rclone ran inside
+            # this container - that all moved to nfs-gateway, which owns
+            # that memory fight now (see its own deployment.yaml). This
+            # is probably more than this pod needs on its own these days
+            # (just qbittorrent itself plus NFS client buffers), but
+            # left as-is rather than re-tuning blind.
             limits: { memory: "3Gi" }
       volumes:
         - name: config
           persistentVolumeClaim:
             claimName: qbittorrent-config
-        - name: vfs-cache
-          persistentVolumeClaim:
-            claimName: qbittorrent-vfs-cache
         - name: dl
           persistentVolumeClaim:
             claimName: qbittorrent-dl
@@ -595,8 +473,6 @@ spec:
           hostPath:
             path: /dev/net/tun
             type: CharDevice
-        - name: rclone-bin
-          emptyDir: {}
         - name: nfs-bin
           emptyDir: {}
         - name: custom-init
