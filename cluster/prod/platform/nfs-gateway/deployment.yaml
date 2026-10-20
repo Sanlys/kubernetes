@@ -139,7 +139,9 @@ spec:
                 - -c
                 - |
                   mountpoint -q /mnt/s3/media-library || exit 1
-                  pgrep ganesha.nfsd >/dev/null || exit 1
+                  # pgrep isn't in this minimal Debian image (no procps) -
+                  # ganesha.nfsd is exec'd as PID 1 directly, so check that.
+                  [ "$(cat /proc/1/comm)" = "ganesha.nfsd" ] || exit 1
             initialDelaySeconds: 15
             periodSeconds: 15
             timeoutSeconds: 10
