@@ -1,0 +1,23 @@
+# secret.enc.yaml is SOPS-encrypted and applied manually (ArgoCD has no
+# SOPS integration here - see vpn-secret.enc.yaml for the same pattern):
+#   SOPS_AGE_SSH_PRIVATE_KEY_FILE=~/.ssh/id_ed25519 \
+#     sops exec-file cluster/prod/platform/nfs-gateway/secret.enc.yaml 'kubectl apply -f {}'
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nfs-gateway
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Sanlys/kubernetes.git
+    targetRevision: main
+    path: cluster/prod/platform/nfs-gateway
+    directory:
+      exclude: "{app.yaml,secret.enc.yaml}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nfs-gateway
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [ServerSideApply=true, CreateNamespace=true]

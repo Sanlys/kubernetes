@@ -1,0 +1,64 @@
+# FSAL_VFS, not FSAL_RGW - RGW's own NFS FSAL only supports strictly
+# sequential, single-pass write I/O (confirmed live: a write at any
+# non-contiguous offset fails immediately with EIO), because RGW models
+# writes as one streaming upload, not a real filesystem. qbittorrent
+# writes torrent pieces out of order as they arrive from peers, which
+# that can't support at all.
+#
+# Instead, rclone (`rclone mount --vfs-cache-mode full`, see
+# deployment.yaml) gives a real local POSIX filesystem backed by the
+# bucket - full random-access read/write/seek, verified live with
+# genuinely out-of-order writes and a checksum round-trip against the
+# real bucket. Ganesha just exports that local directory over NFS like
+# any other filesystem; FSAL_VFS has no write-ordering restriction.
+#
+# One EXPORT block per served bucket. Only media-library is wired up so
+# far (replacing sonarr's own broken rclone-serve-nfs loopback); add
+# another block + another rclone mount in deployment.yaml's startup
+# script + another credentials Secret (see secret.enc.yaml) to serve
+# another app's bucket (e.g. immich's immich-external-library).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nfs-gateway-config
+  namespace: nfs-gateway
+data:
+  ganesha.conf: |
+    NFS_CORE_PARAM {
+            Enable_NLM = false;
+            Enable_RQUOTA = false;
+            Protocols = 4;
+            NFS_Port = 2049;
+    }
+
+    NFSv4 {
+            Delegations = false;
+            Minor_Versions = 1, 2;
+    }
+
+    EXPORT {
+            Export_Id = 1;
+            Path = "/mnt/s3/media-library";
+            Pseudo = "/media-library";
+            Access_Type = RW;
+            Protocols = 4;
+            Transports = TCP;
+            Squash = No_Root_Squash;
+            FSAL {
+                    Name = VFS;
+            }
+    }
+---
+# Non-secret bucket connection info, copied from media's own
+# media-library-bucket ObjectBucketClaim-generated ConfigMap (same
+# values, just also readable from this namespace).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nfs-gateway-media-library-conn
+  namespace: nfs-gateway
+data:
+  BUCKET_HOST: rook-ceph-rgw-ceph-objectstore.rook-ceph.svc
+  BUCKET_PORT: "80"
+  BUCKET_REGION: ""
+  BUCKET_NAME: media-library

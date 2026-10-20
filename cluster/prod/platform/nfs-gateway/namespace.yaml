@@ -1,0 +1,13 @@
+# privileged PSA (needed for the rclone FUSE mount, same as rook-ceph)
+# and role: infra (exempts from the disallow-hostpath/disallow-privileged
+# Kyverno policies, same pattern as every other infra namespace - see
+# kubevirt-operator.yaml's Namespace block). Its own namespace, separate
+# from media, so any app in any namespace (immich, etc.) can mount from
+# it over the network - not just media's apps.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nfs-gateway
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    role: infra
