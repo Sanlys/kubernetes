@@ -1,0 +1,27 @@
+# Kyverno itself isn't managed by this repo (installed out-of-band, no
+# ArgoCD Application for it exists here) - this just adds the missing
+# observability on top of what's already running: a ServiceMonitor (the
+# admission-controller's metrics were never scraped at all) and a
+# PrometheusRule alerting on any policy failure. See servicemonitor.yaml
+# and prometheusrule.yaml for why, and kubevirt-operator.yaml's Namespace
+# for the one standing exception (role: infra) this is expected to alert
+# around, not on.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kyverno-alerting
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Sanlys/kubernetes.git
+    targetRevision: main
+    path: cluster/prod/platform/kyverno-alerting
+    directory:
+      exclude: "app.yaml"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kyverno
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [ServerSideApply=true]

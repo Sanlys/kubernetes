@@ -5,6 +5,15 @@ metadata:
   labels:
     kubevirt.io: ""
     pod-security.kubernetes.io/enforce: "privileged"
+    # Same exemption every other infra namespace (rook-ceph, cert-manager,
+    # etc.) already has - disallow-hostpath/disallow-privileged's match
+    # block excludes role=infra via namespaceSelector. virt-handler
+    # legitimately needs both (hostPath for /dev, /sys, libvirt sockets;
+    # privileged for device access) to do its job - that's not a
+    # violation to flag, just how KubeVirt's node agent works. This file
+    # is a one-time vendored snapshot (not Renovate-managed), so a future
+    # manual re-vendor needs to carry this label forward by hand.
+    role: infra
   name: kubevirt
 ---
 apiVersion: apiextensions.k8s.io/v1

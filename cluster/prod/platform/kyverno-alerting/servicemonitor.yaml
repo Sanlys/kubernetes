@@ -1,0 +1,24 @@
+# Kyverno's admission-controller exposes kyverno_policy_results_total
+# (and other metrics) on this Service already - confirmed live nothing
+# was scraping it at all. The reports-controller's own metrics endpoint
+# (background-scan reconcile internals) doesn't carry per-rule
+# pass/fail results; the admission-controller's does, including for
+# "update" operations - which is what periodically re-evaluates
+# long-running resources like DaemonSets as their controllers reconcile
+# them, not just resources actually being newly created.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kyverno-admission-controller
+  namespace: kyverno
+spec:
+  namespaceSelector:
+    matchNames: ["kyverno"]
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: admission-controller
+      app.kubernetes.io/instance: kyverno
+      app.kubernetes.io/part-of: kyverno
+  endpoints:
+    - port: metrics-port
+      interval: 30s

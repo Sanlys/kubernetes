@@ -1,0 +1,26 @@
+# Alerts on any Kyverno policy rule failing, cluster-wide, after the
+# one known/accepted exception (kubevirt's virt-handler needs
+# hostPath+privileged to function - see kubevirt-operator.yaml's
+# Namespace, labeled role: infra same as every other infra namespace
+# disallow-hostpath/disallow-privileged already exempt). Before that
+# label, this alert would have fired permanently on kubevirt alone,
+# same mistake as every other "this never stops being noisy" alert
+# this repo has avoided elsewhere - the exemption is what makes a
+# cluster-wide catch-all actually meaningful here instead of just noise.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kyverno-policy-failures
+  namespace: kyverno
+spec:
+  groups:
+    - name: kyverno-policy-failures
+      rules:
+        - alert: KyvernoPolicyFailure
+          expr: sum by (policy_name, rule_name, resource_namespace, resource_kind) (increase(kyverno_policy_results_total{rule_result="fail"}[1h])) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Kyverno policy {{ $labels.policy_name }}/{{ $labels.rule_name }} failing in {{ $labels.resource_namespace }}"
+            description: "{{ $labels.resource_kind }} in {{ $labels.resource_namespace }} failed Kyverno rule {{ $labels.rule_name }} (policy {{ $labels.policy_name }}) at least once in the last hour. If this is intentional for this namespace/app, exempt it the same way kubevirt is (role: infra label, or a narrower Kyverno PolicyException) rather than silencing this alert."
