@@ -30,7 +30,13 @@ metadata:
   name: sonarr
   namespace: media
 spec:
-  replicas: 1
+  # Scaled to 0 - the rclone-NFS loopback (see postStart below) has a real
+  # EXCLUSIVE-create bug (rclone's NFSv3 server doesn't support it) that
+  # leaves destination files at 0 bytes and sends Sonarr into an OOM crash
+  # loop retrying forever. Investigating a Ceph-native NFS-Ganesha RGW
+  # export (rook-ceph-nfs/my-nfs, currently unused) as the real fix before
+  # scaling back up - see git log for context when this becomes 1 again.
+  replicas: 0
   strategy:
     type: Recreate
   selector:
