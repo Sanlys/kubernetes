@@ -8,7 +8,14 @@ spec:
   storageClassName: rook-ceph-block-ssd
   resources:
     requests:
-      storage: 50Gi
+      # 400Gi floor comes from qbittorrent's own hard-won history (see
+      # qbittorrent.yaml): a ~154GiB single file claimed its whole
+      # previous 150Gi cache PVC and would have hit ENOSPC a few GiB
+      # short. With --vfs-cache-mode writes (see below), this only needs
+      # to cover the largest file(s) actively being written at once
+      # across every app now sharing this one gateway, not the whole
+      # library.
+      storage: 400Gi
 ---
 apiVersion: v1
 kind: Service
@@ -97,8 +104,22 @@ spec:
               export RCLONE_CONFIG_CEPHBUCKET_ENDPOINT="http://$BUCKET_HOST:$BUCKET_PORT"
               export RCLONE_CONFIG_CEPHBUCKET_REGION="$BUCKET_REGION"
               mkdir -p /mnt/s3/media-library /var/cache/rclone
+              # Go's GC is not cgroup-aware and will expand the heap to
+              # fill whatever it believes is available rather than this
+              # container's actual memory.limit, then get OOM-killed -
+              # same lesson already paid for once in qbittorrent.yaml.
+              export GOMEMLIMIT=2500MiB
+              # vfs-cache-mode full (tried first) caches every file this
+              # gateway touches, not just ones being written - confirmed
+              # live: sonarr/jellyfin's read activity alone fully
+              # downloaded an entire TV season (~40GB) into the cache
+              # with no eviction, and it would have kept growing
+              # unbounded. qbittorrent's own history already proved
+              # "writes" is sufficient for actual write traffic (only
+              # actively-open files are staged locally) without that
+              # unbounded growth from unrelated read-only apps.
               setsid /opt/rclone-bin/rclone mount "cephbucket:$BUCKET_NAME" /mnt/s3/media-library \
-                --vfs-cache-mode full \
+                --vfs-cache-mode writes \
                 --cache-dir /var/cache/rclone \
                 --allow-other \
                 --uid 1000 --gid 1000 --umask 022 \
@@ -147,8 +168,14 @@ spec:
             timeoutSeconds: 10
             failureThreshold: 4
           resources:
-            requests: { cpu: "200m", memory: "512Mi" }
-            limits: { memory: "2Gi" }
+            # GOMEMLIMIT above caps rclone's own heap at 2500MiB; this
+            # needs room for that plus Ganesha itself, the NFS client
+            # buffers for every connected app, and reclaimable page cache
+            # for the CephFS/RBD-backed cache dir - same reasoning as
+            # qbittorrent's own 3Gi limit, bumped further since this now
+            # serves every app, not just one.
+            requests: { cpu: "200m", memory: "1Gi" }
+            limits: { memory: "4Gi" }
       volumes:
         - name: rclone-bin
           emptyDir: {}
