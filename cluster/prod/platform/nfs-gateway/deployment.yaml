@@ -58,13 +58,15 @@ spec:
               mountPath: /shared-bin
       containers:
         - name: nfs-gateway
-          # Pinned to a digest, not just the floating 12-slim tag, so
-          # Renovate still proposes real Debian 12 point-release/security
-          # rebuilds (new digest, same tag) instead of us silently never
-          # updating. The major jump to debian:13-slim is separately
-          # blocked in renovate.json - confirmed it segfaults the
+          # NOT pinned to a digest: a digest captured from an arm64
+          # workstation points at the arm64 manifest, not the amd64 one
+          # these (amd64) nodes need - caused real, intermittent
+          # production instability (confirmed live, reverted). If
+          # re-attempting a digest pin, capture it from an amd64 host/node,
+          # not a local arm64 machine. The major jump to debian:13-slim is
+          # still blocked in renovate.json - confirmed it segfaults the
           # CGO-linked rclone binary this image copies in (see #316).
-          image: debian:12-slim@sha256:7ff6ba31527b9e336162fa061746c366c4b2032f4d2cff2078bea43f78efe3f8
+          image: debian:12-slim
           envFrom:
             - secretRef:
                 name: nfs-gateway-media-library-creds
@@ -137,12 +139,23 @@ spec:
               # serve stat() calls yet, which made Ganesha's FSAL_VFS
               # fail on startup (resolve_posix_filesystem: ENOENT) despite
               # the mount looking "up".
-              for i in $(seq 1 30); do
+              #
+              # 30s (the original budget) was only ever enough on a mostly
+              # empty cache - confirmed live: once qbittorrent's
+              # vfs-cache-mode=writes cache held real in-flight torrent
+              # data, rclone needed longer than that to reconcile the
+              # pre-existing cache dir on startup before serving stat()
+              # calls, causing a real, intermittent production
+              # crash-loop (every restart raced this budget). 180s gives
+              # real headroom; the livenessProbe's initialDelaySeconds
+              # below must stay >= this so kubelet doesn't kill the
+              # container mid-wait on its own separate clock.
+              for i in $(seq 1 180); do
                 mountpoint -q /mnt/s3/media-library && ls /mnt/s3/media-library >/dev/null 2>&1 && break
                 sleep 1
               done
               if ! (mountpoint -q /mnt/s3/media-library && ls /mnt/s3/media-library >/dev/null 2>&1); then
-                echo "rclone mount did not come up after 30s" >&2
+                echo "rclone mount did not come up after 180s" >&2
                 exit 1
               fi
               exec ganesha.nfsd -F -L STDERR -N NIV_INFO
@@ -169,7 +182,11 @@ spec:
                   # pgrep isn't in this minimal Debian image (no procps) -
                   # ganesha.nfsd is exec'd as PID 1 directly, so check that.
                   [ "$(cat /proc/1/comm)" = "ganesha.nfsd" ] || exit 1
-            initialDelaySeconds: 15
+            # initialDelaySeconds must stay >= the readiness loop's own
+            # budget above (180s) - kubelet runs on its own clock from
+            # container start, independent of that loop, and would kill
+            # the container mid-wait otherwise.
+            initialDelaySeconds: 190
             periodSeconds: 15
             timeoutSeconds: 10
             failureThreshold: 4
