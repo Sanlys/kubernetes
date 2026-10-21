@@ -55,6 +55,19 @@
         "minor"
       ],
       "enabled": false
+    },
+    {
+      "description": "nfs-gateway's rclone binary is copied from rclone/rclone's own image and is CGO-linked against its build glibc/libfuse - confirmed to segfault immediately (even on --version) when run on debian:13-slim. Pinned to a digest instead of just the floating 12-slim tag so Renovate still proposes real Debian 12 point-release/security rebuilds; only the major jump to 13 is blocked.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "debian"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
     }
   ]
 }

@@ -58,7 +58,13 @@ spec:
               mountPath: /shared-bin
       containers:
         - name: nfs-gateway
-          image: debian:12-slim
+          # Pinned to a digest, not just the floating 12-slim tag, so
+          # Renovate still proposes real Debian 12 point-release/security
+          # rebuilds (new digest, same tag) instead of us silently never
+          # updating. The major jump to debian:13-slim is separately
+          # blocked in renovate.json - confirmed it segfaults the
+          # CGO-linked rclone binary this image copies in (see #316).
+          image: debian:12-slim@sha256:7ff6ba31527b9e336162fa061746c366c4b2032f4d2cff2078bea43f78efe3f8
           envFrom:
             - secretRef:
                 name: nfs-gateway-media-library-creds
