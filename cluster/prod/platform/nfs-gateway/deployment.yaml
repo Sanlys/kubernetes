@@ -58,7 +58,7 @@ spec:
               mountPath: /shared-bin
       containers:
         - name: nfs-gateway
-          image: debian:12-slim
+          image: debian:13-slim
           envFrom:
             - secretRef:
                 name: nfs-gateway-media-library-creds
