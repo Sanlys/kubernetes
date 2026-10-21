@@ -131,7 +131,7 @@ spec:
                 --cache-dir /var/cache/rclone \
                 --allow-other \
                 --uid 1000 --gid 1000 --umask 022 \
-                --log-level DEBUG \
+                --log-level INFO \
                 > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
               # mountpoint -q alone isn't a strong enough readiness check -
               # it can return true just after the mount(2) syscall
