@@ -141,21 +141,25 @@ spec:
               # the mount looking "up".
               #
               # 30s (the original budget) was only ever enough on a mostly
-              # empty cache - confirmed live: once qbittorrent's
-              # vfs-cache-mode=writes cache held real in-flight torrent
-              # data, rclone needed longer than that to reconcile the
-              # pre-existing cache dir on startup before serving stat()
-              # calls, causing a real, intermittent production
-              # crash-loop (every restart raced this budget). 180s gives
-              # real headroom; the livenessProbe's initialDelaySeconds
-              # below must stay >= this so kubelet doesn't kill the
-              # container mid-wait on its own separate clock.
-              for i in $(seq 1 180); do
+              # empty cache. Confirmed live (do not shrink this without
+              # re-confirming): with ~13GB of dirty writes-mode cache
+              # sitting in just a handful of large in-flight files,
+              # rclone needs several minutes to flush/reconcile that
+              # before the mount serves stat() calls - and critically,
+              # restarting the container (ours or kubelet's) *resets*
+              # that flush, so repeated restarts raced this budget
+              # forever and never let it finish. 900s gives real
+              # headroom for that one-time flush; the livenessProbe's
+              # initialDelaySeconds below must stay >= this so kubelet
+              # doesn't kill the container mid-wait on its own separate
+              # clock. Once this cache is clean, startup should be fast
+              # again - this budget is for the worst case, not typical.
+              for i in $(seq 1 900); do
                 mountpoint -q /mnt/s3/media-library && ls /mnt/s3/media-library >/dev/null 2>&1 && break
                 sleep 1
               done
               if ! (mountpoint -q /mnt/s3/media-library && ls /mnt/s3/media-library >/dev/null 2>&1); then
-                echo "rclone mount did not come up after 180s" >&2
+                echo "rclone mount did not come up after 900s" >&2
                 exit 1
               fi
               exec ganesha.nfsd -F -L STDERR -N NIV_INFO
@@ -183,10 +187,10 @@ spec:
                   # ganesha.nfsd is exec'd as PID 1 directly, so check that.
                   [ "$(cat /proc/1/comm)" = "ganesha.nfsd" ] || exit 1
             # initialDelaySeconds must stay >= the readiness loop's own
-            # budget above (180s) - kubelet runs on its own clock from
+            # budget above (900s) - kubelet runs on its own clock from
             # container start, independent of that loop, and would kill
             # the container mid-wait otherwise.
-            initialDelaySeconds: 190
+            initialDelaySeconds: 910
             periodSeconds: 15
             timeoutSeconds: 10
             failureThreshold: 4
