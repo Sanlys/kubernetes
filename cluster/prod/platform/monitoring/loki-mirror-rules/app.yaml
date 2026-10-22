@@ -1,0 +1,24 @@
+# Separate from loki's own app.yaml deliberately: that Application's
+# second source is `ref: values` only (no path:), so it never applies
+# arbitrary manifests from that directory - this ConfigMap needed its own
+# app to actually get deployed. Picked up by the loki-sc-rules sidecar
+# (chart default: sidecar.rules.enabled) via the loki_rule label - see
+# ../loki/values.yaml's rulerConfig.storage comment.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki-mirror-rules
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Sanlys/kubernetes.git
+    targetRevision: main
+    path: cluster/prod/platform/monitoring/loki-mirror-rules
+    directory:
+      exclude: "{app.yaml}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

@@ -1,0 +1,28 @@
+# Picked up by the loki-sc-rules sidecar (chart default: watches
+# ConfigMaps/Secrets labeled loki_rule in this namespace) and synced into
+# the writable /rules emptyDir the ruler reads from - see values.yaml's
+# rulerConfig.storage comment for why this indirection exists in
+# SingleBinary mode.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-mirror-rules
+  namespace: monitoring
+  labels:
+    loki_rule: "true"
+data:
+  mirror-unique-visitors.yaml: |
+    groups:
+      - name: mirror-unique-visitors
+        # Each evaluation re-queries only the trailing 1d window (cheap,
+        # nowhere near max_query_series), not the dashboard's selected
+        # range - the dashboard panels graph these resulting Prometheus
+        # metrics instead of ever re-scanning raw logs over 30d.
+        interval: 1h
+        rules:
+          - record: mirror:unique_visitors:1d
+            expr: |
+              count(count by (remote_addr) (count_over_time({namespace="mirror", container="mirror"} | json | __error__="" [1d])))
+          - record: mirror:unique_visitors_by_country:1d
+            expr: |
+              count by (geoip_country_code) (count by (geoip_country_code, remote_addr) (count_over_time({namespace="mirror", container="mirror", geoip_country_code!=""} | json | __error__="" [1d])))
