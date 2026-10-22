@@ -25,8 +25,10 @@ data:
         # Each evaluation re-queries only the trailing 1d window (cheap,
         # nowhere near max_query_series), not the dashboard's selected
         # range - the dashboard panels graph these resulting Prometheus
-        # metrics instead of ever re-scanning raw logs over 30d.
-        interval: 1m
+        # metrics instead of ever re-scanning raw logs over 30d. Confirmed
+        # live end-to-end (evaluation + remote_write into Prometheus) at
+        # interval=1m before settling here - 15m balances dashboard trend
+        # smoothness against re-running the 1d groupby unnecessarily often.
         rules:
           - record: mirror:unique_visitors:1d
             expr: |
