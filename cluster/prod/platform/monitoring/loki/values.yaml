@@ -38,6 +38,28 @@ loki:
     compaction_interval: 10m
     retention_delete_delay: 2h
     delete_request_store: filesystem
+  # The "unique visitors" recording rules below need to re-query raw logs
+  # too, but only over a cheap 1d window each evaluation (not the
+  # dashboard's full range) - see ruler.directories below for why this
+  # exists. WAL/rule storage both land on the existing singleBinary PVC
+  # (SingleBinary mode runs the ruler in-process, no separate ruler PVC
+  # needed despite the chart's ruler.persistence option existing for
+  # microservices mode).
+  rulerConfig:
+    enable_api: true
+    storage:
+      type: local
+      local:
+        directory: /etc/loki/rules
+    rule_path: /var/loki/ruler-rule-path
+    ring:
+      kvstore:
+        store: inmemory
+    remote_write:
+      enabled: true
+      clients:
+        prometheus:
+          url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
 
 singleBinary:
   replicas: 1
@@ -71,3 +93,24 @@ bloomCompactor:
   replicas: 0
 bloomGateway:
   replicas: 0
+
+ruler:
+  # "fake" is Loki's fixed internal tenant ID when auth_enabled is false -
+  # not a placeholder to fill in, this is the actual required key.
+  directories:
+    fake:
+      mirror-unique-visitors.yaml: |
+        groups:
+          - name: mirror-unique-visitors
+            # Each evaluation re-queries only the trailing 1d window (cheap,
+            # nowhere near max_query_series), not the dashboard's selected
+            # range - the dashboard panels below just graph these resulting
+            # Prometheus metrics instead of re-scanning raw logs over 30d.
+            interval: 1h
+            rules:
+              - record: mirror:unique_visitors:1d
+                expr: |
+                  count(count by (remote_addr) (count_over_time({namespace="mirror", container="mirror"} | json | __error__="" [1d])))
+              - record: mirror:unique_visitors_by_country:1d
+                expr: |
+                  count by (geoip_country_code) (count by (geoip_country_code, remote_addr) (count_over_time({namespace="mirror", container="mirror", geoip_country_code!=""} | json | __error__="" [1d])))

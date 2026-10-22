@@ -68,6 +68,12 @@ prometheus:
     # retentionSize cap); sized storage below for headroom on that, not on
     # the original 20Gi.
     retention: 31d
+    # Lets Loki's ruler push recording-rule results here (see
+    # platform/monitoring/loki's rulerConfig.remote_write) - needed so the
+    # mirror dashboard's unique-visitor metrics can be computed once over a
+    # cheap 1d window instead of re-scanning the full dashboard range (was
+    # hitting Loki's max_query_series on 30d views).
+    enableRemoteWriteReceiver: true
     # Query API spans. Sampling is parent-based, so only requests that arrive
     # with a sampled trace (through Traefik) are recorded.
     tracingConfig:
