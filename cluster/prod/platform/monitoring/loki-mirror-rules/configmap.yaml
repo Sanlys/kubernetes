@@ -10,6 +10,14 @@ metadata:
   namespace: monitoring
   labels:
     loki_rule: "true"
+  annotations:
+    # Loki's local ruler storage expects rule files under a per-tenant
+    # subdirectory (<rule_path>/<tenant>/...), not flat - confirmed live:
+    # without this the ruler API errored "unable to read rule dir
+    # /rules/fake: no such file or directory" since the sidecar had
+    # written the file straight into /rules. "fake" is Loki's fixed
+    # internal tenant ID when auth_enabled is false, not a placeholder.
+    k8s-sidecar-target-directory: /rules/fake
 data:
   mirror-unique-visitors.yaml: |
     groups:
