@@ -29,7 +29,7 @@ spec:
           restartPolicy: OnFailure
           containers:
             - name: mirror-freshness-check
-              image: alpine:3.24.2
+              image: alpine:3.24.3
               imagePullPolicy: IfNotPresent
               command: ["/bin/sh", "-c"]
               args:
