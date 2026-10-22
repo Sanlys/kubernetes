@@ -26,7 +26,7 @@ data:
         # nowhere near max_query_series), not the dashboard's selected
         # range - the dashboard panels graph these resulting Prometheus
         # metrics instead of ever re-scanning raw logs over 30d.
-        interval: 1h
+        interval: 1m
         rules:
           - record: mirror:unique_visitors:1d
             expr: |
