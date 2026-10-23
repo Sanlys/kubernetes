@@ -1,0 +1,176 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mc-vanilla-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: rook-ceph-block-ssd
+  resources:
+    requests:
+      storage: 40Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mc-vanilla
+  labels:
+    app: mc-vanilla
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mc-vanilla
+  template:
+    metadata:
+      labels:
+        app: mc-vanilla
+    spec:
+      securityContext:
+        fsGroup: 1000
+      # Minecraft is mostly single-threaded; only schedule on nodes labelled
+      # for high single-core performance (set in talos/node/*/10-storage.yaml).
+      nodeSelector:
+        high-single-core-perf: "true"
+      containers:
+        - name: minecraft
+          image: itzg/minecraft-server:2026.10.0-java25-jdk@sha256:4f8d762c6c6e3ccd3289e7830041430bfc89a789dcf34b722aa09a32b8191bf6
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: EULA
+              value: "TRUE"
+            - name: TYPE
+              value: "VANILLA"
+            - name: VERSION
+              value: "26.3"
+            - name: MOTD
+              value: "Vanilla server"
+
+            - name: MEMORY
+              value: "6G"
+            - name: VIEW_DISTANCE
+              value: "14"
+
+              # If level is changed, new world is generated. Seed is applied only when level is changed
+            - name: LEVEL
+              value: "2026-10-23_vanilla"
+            - name: SEED
+              value: ""
+
+            - name: ONLINE_MODE
+              value: "TRUE"
+            - name: USE_AIKAR_FLAGS
+              value: "true"
+            - name: ENABLE_RCON
+              value: "true"
+            - name: RCON_PASSWORD
+              value: "supersecret"
+            - name: OVERRIDE_SERVER_PROPERTIES
+              value: "true"
+
+            - name: MAX_PLAYERS
+              value: "100"
+            - name: ENABLE_WHITELIST
+              value: "false"
+            - name: SPAWN_PROTECTION
+              value: "0"
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    # Warn players
+                    rcon-cli --password "$RCON_PASSWORD" "say Server will be restarting in 10 seconds!"
+                    sleep 10
+                    rcon-cli --password "$RCON_PASSWORD" "say Restarting..."
+                    sleep 2
+                    # Kick everyone
+                    rcon-cli --password "$RCON_PASSWORD" "kick @a Server is restarting, please rejoin"
+
+                    sleep 3
+          ports:
+            - containerPort: 25565
+              name: mc
+          volumeMounts:
+            - name: mc-data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: "2000m"
+              memory: "8008Mi"
+            limits:
+              memory: "8008Mi"
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+          # Simple liveness/readiness so kube doesn't flap it too eagerly
+          livenessProbe:
+            tcpSocket:
+              port: mc
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: mc
+            initialDelaySeconds: 30
+            periodSeconds: 10
+        - name: sftp
+          image: atmoz/sftp:latest@sha256:0960390462a4441dbb63698d7c185b76a41ffcee7b78ff4adf275f3e66f9c475
+          args: ["minecraft:minecraft:1000:1000"]
+          ports:
+            - containerPort: 22
+              name: sftp
+          volumeMounts:
+            - name: mc-data
+              mountPath: /home/minecraft/upload
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "100Mi"
+            limits:
+              memory: "100Mi"
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+      volumes:
+        - name: mc-data
+          persistentVolumeClaim:
+            claimName: mc-vanilla-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mc-vanilla
+  labels:
+    app: mc-vanilla
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.0.6.225
+  selector:
+    app: mc-vanilla
+  ports:
+    - name: mc
+      port: 25565
+      targetPort: 25565
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mc-vanilla-sftp
+  labels:
+    app: mc-vanilla
+spec:
+  type: LoadBalancer
+  selector:
+    app: mc-vanilla
+  ports:
+    - name: sftp
+      port: 22
+      targetPort: 22
+      protocol: TCP
