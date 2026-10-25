@@ -91,8 +91,12 @@ spec:
             - name: iso-storage
               mountPath: /usr/share/nginx/html
           resources:
+            # 64Mi OOMKilled nginx repeatedly - serving the ISO over
+            # concurrent byte-range requests (confirmed live: 20-25MB chunks
+            # per connection) needs more headroom than static-file serving
+            # normally would.
             requests: { cpu: "10m", memory: "64Mi" }
-            limits: { memory: "64Mi" }
+            limits: { memory: "256Mi" }
       volumes:
         - name: nginx-config
           configMap:
