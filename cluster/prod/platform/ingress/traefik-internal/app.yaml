@@ -59,6 +59,13 @@ spec:
               respondingTimeouts:
                 # Traefik v3 defaults to 60s for reading a whole request, which cuts long S3 uploads
                 readTimeout: 0
+            # Interim mitigation for CVE-2026-111497 (Node.js Brotli decoder
+            # RCE, disclosed 2026-10-21) - see traefik-public/app.yaml's
+            # matching comment for full context. Confirmed vulnerable Node
+            # versions behind this gateway: actual-server (v24.18.1,
+            # patched 24.22.1) and jellyseerr (v22.18.0, patched 22.23.4).
+            middlewares:
+              - traefik-strip-brotli@kubernetescrd
         service:
           type: LoadBalancer
           spec:
@@ -98,6 +105,17 @@ spec:
           dashboard:
             enabled: false
         extraObjects:
+          # Referenced by ports.websecure.middlewares above - see that
+          # comment for the CVE-2026-111497 context.
+          - apiVersion: traefik.io/v1alpha1
+            kind: Middleware
+            metadata:
+              name: strip-brotli
+            spec:
+              headers:
+                customRequestHeaders:
+                  Content-Encoding: ""
+                  Accept-Encoding: "gzip, deflate"
           - apiVersion: cert-manager.io/v1
             kind: Certificate
             metadata:

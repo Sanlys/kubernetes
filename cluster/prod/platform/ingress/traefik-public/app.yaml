@@ -60,6 +60,20 @@ spec:
                 # Same reasoning as traefik-internal: large S3/git/photo
                 # uploads shouldn't get cut off at Traefik v3's 60s default.
                 readTimeout: 0
+            # Interim mitigation for CVE-2026-111497 (Node.js Brotli decoder
+            # RCE, disclosed 2026-10-21, no patched upstream images yet for
+            # the vulnerable apps behind this gateway - linkwarden
+            # confirmed on Node v22.23.2, patched is 22.23.4). Strips any
+            # client-sent Content-Encoding (closes the direct "malicious
+            # request body" exploit path) and rewrites Accept-Encoding to
+            # exclude br (stops responses from ever being brotli-encoded).
+            # Does NOT cover linkwarden's own server-side fetches of
+            # user-submitted URLs for link previews - that traffic never
+            # passes through this ingress, so a malicious remote server
+            # could still trigger this via that path. Remove once upstream
+            # images are rebuilt on a patched Node.
+            middlewares:
+              - traefik-public-strip-brotli@kubernetescrd
             # Real internet traffic arrives via frpc (cluster/prod/platform/
             # frpc - frps on an Oracle VPS tunnels to frpc in-cluster, which
             # connects to this entrypoint directly). Without this, every
@@ -160,6 +174,17 @@ spec:
           dashboard:
             enabled: false
         extraObjects:
+          # Referenced by ports.websecure.middlewares above - see that
+          # comment for the CVE-2026-111497 context.
+          - apiVersion: traefik.io/v1alpha1
+            kind: Middleware
+            metadata:
+              name: strip-brotli
+            spec:
+              headers:
+                customRequestHeaders:
+                  Content-Encoding: ""
+                  Accept-Encoding: "gzip, deflate"
           # Binds to the "traefik" entrypoint (8080), which
           # ports.traefik.expose.default (left false, see below) keeps out
           # of the public LoadBalancer Service entirely - this doesn't
