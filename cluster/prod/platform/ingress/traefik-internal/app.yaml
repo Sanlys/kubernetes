@@ -59,13 +59,17 @@ spec:
               respondingTimeouts:
                 # Traefik v3 defaults to 60s for reading a whole request, which cuts long S3 uploads
                 readTimeout: 0
-            # Interim mitigation for CVE-2026-111497 (Node.js Brotli decoder
-            # RCE, disclosed 2026-10-21) - see traefik-public/app.yaml's
-            # matching comment for full context. Confirmed vulnerable Node
-            # versions behind this gateway: actual-server (v24.18.1,
-            # patched 24.22.1) and jellyseerr (v22.18.0, patched 22.23.4).
-            middlewares:
-              - traefik-strip-brotli@kubernetescrd
+            http:
+              # Interim mitigation for CVE-2026-111497 (Node.js Brotli
+              # decoder RCE, disclosed 2026-10-21) - see traefik-public/
+              # app.yaml's matching comment for full context. Confirmed
+              # vulnerable Node versions behind this gateway: actual-server
+              # (v24.18.1, patched 24.22.1) and jellyseerr (v22.18.0,
+              # patched 22.23.4). Must nest under http: - see
+              # traefik-public/app.yaml's comment on the schema error this
+              # hit when it didn't.
+              middlewares:
+                - traefik-strip-brotli@kubernetescrd
         service:
           type: LoadBalancer
           spec:
