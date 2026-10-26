@@ -108,7 +108,7 @@
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "decimals": 0,
+          "decimals": 3,
           "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
         },
         "overrides": []
@@ -248,13 +248,13 @@
       "type": "table",
       "title": "Top Requested Paths",
       "id": 22,
-      "description": "A rising count on a package name you don't expect, or a flood of 404s on one path, can indicate stale package lists on clients or a broken sync.",
+      "description": "A rising count on a package name you don't expect, or a flood of 404s on one path, can indicate stale package lists on clients or a broken sync. Uses approx_topk (see platform/monitoring/loki/values.yaml) so this reflects the dashboard's actual selected time range instead of erroring past a few days - approximate, not exact, but k=20 keeps the error negligible.",
       "gridPos": { "h": 8, "w": 16, "x": 8, "y": 19 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
-          "expr": "topk(20, sum by (request_uri) (count_over_time({namespace=\"mirror\", container=\"mirror\"} | json | __error__=\"\" [$__range])))",
+          "expr": "approx_topk(20, sum by (request_uri) (count_over_time({namespace=\"mirror\", container=\"mirror\"} | json | __error__=\"\" [$__range])))",
           "refId": "A",
           "queryType": "instant"
         }

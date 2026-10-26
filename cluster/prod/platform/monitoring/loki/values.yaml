@@ -32,6 +32,27 @@ loki:
     # errored with "maximum number of series (500) reached" only after the
     # FRP Proxy Protocol fix started letting real external IPs through.
     max_query_series: 5000
+    # Lets the "Top Requested Paths" panel use approx_topk instead of a
+    # plain topk(sum by (request_uri)...) - that plain version hit the same
+    # max_query_series wall as Unique Visitors once the dashboard's range
+    # grew (confirmed live: ~2.7k distinct request_uri values in just 24h,
+    # so 30d blows well past 5000). approx_topk uses a count-min sketch
+    # instead of materializing one series per path, so it isn't bounded by
+    # max_query_series at all - true per-request_uri accuracy traded for an
+    # approximation, but k=20 here is tiny next to the default
+    # max_count_min_sketch_heap_size (10000), so the approximation error is
+    # negligible regardless of how many distinct paths exist in range.
+    # Experimental upstream (limited support, no SLA) - see
+    # ../grafana-dashboards/raw/mirror-analytics.json panel id 22.
+    #
+    # approx_count_distinct (which would let Unique Visitors do the same
+    # for remote_addr) is NOT available yet - confirmed live by grepping
+    # Loki's parser grammar at every tagged release through v3.6.19/v3.7.9
+    # (both 2026-10-20): the function only exists on the unreleased main
+    # branch, despite grafana.com's 2026-09-29 "what's new" post. Revisit
+    # once it actually ships in a tagged release.
+    shard_aggregations:
+      - approx_topk
   compactor:
     retention_enabled: true
     working_directory: /var/loki/compactor
