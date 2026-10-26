@@ -22,16 +22,29 @@ loki:
     # roughly ~105GB - PVC bumped below to 150Gi for headroom. Trivial
     # against the ~47TB free in the Ceph pool.
     retention_period: 960h
-    # Was the 500 default - the mirror dashboard's "Unique Visitors" panels
-    # do `count by (remote_addr) (...)` over raw logs (remote_addr isn't a
-    # Loki label, by design - unbounded cardinality - so it can't be a
-    # Prometheus metric dimension). That groupby needs one intermediate
-    # series per distinct IP in range *before* the outer count() collapses
-    # it to a single number, and real internet traffic produces more than
-    # 500 distinct IPs over any useful time range. Confirmed live: the panel
-    # errored with "maximum number of series (500) reached" only after the
-    # FRP Proxy Protocol fix started letting real external IPs through.
-    max_query_series: 5000
+    # Was 500, then 5000 - the mirror dashboard's "Unique Visitors" and "Top
+    # Requested Paths" panels do `count/sum by (remote_addr|request_uri)
+    # (...)` over raw logs (neither is a Loki label, by design - unbounded
+    # cardinality - so neither can be a Prometheus metric dimension). That
+    # groupby needs one intermediate series per distinct value in range
+    # *before* the outer aggregation collapses it, and 5000 wasn't enough
+    # once the dashboard's range grew past a few days.
+    #
+    # approx_topk/approx_count_distinct would let these scale without a
+    # series cap at all (count-min sketch / HyperLogLog instead of one
+    # series per value) - see the shard_aggregations comment below for why
+    # that's not usable yet. Until it is, raised this instead: unlike
+    # retention (which keeps growing forever), these panels query a
+    # *rolling* window, so cardinality converges to a ceiling as old
+    # entries age out rather than growing without bound - the earlier
+    # "just keep raising it" concern was about unbounded growth, which
+    # this isn't. Confirmed live before raising: remote_addr count went
+    # 1d=1633 -> 3d=3875, visibly decelerating (not linear - visitors
+    # recur across days), so a 30d linear extrapolation (~49k) would be a
+    # large overestimate. 25000 gives real headroom over that without
+    # guessing something extreme; re-measure via Grafana after this lands
+    # and adjust if 30d actually comes in higher than expected.
+    max_query_series: 25000
     # Was meant to let the "Top Requested Paths" panel use approx_topk
     # instead of plain topk(sum by (request_uri)...), which hits the same
     # max_query_series wall as Unique Visitors once the dashboard's range

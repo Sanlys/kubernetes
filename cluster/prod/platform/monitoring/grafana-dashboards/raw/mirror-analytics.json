@@ -94,15 +94,15 @@
       "type": "stat",
       "title": "Unique Visitors",
       "id": 4,
-      "description": "From a Loki recording rule (see platform/monitoring/loki/values.yaml), not a live scan - each evaluation only re-queries a rolling 1d window, which is what kept the raw-log version of this query from ever completing over 30d (remote_addr cardinality blew past Loki's max_query_series). This is the most recent 1d count, not a deduplicated total across the dashboard's range - see the Unique Visitors (daily) trend panel below for how it moved over the full window.",
+      "description": "Deduplicated distinct remote_addr count over the dashboard's selected range (live query, not a recording rule - see platform/monitoring/loki/values.yaml's max_query_series comment for why this now fits under the series cap). The Unique Visitors (daily) trend panel below still shows the day-by-day breakdown.",
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "mirror:unique_visitors:1d",
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "expr": "count(count by (remote_addr) (count_over_time({namespace=\"mirror\", container=\"mirror\"} | json | __error__=\"\" [$__range])))",
           "refId": "A",
-          "instant": true
+          "queryType": "instant"
         }
       ],
       "fieldConfig": {
@@ -403,15 +403,15 @@
       "type": "table",
       "title": "Unique Visitors by Country",
       "id": 35,
-      "description": "From the same rolling-1d recording rule as the Unique Visitors stat (see its description) - most recent 1d count per country, not deduplicated across the dashboard's full range.",
+      "description": "Deduplicated distinct remote_addr count per country over the dashboard's selected range (live query - see the Unique Visitors stat panel's description).",
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 52 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "topk(20, mirror:unique_visitors_by_country:1d)",
+          "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+          "expr": "topk(20, count by (geoip_country_code) (count by (geoip_country_code, remote_addr) (count_over_time({namespace=\"mirror\", container=\"mirror\", geoip_country_code!=\"\"} | json | __error__=\"\" [$__range]))))",
           "refId": "A",
-          "instant": true,
+          "queryType": "instant",
           "format": "table"
         }
       ],
@@ -433,7 +433,7 @@
       "type": "timeseries",
       "title": "Unique Visitors (daily, rolling 24h)",
       "id": 41,
-      "description": "This is the actual way to see unique visitors across the dashboard's full range (e.g. 30d) - each point is a recording-rule evaluation over its own trailing 1d window, not a running total. Points aren't additive across days (a visitor active on several days is counted once per day it was seen) - don't sum this series to get a monthly total, read it as a trend.",
+      "description": "Day-by-day trend, complementing the Unique Visitors stat above (which now gives a true deduplicated total for the whole selected range). Each point here is its own trailing 1d window, not a running total - points aren't additive across days (a visitor active on several days is counted once per day it was seen), so don't sum this series to get a period total; read it as a trend.",
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 61 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "targets": [
