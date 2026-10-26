@@ -22,6 +22,15 @@ loki:
     # roughly ~105GB - PVC bumped below to 150Gi for headroom. Trivial
     # against the ~47TB free in the Ceph pool.
     retention_period: 960h
+    # Separate from max_query_series below - this caps how wide a *time
+    # range* a single query can span, regardless of cardinality. Default
+    # is 721h (30d1h); confirmed live via Grafana's API that it rejects a
+    # query once the selected range exceeds it. Our retention is 960h
+    # (40d), so without raising this, picking anything past ~30 days in
+    # the dashboard's time picker would hit this cap even though the data
+    # is still retained and would otherwise be queryable. Matched to
+    # retention_period so the full retained history is always in range.
+    max_query_length: 960h
     # Was 500, then 5000 - the mirror dashboard's "Unique Visitors" and "Top
     # Requested Paths" panels do `count/sum by (remote_addr|request_uri)
     # (...)` over raw logs (neither is a Loki label, by design - unbounded
