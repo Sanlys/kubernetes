@@ -248,13 +248,13 @@
       "type": "table",
       "title": "Top Requested Paths",
       "id": 22,
-      "description": "A rising count on a package name you don't expect, or a flood of 404s on one path, can indicate stale package lists on clients or a broken sync. Uses approx_topk (see platform/monitoring/loki/values.yaml) so this reflects the dashboard's actual selected time range instead of erroring past a few days - approximate, not exact, but k=20 keeps the error negligible.",
+      "description": "A rising count on a package name you don't expect, or a flood of 404s on one path, can indicate stale package lists on clients or a broken sync. Errors past a few days' range (max_query_series) - confirmed ~2.7k distinct request_uri values in just 24h. Tried approx_topk as a fix (see platform/monitoring/loki/values.yaml's comment) but it doesn't parse on our Loki 3.6.11 once shard_aggregations is enabled, despite parsing fine before - looks like a real bug in this experimental feature on this version, not a config mistake. Revisit on a newer Loki.",
       "gridPos": { "h": 8, "w": 16, "x": 8, "y": 19 },
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
-          "expr": "approx_topk(20, sum by (request_uri) (count_over_time({namespace=\"mirror\", container=\"mirror\"} | json | __error__=\"\" [$__range])))",
+          "expr": "topk(20, sum by (request_uri) (count_over_time({namespace=\"mirror\", container=\"mirror\"} | json | __error__=\"\" [$__range])))",
           "refId": "A",
           "queryType": "instant"
         }

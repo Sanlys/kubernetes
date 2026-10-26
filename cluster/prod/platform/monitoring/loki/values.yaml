@@ -32,25 +32,29 @@ loki:
     # errored with "maximum number of series (500) reached" only after the
     # FRP Proxy Protocol fix started letting real external IPs through.
     max_query_series: 5000
-    # Lets the "Top Requested Paths" panel use approx_topk instead of a
-    # plain topk(sum by (request_uri)...) - that plain version hit the same
+    # Was meant to let the "Top Requested Paths" panel use approx_topk
+    # instead of plain topk(sum by (request_uri)...), which hits the same
     # max_query_series wall as Unique Visitors once the dashboard's range
-    # grew (confirmed live: ~2.7k distinct request_uri values in just 24h,
-    # so 30d blows well past 5000). approx_topk uses a count-min sketch
-    # instead of materializing one series per path, so it isn't bounded by
-    # max_query_series at all - true per-request_uri accuracy traded for an
-    # approximation, but k=20 here is tiny next to the default
-    # max_count_min_sketch_heap_size (10000), so the approximation error is
-    # negligible regardless of how many distinct paths exist in range.
-    # Experimental upstream (limited support, no SLA) - see
-    # ../grafana-dashboards/raw/mirror-analytics.json panel id 22.
+    # grows (confirmed live: ~2.7k distinct request_uri values in just
+    # 24h). approx_topk uses a count-min sketch instead of materializing
+    # one series per path, so in theory it isn't bounded by
+    # max_query_series at all.
     #
-    # approx_count_distinct (which would let Unique Visitors do the same
-    # for remote_addr) is NOT available yet - confirmed live by grepping
-    # Loki's parser grammar at every tagged release through v3.6.19/v3.7.9
-    # (both 2026-10-20): the function only exists on the unreleased main
-    # branch, despite grafana.com's 2026-09-29 "what's new" post. Revisit
-    # once it actually ships in a tagged release.
+    # Left enabled but NOT currently used by the dashboard (reverted back
+    # to plain topk - see ../grafana-dashboards/raw/mirror-analytics.json
+    # panel id 22): confirmed live that approx_topk queries parsed fine
+    # with this *unset*, but once set to include approx_topk here, the
+    # exact same queries started failing with "parse error ... unexpected
+    # IDENTIFIER" - the querier stops recognizing the function entirely,
+    # the opposite of what enabling it should do. Reproduced across
+    # several query shapes, ruled out a query-syntax mistake. Looks like a
+    # real bug in this experimental/no-SLA feature on Loki 3.6.11
+    # specifically. Revisit after a Loki version bump, or once
+    # approx_count_distinct (same fix for Unique Visitors' remote_addr
+    # cardinality) actually ships - confirmed live by grepping Loki's
+    # parser grammar at every tagged release through v3.6.19/v3.7.9 (both
+    # 2026-10-20): that function only exists on the unreleased main
+    # branch, despite grafana.com's 2026-09-29 "what's new" post.
     shard_aggregations:
       - approx_topk
   compactor:
