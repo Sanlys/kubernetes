@@ -1,0 +1,11 @@
+# General-purpose bucket for one-off files (e.g. large exports that don't
+# fit email/Discord) that aren't tied to any particular app - distinct from
+# the per-app buckets under media/ and syncthing/.
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: misc-files-bucket
+  namespace: misc-files
+spec:
+  bucketName: misc-files
+  storageClassName: rook-ceph-bucket
