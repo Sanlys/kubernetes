@@ -1,10 +1,42 @@
+# Bare-hostname probes against the Traefik default backend: no route
+# matches the apex/k8s hostnames, so a healthy ingress answers 404 with
+# TRAEFIK DEFAULT CERT. Anything else (timeout, refused) means the path
+# to that Traefik is broken.
+config:
+  modules:
+    http_traefik_default_404:
+      prober: http
+      timeout: 5s
+      http:
+        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+        valid_status_codes: [404]
+        follow_redirects: false
+        preferred_ip_protocol: "ip4"
+        tls_config:
+          insecure_skip_verify: true
+
 # Was already collecting probe_success for every target below with
 # nothing ever alerting on it - Grafana showed it, nobody got paged.
 prometheusRule:
   enabled: true
+  # Prometheus' ruleSelector only picks up rules labelled release=monitoring -
+  # without this the rules below were never loaded, so the 2026-10-30 frps
+  # outage went unalerted despite the *-external probes reading 0.
+  additionalLabels:
+    release: monitoring
   rules:
+    # Fast-path for losing the ingress entirely (e.g. the frps VPS hanging):
+    # 15s probes, so 1m is ~4 consecutive failures.
+    - alert: IngressUnreachable
+      expr: probe_success{target=~"ingress-.*"} == 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Ingress unreachable: {{ $labels.target }}"
+        description: "Traefik default-backend probe {{ $labels.target }} ({{ $labels.instance }}) has been failing for over 1 minute. For ingress-public-external this usually means the frps VPS or the frpc tunnel is down."
     - alert: ProbeFailed
-      expr: probe_success == 0
+      expr: probe_success{target!~"ingress-.*"} == 0
       for: 5m
       labels:
         severity: warning
@@ -28,6 +60,27 @@ serviceMonitor:
   selfMonitor:
     enabled: true
   targets:
+    # Pinned to explicit IPs on purpose: on the LAN lysakermoen.com resolves
+    # to traefik-public directly, which would never notice the VPS/frp path
+    # being down. hostname sets Host/SNI while the connection goes to the IP.
+    - name: "ingress-public-external"
+      url: https://79.76.33.72
+      hostname: lysakermoen.com
+      module: http_traefik_default_404
+      interval: 15s
+      scrapeTimeout: 10s
+    - name: "ingress-public-local"
+      url: https://10.0.6.241
+      hostname: lysakermoen.com
+      module: http_traefik_default_404
+      interval: 15s
+      scrapeTimeout: 10s
+    - name: "ingress-internal"
+      url: https://10.0.6.240
+      hostname: k8s.lysakermoen.com
+      module: http_traefik_default_404
+      interval: 15s
+      scrapeTimeout: 10s
     - name: "vaultwarden-external"
       url: https://79.76.33.72
       hostname: vaultwarden.lysakermoen.com
@@ -98,8 +151,8 @@ serviceMonitor:
       url: https://nginx-custom.k8s.lysakermoen.com
     - name: "nginx-custom-public"
       url: https://nginx-custom.lysakermoen.com
-    - name: "photoprism-public"
-      url: https://photoprism.lysakermoen.com
+    - name: "photoprism-internal"
+      url: https://photoprism.k8s.lysakermoen.com
     - name: "ceph-dashboard-internal"
       url: https://ceph.k8s.lysakermoen.com
     - name: "s3-internal"
