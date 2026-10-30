@@ -69,6 +69,15 @@ serviceMonitor:
       module: http_traefik_default_404
       interval: 15s
       scrapeTimeout: 10s
+    # Home WAN IP -> router port forward -> traefik-public, i.e. the path
+    # public DNS points at now. Works from inside the LAN only because the
+    # router does NAT loopback.
+    - name: "ingress-public-home"
+      url: https://62.141.128.169
+      hostname: lysakermoen.com
+      module: http_traefik_default_404
+      interval: 15s
+      scrapeTimeout: 10s
     - name: "ingress-public-local"
       url: https://10.0.6.241
       hostname: lysakermoen.com
