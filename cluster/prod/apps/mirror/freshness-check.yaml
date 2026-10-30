@@ -21,12 +21,17 @@ spec:
   jobTemplate:
     spec:
       activeDeadlineSeconds: 60
+      # Never + backoffLimit instead of OnFailure: a failed attempt's pod
+      # (and its logs) survives for failedJobsHistoryLimit to keep, rather
+      # than being restarted in place and then reaped at the deadline with
+      # nothing left to debug.
+      backoffLimit: 2
       template:
         metadata:
           labels:
             app: mirror-freshness-check
         spec:
-          restartPolicy: OnFailure
+          restartPolicy: Never
           containers:
             - name: mirror-freshness-check
               image: alpine:3.24.3
@@ -34,8 +39,25 @@ spec:
               command: ["/bin/sh", "-c"]
               args:
                 - |
-                  set -e
-                  apk add --no-cache curl
+                  set -eu
+                  # busybox wget ships in the base image - the old
+                  # `apk add curl` pulled from the Alpine CDN every 5 minutes
+                  # and was the flaky part (one stalled download burned the
+                  # whole 60s deadline). Per-request timeout + retries, and
+                  # the value must be a bare epoch: a failed fetch inside
+                  # $(...) used to just print an empty line and exit 0.
+                  fetch() {
+                    for attempt in 1 2 3; do
+                      v=$(wget -qO- -T 5 "http://mirror.mirror.svc.cluster.local/$1" 2>/dev/null) || v=""
+                      case "$v" in
+                        ''|*[!0-9]*) echo "fetch /$1 attempt $attempt failed: got '$v'" >&2; sleep 3 ;;
+                        *) echo "$v"; return 0 ;;
+                      esac
+                    done
+                    return 1
+                  }
+                  lastsync=$(fetch lastsync)
+                  lastupdate=$(fetch lastupdate)
                   # Grepped by the Alloy pipeline for the dashboard's
                   # sync-freshness panels - see
                   # cluster/prod/platform/monitoring/alloy. lastsync is when
@@ -44,8 +66,8 @@ spec:
                   # reflects when upstream itself last published - the two
                   # legitimately differ by however stale we are relative to
                   # upstream at sync time.
-                  echo "MIRROR_LASTSYNC_EPOCH=$(curl -sf http://mirror.mirror.svc.cluster.local/lastsync)"
-                  echo "MIRROR_LASTUPDATE_EPOCH=$(curl -sf http://mirror.mirror.svc.cluster.local/lastupdate)"
+                  echo "MIRROR_LASTSYNC_EPOCH=$lastsync"
+                  echo "MIRROR_LASTUPDATE_EPOCH=$lastupdate"
               resources:
                 requests:
                   cpu: 10m
