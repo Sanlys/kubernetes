@@ -5,10 +5,10 @@ metadata:
   namespace: photoprism
 spec:
   parentRefs:
-    - name: traefik-public-gateway
-      namespace: traefik-public
+    - name: traefik-gateway
+      namespace: traefik
       sectionName: websecure
-  hostnames: ["photoprism.lysakermoen.com"]
+  hostnames: ["photoprism.k8s.lysakermoen.com"]
   rules:
     - backendRefs:
         - name: photoprism

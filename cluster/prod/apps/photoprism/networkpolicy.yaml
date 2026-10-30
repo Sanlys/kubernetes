@@ -1,12 +1,13 @@
-# Ingress only from traefik-public (ingress.yaml only attaches there, no
-# internal route). Selecting this pod for ingress switches it from
-# default-allow to default-deny-except-listed - same mechanism as
-# s3-vfs-proxy/smb-gateway. mariadb (same namespace) isn't selected by
-# any policy, so it stays reachable from photoprism unaffected.
+# Ingress only from traefik-internal (ingress.yaml only attaches there, no
+# public route - photoprism is private-only, not actively maintained).
+# Selecting this pod for ingress switches it from default-allow to
+# default-deny-except-listed - same mechanism as s3-vfs-proxy/smb-gateway.
+# mariadb (same namespace) isn't selected by any policy, so it stays
+# reachable from photoprism unaffected.
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: allow-traefik-public-only
+  name: allow-traefik-internal-only
   namespace: photoprism
 spec:
   endpointSelector:
@@ -15,7 +16,7 @@ spec:
   ingress:
     - fromEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: traefik-public
+            k8s:io.kubernetes.pod.namespace: traefik
       toPorts:
         - ports:
             - port: "2342"
