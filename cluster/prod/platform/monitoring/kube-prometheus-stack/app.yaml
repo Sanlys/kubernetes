@@ -24,7 +24,6 @@ spec:
     - repoURL: https://github.com/Sanlys/kubernetes.git
       targetRevision: main
       path: cluster/prod/platform/monitoring/kube-prometheus-stack/extra
-      directory: {}
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
