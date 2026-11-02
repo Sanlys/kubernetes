@@ -3,3 +3,4 @@ secret.yaml
 target/
 talos/clusterconfig/
 .DS_Store
+scripts/.cve-watch-state.json
