@@ -27,6 +27,11 @@ from pathlib import Path
 REPO_DIR = "/Users/sanderlysakermoen/Documents/git/kubernetes"
 STATE_FILE = Path(__file__).parent / ".health-sweep-state.json"
 
+# LAN gateway for the cluster's home network - used to tell "I'm not on this
+# network right now" apart from "the cluster itself is actually down".
+GATEWAY_IP = "10.0.6.1"
+EXTERNAL_PROBE_IP = "1.1.1.1"
+
 
 def load_state():
     if STATE_FILE.exists():
@@ -34,7 +39,14 @@ def load_state():
             return json.loads(STATE_FILE.read_text())
         except Exception:
             pass
-    return {"ceph_last": None, "argocd_last": {}, "pods_last": [], "alerts_last": [], "prs_seen": []}
+    return {
+        "conn_last": None,
+        "ceph_last": None,
+        "argocd_last": {},
+        "pods_last": [],
+        "alerts_last": [],
+        "prs_seen": [],
+    }
 
 
 def save_state(state):
@@ -47,6 +59,41 @@ def run(cmd, cwd=None, timeout=30):
         return r.stdout.strip(), r.stderr.strip(), r.returncode
     except Exception as e:
         return "", str(e), 1
+
+
+def check_connectivity(state, report):
+    """Returns True if the cluster API is reachable. If not, figures out
+    whether that's because this machine isn't on the cluster's network right
+    now (common, routine, muted after the first report) or because the
+    cluster itself is actually down (rare, serious, never muted)."""
+    _, _, rc = run(["kubectl", "get", "--raw=/healthz", "--request-timeout=5s"], timeout=10)
+    if rc == 0:
+        if state.get("conn_last") not in (None, "ok"):
+            report.append("CLUSTER: connectivity restored")
+        state["conn_last"] = "ok"
+        return True
+
+    _, _, gw_rc = run(["ping", "-c", "1", "-W", "2000", GATEWAY_IP], timeout=5)
+    _, _, ext_rc = run(["ping", "-c", "1", "-W", "2000", EXTERNAL_PROBE_IP], timeout=5)
+
+    if gw_rc == 0:
+        # On the cluster's own network, but the API server still didn't
+        # answer - this is a real problem, not a "wrong network" situation.
+        # Always report, every cycle, until it clears - never mute this one.
+        report.append(
+            "CLUSTER DOWN: on cluster network (gateway reachable) but API server "
+            "unreachable - needs investigation, not just a connectivity blip"
+        )
+        state["conn_last"] = "cluster_down"
+    else:
+        detail = "internet OK, so just not on the cluster LAN" if ext_rc == 0 else "internet also unreachable"
+        if state.get("conn_last") != "local":
+            report.append(
+                f"LOCAL: not on cluster network (gateway {GATEWAY_IP} unreachable, {detail}) "
+                "- skipping cluster-side checks this cycle"
+            )
+        state["conn_last"] = "local"
+    return False
 
 
 def check_ceph(state, report):
@@ -193,12 +240,14 @@ def check_cve(report):
 def main():
     state = load_state()
     report = []
-    check_ceph(state, report)
-    check_argocd(state, report)
-    check_pods(state, report)
-    check_alerts(state, report)
-    check_prs(state, report)
-    check_cve(report)
+    reachable = check_connectivity(state, report)
+    if reachable:
+        check_ceph(state, report)
+        check_argocd(state, report)
+        check_pods(state, report)
+        check_alerts(state, report)
+    check_prs(state, report)  # independent of cluster reachability
+    check_cve(report)  # independent of cluster reachability
     save_state(state)
     for line in report:
         print(line)
