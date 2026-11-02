@@ -1,0 +1,208 @@
+#!/usr/bin/env python3
+"""
+One-script recurring health sweep for this cluster + repo.
+
+Design goal: run this every cycle and read only its stdout. Each check is
+compared against the last run's state (stored locally) and only prints
+when something is NEW or CHANGED - a clean cycle prints nothing at all.
+When it does print something, that's the signal to drop into manual,
+unscripted investigation (reading diffs/changelogs, WebSearch on a CVE,
+etc.) rather than trusting this script's own text as the final word.
+
+Checks:
+  - Ceph health (transition-based: only reports when the summary changes)
+  - ArgoCD app sync/health (per-app transition-based)
+  - Pods stuck outside Running/Succeeded (reports newly-bad and newly-recovered)
+  - Firing Alertmanager alerts, excluding Watchdog (reports newly-firing/resolved)
+  - Open GitHub PRs on this repo (reports only PRs never seen before - merge/hold
+    decisions still need a human/manual-Claude look at the real diff+changelog)
+  - CVE watch (delegates to cve-watch.py, relays its output if not clean)
+
+Exit code is always 0. Empty stdout == fully clean cycle.
+"""
+import json
+import subprocess
+from pathlib import Path
+
+REPO_DIR = "/Users/sanderlysakermoen/Documents/git/kubernetes"
+STATE_FILE = Path(__file__).parent / ".health-sweep-state.json"
+
+
+def load_state():
+    if STATE_FILE.exists():
+        try:
+            return json.loads(STATE_FILE.read_text())
+        except Exception:
+            pass
+    return {"ceph_last": None, "argocd_last": {}, "pods_last": [], "alerts_last": [], "prs_seen": []}
+
+
+def save_state(state):
+    STATE_FILE.write_text(json.dumps(state, indent=2))
+
+
+def run(cmd, cwd=None, timeout=30):
+    try:
+        r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+        return r.stdout.strip(), r.stderr.strip(), r.returncode
+    except Exception as e:
+        return "", str(e), 1
+
+
+def check_ceph(state, report):
+    out, err, rc = run(["kubectl", "exec", "-n", "rook-ceph", "deploy/rook-ceph-tools", "--", "ceph", "health"])
+    if rc != 0:
+        report.append(f"! CEPH check failed: {err or out}")
+        return
+    current = out
+    last = state.get("ceph_last")
+    if current != last:
+        if last is None:
+            report.append(f"CEPH: {current}")
+        else:
+            report.append(f"CEPH changed: '{last}' -> '{current}'")
+    state["ceph_last"] = current
+
+
+def check_argocd(state, report):
+    out, err, rc = run(["kubectl", "get", "application", "-n", "argocd", "-o", "json"])
+    if rc != 0:
+        report.append(f"! ARGOCD check failed: {err or out}")
+        return
+    try:
+        apps = json.loads(out).get("items", [])
+    except Exception as e:
+        report.append(f"! ARGOCD parse failed: {e}")
+        return
+    last = state.get("argocd_last", {})
+    current = {}
+    for app in apps:
+        name = app["metadata"]["name"]
+        sync = app.get("status", {}).get("sync", {}).get("status", "Unknown")
+        health = app.get("status", {}).get("health", {}).get("status", "Unknown")
+        status = f"{sync}/{health}"
+        current[name] = status
+        healthy = status == "Synced/Healthy"
+        prev = last.get(name)
+        if not healthy and status != prev:
+            report.append(f"ARGOCD: {name} -> {status}")
+        elif healthy and prev and prev != status and prev != "Synced/Healthy":
+            report.append(f"ARGOCD: {name} recovered ({prev} -> {status})")
+    state["argocd_last"] = current
+
+
+def check_pods(state, report):
+    out, err, rc = run([
+        "kubectl", "get", "pods", "-A",
+        "--field-selector=status.phase!=Running,status.phase!=Succeeded",
+        "-o", "json",
+    ])
+    if rc != 0:
+        report.append(f"! PODS check failed: {err or out}")
+        return
+    try:
+        items = json.loads(out).get("items", [])
+    except Exception as e:
+        report.append(f"! PODS parse failed: {e}")
+        return
+    current = set()
+    details = {}
+    for p in items:
+        key = f"{p['metadata']['namespace']}/{p['metadata']['name']}"
+        current.add(key)
+        phase = p.get("status", {}).get("phase", "?")
+        details[key] = phase
+    last = set(state.get("pods_last", []))
+    new_bad = current - last
+    recovered = last - current
+    for k in sorted(new_bad):
+        report.append(f"POD: {k} is {details.get(k, '?')}")
+    if recovered:
+        report.append(f"POD: {len(recovered)} previously-stuck pod(s) recovered")
+    state["pods_last"] = sorted(current)
+
+
+def check_alerts(state, report):
+    name_out, _, rc = run([
+        "kubectl", "get", "pods", "-n", "monitoring",
+        "-l", "app.kubernetes.io/name=alertmanager",
+        "-o", "jsonpath={.items[0].metadata.name}",
+    ])
+    if rc != 0 or not name_out:
+        report.append("! ALERTS check failed: could not find alertmanager pod")
+        return
+    out, err, rc = run([
+        "kubectl", "exec", "-n", "monitoring", name_out, "-c", "alertmanager",
+        "--", "wget", "-qO-", "http://localhost:9093/api/v2/alerts",
+    ])
+    if rc != 0:
+        report.append(f"! ALERTS check failed: {err or out}")
+        return
+    try:
+        alerts = json.loads(out)
+    except Exception as e:
+        report.append(f"! ALERTS parse failed: {e}")
+        return
+    current = {}
+    for a in alerts:
+        labels = a.get("labels", {})
+        if labels.get("alertname") == "Watchdog":
+            continue
+        fp = a.get("fingerprint")
+        if a.get("status", {}).get("state") != "active":
+            continue
+        tag = labels.get("node") or labels.get("pod") or labels.get("daemonset") or labels.get("instance") or ""
+        current[fp] = f"{labels.get('alertname')} ({tag})" if tag else labels.get("alertname", fp)
+    last = state.get("alerts_last", [])
+    last_fps = {x.split("::", 1)[0] for x in last}
+    current_fps = set(current.keys())
+    for fp in current_fps - last_fps:
+        report.append(f"ALERT firing: {current[fp]}")
+    resolved = last_fps - current_fps
+    if resolved:
+        report.append(f"ALERT: {len(resolved)} previously-firing alert(s) resolved")
+    state["alerts_last"] = [f"{fp}::{desc}" for fp, desc in current.items()]
+
+
+def check_prs(state, report):
+    out, err, rc = run(["gh", "pr", "list", "--state", "open", "--json", "number,title,url"], cwd=REPO_DIR)
+    if rc != 0:
+        report.append(f"! PR check failed: {err or out}")
+        return
+    try:
+        prs = json.loads(out)
+    except Exception as e:
+        report.append(f"! PR parse failed: {e}")
+        return
+    seen = set(state.get("prs_seen", []))
+    new_prs = [p for p in prs if p["number"] not in seen]
+    for p in new_prs:
+        report.append(f"PR #{p['number']}: {p['title']} - {p['url']}")
+    state["prs_seen"] = sorted(seen | {p["number"] for p in prs})
+
+
+def check_cve(report):
+    out, err, rc = run(["python3", str(Path(__file__).parent / "cve-watch.py")], timeout=180)
+    first_line = out.splitlines()[0] if out else ""
+    if rc != 0:
+        report.append(f"! CVE check failed: {err or out}")
+    elif "clean" not in first_line:
+        report.append(out)
+
+
+def main():
+    state = load_state()
+    report = []
+    check_ceph(state, report)
+    check_argocd(state, report)
+    check_pods(state, report)
+    check_alerts(state, report)
+    check_prs(state, report)
+    check_cve(report)
+    save_state(state)
+    for line in report:
+        print(line)
+
+
+if __name__ == "__main__":
+    main()
