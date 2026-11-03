@@ -64,6 +64,8 @@ spec:
             # Create additional users manually (see forgejo admin user create above).
             - name: GITEA__service__DISABLE_REGISTRATION
               value: "true"
+            - name: GITEA__metrics__ENABLED
+              value: "true"
           ports:
             - name: http
               containerPort: 3000
