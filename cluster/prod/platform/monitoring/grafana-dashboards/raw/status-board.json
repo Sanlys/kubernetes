@@ -749,11 +749,11 @@
     },
     {
       "id": 16,
-      "type": "stat",
-      "title": "CPU: talos-3gd-ovr",
+      "type": "table",
+      "title": "Nodes",
       "gridPos": {
-        "h": 4,
-        "w": 4,
+        "h": 11,
+        "w": 24,
         "x": 0,
         "y": 31
       },
@@ -763,1603 +763,116 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-3gd-ovr\"})",
+          "expr": "sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info)",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
           "instant": true,
+          "format": "table",
           "refId": "A"
+        },
+        {
+          "expr": "sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "B"
+        },
+        {
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "C"
         }
       ],
       "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Memory"
+            },
+            "properties": [
               {
-                "color": "blue",
-                "value": null
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ready"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "NotReady",
+                        "color": "red"
+                      },
+                      "1": {
+                        "text": "Ready",
+                        "color": "green"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
               }
             ]
           }
-        },
-        "overrides": []
+        ]
       },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
+        "showHeader": true
+      },
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
         },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {
+              "node": true,
+              "Value #A": true,
+              "Value #B": true,
+              "Value #C": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "node": "Node",
+              "Value #A": "CPU (cores)",
+              "Value #B": "Memory",
+              "Value #C": "Ready"
+            }
+          }
+        }
+      ]
     },
     {
       "id": 17,
-      "type": "stat",
-      "title": "CPU: talos-6l0-2ma",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
-        "y": 31
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-6l0-2ma\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 18,
-      "type": "stat",
-      "title": "CPU: talos-hjv-x6c",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 8,
-        "y": 31
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-hjv-x6c\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 19,
-      "type": "stat",
-      "title": "CPU: talos-hfy-gns",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 12,
-        "y": 31
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-hfy-gns\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 20,
-      "type": "stat",
-      "title": "CPU: talos-jcx-enc",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 16,
-        "y": 31
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-jcx-enc\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 21,
-      "type": "stat",
-      "title": "CPU: talos-jwk-gs2",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 20,
-        "y": 31
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-jwk-gs2\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 22,
-      "type": "stat",
-      "title": "CPU: talos-ly6-852",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 0,
-        "y": 35
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-ly6-852\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 23,
-      "type": "stat",
-      "title": "CPU: talos-puf-79s",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
-        "y": 35
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-puf-79s\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 24,
-      "type": "stat",
-      "title": "CPU: talos-zr9-r2s",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 8,
-        "y": 35
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-zr9-r2s\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 25,
-      "type": "stat",
-      "title": "Memory: talos-3gd-ovr",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 0,
-        "y": 39
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-3gd-ovr\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 26,
-      "type": "stat",
-      "title": "Memory: talos-6l0-2ma",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
-        "y": 39
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-6l0-2ma\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 27,
-      "type": "stat",
-      "title": "Memory: talos-hjv-x6c",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 8,
-        "y": 39
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-hjv-x6c\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 28,
-      "type": "stat",
-      "title": "Memory: talos-hfy-gns",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 12,
-        "y": 39
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-hfy-gns\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 29,
-      "type": "stat",
-      "title": "Memory: talos-jcx-enc",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 16,
-        "y": 39
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-jcx-enc\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 30,
-      "type": "stat",
-      "title": "Memory: talos-jwk-gs2",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 20,
-        "y": 39
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-jwk-gs2\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 31,
-      "type": "stat",
-      "title": "Memory: talos-ly6-852",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 0,
-        "y": 43
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-ly6-852\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 32,
-      "type": "stat",
-      "title": "Memory: talos-puf-79s",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
-        "y": 43
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-puf-79s\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 33,
-      "type": "stat",
-      "title": "Memory: talos-zr9-r2s",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 8,
-        "y": 43
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-zr9-r2s\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 34,
-      "type": "stat",
-      "title": "Ready: talos-3gd-ovr",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 0,
-        "y": 47
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\",node=\"talos-3gd-ovr\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "NotReady"
-                },
-                "1": {
-                  "text": "Ready"
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 35,
-      "type": "stat",
-      "title": "Ready: talos-6l0-2ma",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
-        "y": 47
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\",node=\"talos-6l0-2ma\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "NotReady"
-                },
-                "1": {
-                  "text": "Ready"
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 36,
-      "type": "stat",
-      "title": "Ready: talos-hjv-x6c",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 8,
-        "y": 47
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\",node=\"talos-hjv-x6c\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "NotReady"
-                },
-                "1": {
-                  "text": "Ready"
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 37,
-      "type": "stat",
-      "title": "Ready: talos-hfy-gns",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 12,
-        "y": 47
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\",node=\"talos-hfy-gns\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "NotReady"
-                },
-                "1": {
-                  "text": "Ready"
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 38,
-      "type": "stat",
-      "title": "Ready: talos-jcx-enc",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 16,
-        "y": 47
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\",node=\"talos-jcx-enc\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "NotReady"
-                },
-                "1": {
-                  "text": "Ready"
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 39,
-      "type": "stat",
-      "title": "Ready: talos-jwk-gs2",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 20,
-        "y": 47
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\",node=\"talos-jwk-gs2\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "NotReady"
-                },
-                "1": {
-                  "text": "Ready"
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 40,
-      "type": "stat",
-      "title": "Ready: talos-ly6-852",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 0,
-        "y": 51
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\",node=\"talos-ly6-852\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "NotReady"
-                },
-                "1": {
-                  "text": "Ready"
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 41,
-      "type": "stat",
-      "title": "Ready: talos-puf-79s",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
-        "y": 51
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\",node=\"talos-puf-79s\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "NotReady"
-                },
-                "1": {
-                  "text": "Ready"
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 42,
-      "type": "stat",
-      "title": "Ready: talos-zr9-r2s",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 8,
-        "y": 51
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\",node=\"talos-zr9-r2s\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "NotReady"
-                },
-                "1": {
-                  "text": "Ready"
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 43,
       "type": "row",
       "title": "Ceph components",
       "collapsed": false,
@@ -2367,19 +880,19 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 55
+        "y": 42
       },
       "panels": []
     },
     {
-      "id": 44,
+      "id": 18,
       "type": "stat",
       "title": "OSD: osd.0",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 0,
-        "y": 56
+        "y": 43
       },
       "datasource": {
         "type": "prometheus",
@@ -2443,14 +956,14 @@
       }
     },
     {
-      "id": 45,
+      "id": 19,
       "type": "stat",
       "title": "OSD: osd.1",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 3,
-        "y": 56
+        "y": 43
       },
       "datasource": {
         "type": "prometheus",
@@ -2514,14 +1027,14 @@
       }
     },
     {
-      "id": 46,
+      "id": 20,
       "type": "stat",
       "title": "OSD: osd.2",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 6,
-        "y": 56
+        "y": 43
       },
       "datasource": {
         "type": "prometheus",
@@ -2585,14 +1098,14 @@
       }
     },
     {
-      "id": 47,
+      "id": 21,
       "type": "stat",
       "title": "OSD: osd.4",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 9,
-        "y": 56
+        "y": 43
       },
       "datasource": {
         "type": "prometheus",
@@ -2656,14 +1169,14 @@
       }
     },
     {
-      "id": 48,
+      "id": 22,
       "type": "stat",
       "title": "OSD: osd.5",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 12,
-        "y": 56
+        "y": 43
       },
       "datasource": {
         "type": "prometheus",
@@ -2727,14 +1240,14 @@
       }
     },
     {
-      "id": 49,
+      "id": 23,
       "type": "stat",
       "title": "OSD: osd.7",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 15,
-        "y": 56
+        "y": 43
       },
       "datasource": {
         "type": "prometheus",
@@ -2798,14 +1311,14 @@
       }
     },
     {
-      "id": 50,
+      "id": 24,
       "type": "stat",
       "title": "OSD: osd.9",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 18,
-        "y": 56
+        "y": 43
       },
       "datasource": {
         "type": "prometheus",
@@ -2869,7 +1382,7 @@
       }
     },
     {
-      "id": 51,
+      "id": 25,
       "type": "row",
       "title": "Public apps (traefik-public)",
       "collapsed": false,
@@ -2877,19 +1390,19 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 60
+        "y": 47
       },
       "panels": []
     },
     {
-      "id": 52,
+      "id": 26,
       "type": "table",
       "title": "Public app traffic",
       "gridPos": {
         "h": 9,
         "w": 16,
         "x": 0,
-        "y": 61
+        "y": 48
       },
       "datasource": {
         "type": "prometheus",
@@ -2961,14 +1474,14 @@
       ]
     },
     {
-      "id": 53,
+      "id": 27,
       "type": "table",
       "title": "TLS cert expiry",
       "gridPos": {
         "h": 9,
         "w": 8,
         "x": 16,
-        "y": 61
+        "y": 48
       },
       "datasource": {
         "type": "prometheus",
@@ -3012,14 +1525,14 @@
       ]
     },
     {
-      "id": 54,
+      "id": 28,
       "type": "timeseries",
       "title": "Public app request rate (history)",
       "gridPos": {
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 70
+        "y": 57
       },
       "datasource": {
         "type": "prometheus",
@@ -3054,14 +1567,14 @@
       }
     },
     {
-      "id": 55,
+      "id": 29,
       "type": "stat",
       "title": "Arch mirror \u2014 hours since last sync",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 76
+        "y": 63
       },
       "datasource": {
         "type": "prometheus",
@@ -3116,14 +1629,14 @@
       }
     },
     {
-      "id": 56,
+      "id": 30,
       "type": "stat",
       "title": "Arch mirror \u2014 hours since upstream update",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 76
+        "y": 63
       },
       "datasource": {
         "type": "prometheus",
@@ -3170,14 +1683,14 @@
       }
     },
     {
-      "id": 57,
+      "id": 31,
       "type": "timeseries",
       "title": "Arch mirror \u2014 requests/s",
       "gridPos": {
         "h": 5,
         "w": 6,
         "x": 12,
-        "y": 76
+        "y": 63
       },
       "datasource": {
         "type": "prometheus",
@@ -3212,14 +1725,14 @@
       }
     },
     {
-      "id": 58,
+      "id": 32,
       "type": "timeseries",
       "title": "Arch mirror \u2014 bandwidth",
       "gridPos": {
         "h": 5,
         "w": 6,
         "x": 18,
-        "y": 76
+        "y": 63
       },
       "datasource": {
         "type": "prometheus",
@@ -3254,7 +1767,7 @@
       }
     },
     {
-      "id": 59,
+      "id": 33,
       "type": "row",
       "title": "Game servers",
       "collapsed": false,
@@ -3262,19 +1775,19 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 81
+        "y": 68
       },
       "panels": []
     },
     {
-      "id": 60,
+      "id": 34,
       "type": "table",
       "title": "Minecraft servers",
       "gridPos": {
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 82
+        "y": 69
       },
       "datasource": {
         "type": "prometheus",
@@ -3405,14 +1918,14 @@
       ]
     },
     {
-      "id": 61,
+      "id": 35,
       "type": "logs",
       "title": "Combined server logs (minecraft process only, by display name)",
       "gridPos": {
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 88
+        "y": 75
       },
       "datasource": {
         "type": "loki",
@@ -3436,7 +1949,7 @@
       }
     },
     {
-      "id": 62,
+      "id": 36,
       "type": "row",
       "title": "Network",
       "collapsed": false,
@@ -3444,19 +1957,19 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 97
+        "y": 84
       },
       "panels": []
     },
     {
-      "id": 63,
+      "id": 37,
       "type": "timeseries",
       "title": "Cluster network throughput (physical NICs)",
       "gridPos": {
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 98
+        "y": 85
       },
       "datasource": {
         "type": "prometheus",
