@@ -777,6 +777,15 @@
           "unit": "short",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -787,7 +796,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -822,6 +831,15 @@
           "unit": "short",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -832,7 +850,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -867,6 +885,15 @@
           "unit": "short",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -877,7 +904,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -912,6 +939,15 @@
           "unit": "short",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -922,7 +958,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -957,6 +993,15 @@
           "unit": "short",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -967,7 +1012,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1002,6 +1047,15 @@
           "unit": "short",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -1012,7 +1066,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1047,6 +1101,15 @@
           "unit": "short",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -1057,7 +1120,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1092,6 +1155,15 @@
           "unit": "short",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -1102,7 +1174,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1137,6 +1209,15 @@
           "unit": "short",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -1147,7 +1228,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1182,6 +1263,15 @@
           "unit": "bytes",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -1192,7 +1282,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1227,6 +1317,15 @@
           "unit": "bytes",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -1237,7 +1336,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1272,6 +1371,15 @@
           "unit": "bytes",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -1282,7 +1390,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1317,6 +1425,15 @@
           "unit": "bytes",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -1327,7 +1444,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1362,6 +1479,15 @@
           "unit": "bytes",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -1372,7 +1498,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1407,6 +1533,15 @@
           "unit": "bytes",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -1417,7 +1552,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1452,6 +1587,15 @@
           "unit": "bytes",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -1462,7 +1606,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1497,6 +1641,15 @@
           "unit": "bytes",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -1507,7 +1660,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1542,6 +1695,15 @@
           "unit": "bytes",
           "color": {
             "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
           }
         },
         "overrides": []
@@ -1552,7 +1714,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1623,7 +1785,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1694,7 +1856,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1765,7 +1927,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1836,7 +1998,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1907,7 +2069,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -1978,7 +2140,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -2049,7 +2211,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -2120,7 +2282,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -2191,7 +2353,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -2275,7 +2437,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -2346,7 +2508,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -2417,7 +2579,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -2488,7 +2650,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -2559,7 +2721,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -2630,7 +2792,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
@@ -2701,7 +2863,7 @@
             "lastNotNull"
           ]
         },
-        "textMode": "name",
+        "textMode": "value",
         "graphMode": "area",
         "colorMode": "background"
       }
