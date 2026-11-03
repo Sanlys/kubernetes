@@ -1,0 +1,13 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mc-monitor
+  namespace: mc-monitor
+spec:
+  selector:
+    matchLabels:
+      app: mc-monitor
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s

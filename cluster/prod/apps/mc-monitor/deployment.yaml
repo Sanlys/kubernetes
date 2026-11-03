@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mc-monitor
+  namespace: mc-monitor
+  labels: { app: mc-monitor }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: mc-monitor }
+  template:
+    metadata:
+      labels: { app: mc-monitor }
+    spec:
+      containers:
+        - name: mc-monitor
+          image: itzg/mc-monitor:1.18.3
+          args:
+            - export-for-prometheus
+            - --port=8080
+          env:
+            # Java-edition server list this exporter polls via the standard
+            # server-list-ping protocol - read-only, no RCON needed. Internal
+            # Service DNS, not the public LoadBalancer IPs, since this runs
+            # in-cluster. Exposes minecraft_status_healthy,
+            # minecraft_status_response_time_seconds,
+            # minecraft_status_players_online_count and
+            # minecraft_status_players_max_count per server (no MOTD metric
+            # exists in this tool - MOTD is shown in Grafana from the known
+            # static config instead).
+            - name: EXPORT_SERVERS
+              value: "mc-paper.minecraft-server.svc.cluster.local:25565,mc-paper-temporary.minecraft-server-temporary.svc.cluster.local:25566,mc-paper.minecraft-slimey.svc.cluster.local:25565,mc-vanilla.minecraft-vanilla.svc.cluster.local:25565"
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests: { cpu: "10m", memory: "32Mi" }
+            limits: { memory: "64Mi" }
