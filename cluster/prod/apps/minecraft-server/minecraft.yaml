@@ -17,6 +17,7 @@ metadata:
   name: mc-paper
   labels:
     app: mc-paper
+    display-name: daurs-stream
 spec:
   replicas: 1
   strategy:
@@ -28,6 +29,7 @@ spec:
     metadata:
       labels:
         app: mc-paper
+        display-name: daurs-stream
     spec:
       securityContext:
         fsGroup: 1000

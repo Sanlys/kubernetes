@@ -17,6 +17,7 @@ metadata:
   name: mc-paper-temporary
   labels:
     app: mc-paper-temporary
+    display-name: slimeyteacup-temp
 spec:
   replicas: 1
   strategy:
@@ -28,6 +29,7 @@ spec:
     metadata:
       labels:
         app: mc-paper-temporary
+        display-name: slimeyteacup-temp
     spec:
       securityContext:
         fsGroup: 1000

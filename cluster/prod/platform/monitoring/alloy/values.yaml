@@ -71,6 +71,17 @@ alloy:
           target_label  = "node"
           action        = "replace"
         }
+
+        // Promotes the optional "display-name" pod label (set on the
+        // Minecraft servers so far) to a real Loki label, so a combined
+        // log view across lookalike apps can legend by a human name
+        // instead of the pod/deployment name. Absent on pods that don't
+        // set it, so this is additive and harmless elsewhere.
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_display_name"]
+          target_label  = "display_name"
+          action        = "replace"
+        }
       }
 
       loki.source.kubernetes "pod_logs" {

@@ -17,6 +17,7 @@ metadata:
   name: mc-vanilla
   labels:
     app: mc-vanilla
+    display-name: vanilla
 spec:
   replicas: 1
   strategy:
@@ -28,6 +29,7 @@ spec:
     metadata:
       labels:
         app: mc-vanilla
+        display-name: vanilla
     spec:
       securityContext:
         fsGroup: 1000
