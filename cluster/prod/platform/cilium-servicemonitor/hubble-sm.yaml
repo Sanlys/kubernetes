@@ -8,7 +8,7 @@ spec:
     matchNames: ["kube-system"]
   selector:
     matchLabels:
-      k8s-app: cilium
+      k8s-app: hubble
       app.kubernetes.io/name: hubble
   endpoints:
     - port: hubble-metrics
