@@ -749,11 +749,11 @@
     },
     {
       "id": 16,
-      "type": "timeseries",
-      "title": "Node CPU: $node",
+      "type": "stat",
+      "title": "CPU: talos-3gd-ovr",
       "gridPos": {
-        "h": 7,
-        "w": 8,
+        "h": 4,
+        "w": 4,
         "x": 0,
         "y": 31
       },
@@ -761,109 +761,811 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "repeat": "node",
-      "repeatDirection": "h",
-      "maxPerRow": 3,
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"$node\"})",
-          "legendFormat": "usage",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-3gd-ovr\"})",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "instant": true,
           "refId": "A"
-        },
-        {
-          "expr": "sum(kube_pod_container_resource_requests{resource=\"cpu\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"$node\"})",
-          "legendFormat": "requests",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "B"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2
+          "color": {
+            "mode": "thresholds"
           }
         },
         "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
       }
     },
     {
       "id": 17,
-      "type": "timeseries",
-      "title": "Node memory: $node",
+      "type": "stat",
+      "title": "CPU: talos-6l0-2ma",
       "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 0,
-        "y": 38
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 31
       },
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "repeat": "node",
-      "repeatDirection": "h",
-      "maxPerRow": 3,
       "targets": [
         {
-          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"$node\"})",
-          "legendFormat": "usage",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-6l0-2ma\"})",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "instant": true,
           "refId": "A"
-        },
-        {
-          "expr": "sum(kube_pod_container_resource_requests{resource=\"memory\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"$node\"})",
-          "legendFormat": "requests",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "B"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "bytes",
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
           }
         },
         "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
       }
     },
     {
       "id": 18,
+      "type": "stat",
+      "title": "CPU: talos-hjv-x6c",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 31
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-hjv-x6c\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 19,
+      "type": "stat",
+      "title": "CPU: talos-hfy-gns",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 31
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-hfy-gns\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 20,
+      "type": "stat",
+      "title": "CPU: talos-jcx-enc",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 31
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-jcx-enc\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 21,
+      "type": "stat",
+      "title": "CPU: talos-jwk-gs2",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 31
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-jwk-gs2\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 22,
+      "type": "stat",
+      "title": "CPU: talos-ly6-852",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 35
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-ly6-852\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 23,
+      "type": "stat",
+      "title": "CPU: talos-puf-79s",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 35
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-puf-79s\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 24,
+      "type": "stat",
+      "title": "CPU: talos-zr9-r2s",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 35
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-zr9-r2s\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 25,
+      "type": "stat",
+      "title": "Memory: talos-3gd-ovr",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 39
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-3gd-ovr\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 26,
+      "type": "stat",
+      "title": "Memory: talos-6l0-2ma",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 39
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-6l0-2ma\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 27,
+      "type": "stat",
+      "title": "Memory: talos-hjv-x6c",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 39
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-hjv-x6c\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 28,
+      "type": "stat",
+      "title": "Memory: talos-hfy-gns",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 39
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-hfy-gns\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 29,
+      "type": "stat",
+      "title": "Memory: talos-jcx-enc",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 39
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-jcx-enc\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 30,
+      "type": "stat",
+      "title": "Memory: talos-jwk-gs2",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 39
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-jwk-gs2\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 31,
+      "type": "stat",
+      "title": "Memory: talos-ly6-852",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 43
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-ly6-852\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 32,
+      "type": "stat",
+      "title": "Memory: talos-puf-79s",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 43
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-puf-79s\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 33,
+      "type": "stat",
+      "title": "Memory: talos-zr9-r2s",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 43
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info{node=\"talos-zr9-r2s\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "thresholds"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "name",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 34,
       "type": "stat",
       "title": "Ready: talos-3gd-ovr",
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 45
+        "y": 47
       },
       "datasource": {
         "type": "prometheus",
@@ -927,14 +1629,14 @@
       }
     },
     {
-      "id": 19,
+      "id": 35,
       "type": "stat",
       "title": "Ready: talos-6l0-2ma",
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 45
+        "y": 47
       },
       "datasource": {
         "type": "prometheus",
@@ -998,14 +1700,14 @@
       }
     },
     {
-      "id": 20,
+      "id": 36,
       "type": "stat",
       "title": "Ready: talos-hjv-x6c",
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 45
+        "y": 47
       },
       "datasource": {
         "type": "prometheus",
@@ -1069,14 +1771,14 @@
       }
     },
     {
-      "id": 21,
+      "id": 37,
       "type": "stat",
       "title": "Ready: talos-hfy-gns",
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 45
+        "y": 47
       },
       "datasource": {
         "type": "prometheus",
@@ -1140,14 +1842,14 @@
       }
     },
     {
-      "id": 22,
+      "id": 38,
       "type": "stat",
       "title": "Ready: talos-jcx-enc",
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 45
+        "y": 47
       },
       "datasource": {
         "type": "prometheus",
@@ -1211,14 +1913,14 @@
       }
     },
     {
-      "id": 23,
+      "id": 39,
       "type": "stat",
       "title": "Ready: talos-jwk-gs2",
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 45
+        "y": 47
       },
       "datasource": {
         "type": "prometheus",
@@ -1282,14 +1984,14 @@
       }
     },
     {
-      "id": 24,
+      "id": 40,
       "type": "stat",
       "title": "Ready: talos-ly6-852",
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 49
+        "y": 51
       },
       "datasource": {
         "type": "prometheus",
@@ -1353,14 +2055,14 @@
       }
     },
     {
-      "id": 25,
+      "id": 41,
       "type": "stat",
       "title": "Ready: talos-puf-79s",
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 49
+        "y": 51
       },
       "datasource": {
         "type": "prometheus",
@@ -1424,14 +2126,14 @@
       }
     },
     {
-      "id": 26,
+      "id": 42,
       "type": "stat",
       "title": "Ready: talos-zr9-r2s",
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 49
+        "y": 51
       },
       "datasource": {
         "type": "prometheus",
@@ -1495,7 +2197,7 @@
       }
     },
     {
-      "id": 27,
+      "id": 43,
       "type": "row",
       "title": "Ceph components",
       "collapsed": false,
@@ -1503,19 +2205,19 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 53
+        "y": 55
       },
       "panels": []
     },
     {
-      "id": 28,
+      "id": 44,
       "type": "stat",
       "title": "OSD: osd.0",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 0,
-        "y": 54
+        "y": 56
       },
       "datasource": {
         "type": "prometheus",
@@ -1579,14 +2281,14 @@
       }
     },
     {
-      "id": 29,
+      "id": 45,
       "type": "stat",
       "title": "OSD: osd.1",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 3,
-        "y": 54
+        "y": 56
       },
       "datasource": {
         "type": "prometheus",
@@ -1650,14 +2352,14 @@
       }
     },
     {
-      "id": 30,
+      "id": 46,
       "type": "stat",
       "title": "OSD: osd.2",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 6,
-        "y": 54
+        "y": 56
       },
       "datasource": {
         "type": "prometheus",
@@ -1721,14 +2423,14 @@
       }
     },
     {
-      "id": 31,
+      "id": 47,
       "type": "stat",
       "title": "OSD: osd.4",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 9,
-        "y": 54
+        "y": 56
       },
       "datasource": {
         "type": "prometheus",
@@ -1792,14 +2494,14 @@
       }
     },
     {
-      "id": 32,
+      "id": 48,
       "type": "stat",
       "title": "OSD: osd.5",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 12,
-        "y": 54
+        "y": 56
       },
       "datasource": {
         "type": "prometheus",
@@ -1863,14 +2565,14 @@
       }
     },
     {
-      "id": 33,
+      "id": 49,
       "type": "stat",
       "title": "OSD: osd.7",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 15,
-        "y": 54
+        "y": 56
       },
       "datasource": {
         "type": "prometheus",
@@ -1934,14 +2636,14 @@
       }
     },
     {
-      "id": 34,
+      "id": 50,
       "type": "stat",
       "title": "OSD: osd.9",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 18,
-        "y": 54
+        "y": 56
       },
       "datasource": {
         "type": "prometheus",
@@ -2005,7 +2707,7 @@
       }
     },
     {
-      "id": 35,
+      "id": 51,
       "type": "row",
       "title": "Public apps (traefik-public)",
       "collapsed": false,
@@ -2013,19 +2715,19 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 58
+        "y": 60
       },
       "panels": []
     },
     {
-      "id": 36,
+      "id": 52,
       "type": "table",
       "title": "Public app traffic",
       "gridPos": {
         "h": 9,
         "w": 16,
         "x": 0,
-        "y": 59
+        "y": 61
       },
       "datasource": {
         "type": "prometheus",
@@ -2033,7 +2735,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (exported_service) (rate(traefik_service_requests_total{container=\"traefik-public\"}[5m]))",
+          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -2043,7 +2745,7 @@
           "refId": "A"
         },
         {
-          "expr": "sum by (exported_service) (rate(traefik_service_requests_total{container=\"traefik-public\", code=~\"4..|5..\"}[5m]))",
+          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\", code=~\"4..|5..\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -2053,7 +2755,7 @@
           "refId": "B"
         },
         {
-          "expr": "histogram_quantile(0.95, sum by (le, exported_service) (rate(traefik_service_request_duration_seconds_bucket{container=\"traefik-public\"}[5m]))) * 1000",
+          "expr": "histogram_quantile(0.95, sum by (le, app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_request_duration_seconds_bucket{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))) * 1000",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -2080,14 +2782,14 @@
           "options": {
             "excludeByName": {},
             "includeByName": {
-              "exported_service": true,
+              "app": true,
               "Value #A": true,
               "Value #B": true,
               "Value #C": true
             },
             "indexByName": {},
             "renameByName": {
-              "exported_service": "App",
+              "app": "App",
               "Value #A": "Req/s",
               "Value #B": "Errors/s",
               "Value #C": "p95 ms"
@@ -2097,14 +2799,14 @@
       ]
     },
     {
-      "id": 37,
+      "id": 53,
       "type": "table",
       "title": "TLS cert expiry",
       "gridPos": {
         "h": 9,
         "w": 8,
         "x": 16,
-        "y": 59
+        "y": 61
       },
       "datasource": {
         "type": "prometheus",
@@ -2148,14 +2850,14 @@
       ]
     },
     {
-      "id": 38,
+      "id": 54,
       "type": "timeseries",
       "title": "Public app request rate (history)",
       "gridPos": {
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 68
+        "y": 70
       },
       "datasource": {
         "type": "prometheus",
@@ -2163,8 +2865,8 @@
       },
       "targets": [
         {
-          "expr": "sum by (exported_service) (rate(traefik_service_requests_total{container=\"traefik-public\"}[5m]))",
-          "legendFormat": "{{exported_service}}",
+          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
+          "legendFormat": "{{app}}",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -2190,14 +2892,14 @@
       }
     },
     {
-      "id": 39,
+      "id": 55,
       "type": "stat",
       "title": "Arch mirror \u2014 hours since last sync",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 74
+        "y": 76
       },
       "datasource": {
         "type": "prometheus",
@@ -2252,14 +2954,14 @@
       }
     },
     {
-      "id": 40,
+      "id": 56,
       "type": "stat",
       "title": "Arch mirror \u2014 hours since upstream update",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 74
+        "y": 76
       },
       "datasource": {
         "type": "prometheus",
@@ -2306,14 +3008,14 @@
       }
     },
     {
-      "id": 41,
+      "id": 57,
       "type": "timeseries",
-      "title": "Arch mirror \u2014 requests & bandwidth",
+      "title": "Arch mirror \u2014 requests/s",
       "gridPos": {
         "h": 5,
-        "w": 12,
+        "w": 6,
         "x": 12,
-        "y": 74
+        "y": 76
       },
       "datasource": {
         "type": "prometheus",
@@ -2328,20 +3030,11 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "A"
-        },
-        {
-          "expr": "sum(rate(loki_process_custom_mirror_bytes_total[$__rate_interval]))",
-          "legendFormat": "bytes/s",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "B"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
+          "unit": "reqps",
           "custom": {
             "fillOpacity": 10,
             "lineWidth": 2
@@ -2357,7 +3050,49 @@
       }
     },
     {
-      "id": 42,
+      "id": 58,
+      "type": "timeseries",
+      "title": "Arch mirror \u2014 bandwidth",
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 76
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(loki_process_custom_mirror_bytes_total[$__rate_interval]))",
+          "legendFormat": "bytes/s",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 59,
       "type": "row",
       "title": "Game servers",
       "collapsed": false,
@@ -2365,19 +3100,19 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 79
+        "y": 81
       },
       "panels": []
     },
     {
-      "id": 43,
+      "id": 60,
       "type": "table",
       "title": "Minecraft servers",
       "gridPos": {
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 80
+        "y": 82
       },
       "datasource": {
         "type": "prometheus",
@@ -2508,14 +3243,14 @@
       ]
     },
     {
-      "id": 44,
+      "id": 61,
       "type": "logs",
       "title": "Combined server logs (minecraft process only, by display name)",
       "gridPos": {
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 86
+        "y": 88
       },
       "datasource": {
         "type": "loki",
@@ -2523,7 +3258,7 @@
       },
       "targets": [
         {
-          "expr": "{namespace=~\"minecraft-.*\", container=\"minecraft\"}",
+          "expr": "{namespace=~\"minecraft-.*\", container=\"minecraft\"} | line_format \"[{{.display_name}}] {{__line__}}\"",
           "datasource": {
             "type": "loki",
             "uid": "${DS_LOKI}"
@@ -2539,7 +3274,7 @@
       }
     },
     {
-      "id": 45,
+      "id": 62,
       "type": "row",
       "title": "Network",
       "collapsed": false,
@@ -2547,19 +3282,19 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 95
+        "y": 97
       },
       "panels": []
     },
     {
-      "id": 46,
+      "id": 63,
       "type": "timeseries",
-      "title": "Cluster network throughput (physical NIC)",
+      "title": "Cluster network throughput (physical NICs)",
       "gridPos": {
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 96
+        "y": 98
       },
       "datasource": {
         "type": "prometheus",
@@ -2567,7 +3302,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(node_network_receive_bytes_total{device=\"eth0\"}[5m]))",
+          "expr": "sum(rate(node_network_receive_bytes_total{device!~\"lo|lxc.*|cilium_.*|sit0|teql0|tunl0|ip6tnl0|dummy0\"}[5m]))",
           "legendFormat": "ingress",
           "datasource": {
             "type": "prometheus",
@@ -2576,7 +3311,7 @@
           "refId": "A"
         },
         {
-          "expr": "sum(rate(node_network_transmit_bytes_total{device=\"eth0\"}[5m]))",
+          "expr": "sum(rate(node_network_transmit_bytes_total{device!~\"lo|lxc.*|cilium_.*|sit0|teql0|tunl0|ip6tnl0|dummy0\"}[5m]))",
           "legendFormat": "egress",
           "datasource": {
             "type": "prometheus",
