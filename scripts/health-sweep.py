@@ -13,7 +13,9 @@ Checks:
   - Ceph health (transition-based: only reports when the summary changes)
   - ArgoCD app sync/health (per-app transition-based)
   - Pods stuck outside Running/Succeeded (reports newly-bad and newly-recovered)
-  - Firing Alertmanager alerts, excluding Watchdog (reports newly-firing/resolved)
+  - Firing Alertmanager alerts, excluding Watchdog (reports every currently-active
+    alert every cycle, tagged new/active, plus resolved counts - a persistent
+    alert is never silently dropped after its first mention)
   - Open GitHub PRs on this repo (reports only PRs never seen before - merge/hold
     decisions still need a human/manual-Claude look at the real diff+changelog)
   - CVE watch (delegates to cve-watch.py, relays its output if not clean)
@@ -198,14 +200,27 @@ def check_alerts(state, report):
         fp = a.get("fingerprint")
         if a.get("status", {}).get("state") != "active":
             continue
-        tag = labels.get("node") or labels.get("pod") or labels.get("daemonset") or labels.get("instance") or ""
+        # Workload-identifying labels take priority over "pod"/"job", which on
+        # a metrics-derived alert (e.g. KubeDeploymentReplicasMismatch) belong
+        # to the exporter (kube-state-metrics) itself, not the actual affected
+        # workload. "pod" is only trustworthy when nothing more specific is
+        # set (e.g. KubePodNotReady), and gets the namespace prefixed.
+        ns = labels.get("namespace")
+        pod_tag = f"{ns}/{labels['pod']}" if ns and labels.get("pod") else labels.get("pod")
+        tag = (
+            labels.get("deployment") or labels.get("statefulset") or labels.get("daemonset")
+            or labels.get("node") or pod_tag or labels.get("instance") or ""
+        )
         current[fp] = f"{labels.get('alertname')} ({tag})" if tag else labels.get("alertname", fp)
-    last = state.get("alerts_last", [])
-    last_fps = {x.split("::", 1)[0] for x in last}
+    last = {x.split("::", 1)[0] for x in state.get("alerts_last", [])}
     current_fps = set(current.keys())
-    for fp in current_fps - last_fps:
-        report.append(f"ALERT firing: {current[fp]}")
-    resolved = last_fps - current_fps
+    # Every currently-active alert is reported every cycle (never silently
+    # dropped after its first mention) - a long-lived alert must stay
+    # visible for as long as it's actually firing.
+    for fp in sorted(current_fps, key=lambda fp: current[fp]):
+        tag = "new" if fp not in last else "active"
+        report.append(f"ALERT {tag}: {current[fp]}")
+    resolved = last - current_fps
     if resolved:
         report.append(f"ALERT: {len(resolved)} previously-firing alert(s) resolved")
     state["alerts_last"] = [f"{fp}::{desc}" for fp, desc in current.items()]
