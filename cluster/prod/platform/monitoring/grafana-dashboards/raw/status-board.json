@@ -575,9 +575,6 @@
         "x": 0,
         "y": 12
       },
-      "repeat": "node",
-      "repeatDirection": "h",
-      "maxPerRow": 4,
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -590,7 +587,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "instant": true,
-          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"$node\"}"
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-3gd-ovr\"}"
         },
         {
           "refId": "B",
@@ -599,7 +596,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "instant": true,
-          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"$node\"}"
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-3gd-ovr\"}"
         },
         {
           "refId": "C",
@@ -608,7 +605,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "instant": true,
-          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"$node\"}"
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-3gd-ovr\"}"
         },
         {
           "refId": "D",
@@ -617,7 +614,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "instant": true,
-          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"$node\"}"
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-3gd-ovr\"}"
         },
         {
           "refId": "E",
@@ -626,7 +623,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "instant": true,
-          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"$node\"}"
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-3gd-ovr\"}"
         },
         {
           "refId": "F",
@@ -635,7 +632,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "instant": true,
-          "expr": "count(kube_node_spec_taint{node=\"$node\"}) or vector(0)"
+          "expr": "count(kube_node_spec_taint{node=\"talos-3gd-ovr\"}) or vector(0)"
         },
         {
           "refId": "G",
@@ -644,27 +641,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "instant": true,
-          "expr": "time() - kube_node_created{node=\"$node\"}"
-        },
-        {
-          "refId": "H",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "expr": "kube_node_status_addresses{type=\"InternalIP\", node=\"$node\"}"
-        },
-        {
-          "refId": "I",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "expr": "kube_node_role{role=\"control-plane\", node=\"$node\"}"
+          "expr": "time() - kube_node_created{node=\"talos-3gd-ovr\"}"
         }
       ],
       "fieldConfig": {
@@ -672,11 +649,11 @@
         "overrides": []
       },
       "options": {
-        "html": "<div class=\"card\">\n  <div class=\"head\">\n    <span class=\"name\" id=\"n-name\"></span>\n    <span class=\"role\" id=\"n-role\"></span>\n  </div>\n  <div class=\"ip\" id=\"n-ip\"></div>\n  <div class=\"grid\">\n    <div><span class=\"lbl\">CPU</span><span id=\"n-cpu\"></span></div>\n    <div><span class=\"lbl\">RAM</span><span id=\"n-ram\"></span></div>\n    <div><span class=\"lbl\">Age</span><span id=\"n-age\"></span></div>\n    <div><span class=\"lbl\">Ready</span><span id=\"n-ready\"></span></div>\n    <div><span class=\"lbl\">Taints</span><span id=\"n-taints\"></span></div>\n  </div>\n</div>",
+        "html": "<div class=\"card\">\n  <div class=\"head\">\n    <span class=\"name\">talos-3gd-ovr</span>\n    <span class=\"role cp\">CP</span>\n  </div>\n  <div class=\"ip\">10.0.6.126</div>\n  <div class=\"grid\">\n    <div><span class=\"lbl\">CPU</span><span id=\"n-cpu\"></span></div>\n    <div><span class=\"lbl\">RAM</span><span id=\"n-ram\"></span></div>\n    <div><span class=\"lbl\">Age</span><span id=\"n-age\"></span></div>\n    <div><span class=\"lbl\">Ready</span><span id=\"n-ready\"></span></div>\n    <div><span class=\"lbl\">Taints</span><span id=\"n-taints\"></span></div>\n  </div>\n</div>",
         "css": ".card { font-family: inherit; color: #c7c9d1; height: 100%; box-sizing: border-box;\n  padding: 4px 8px; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; }\n.head { display: flex; justify-content: space-between; align-items: baseline; }\n.name { font-weight: 600; font-size: 13px; color: #e4e5ea; }\n.role { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: #1d2230; color: #7fa3e8; }\n.role.cp { background: #16321f; color: #5fc77e; }\n.ip { font-size: 10.5px; color: #8a8d98; }\n.grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 10px; font-size: 12px; margin-top: 3px; }\n.grid > div { display: flex; flex-direction: column; }\n.lbl { font-size: 9.5px; color: #6b6d76; text-transform: uppercase; letter-spacing: .3px; }\n#n-ready.ok { color: #5fc77e; } #n-ready.bad { color: #e05b5b; }",
         "rootCSS": "",
         "onInit": "",
-        "onRender": "function numField(refId) {\n  var frame = data.series.filter(function (s) { return s.refId === refId; })[0];\n  if (!frame) { return null; }\n  var field = frame.fields.filter(function (f) { return f.type === \"number\"; })[0];\n  if (!field || field.values.length === 0) { return null; }\n  var vals = field.values;\n  return vals.get ? vals.get(vals.length - 1) : vals[vals.length - 1];\n}\nfunction strField(refId, fieldName) {\n  var frame = data.series.filter(function (s) { return s.refId === refId; })[0];\n  if (!frame) { return null; }\n  var field = frame.fields.filter(function (f) { return f.name === fieldName; })[0];\n  if (!field || field.values.length === 0) { return null; }\n  var vals = field.values;\n  return vals.get ? vals.get(vals.length - 1) : vals[vals.length - 1];\n}\nfunction fmtBytes(b) {\n  if (b == null) { return \"\u2014\"; }\n  return (b / 1e9).toFixed(1) + \" GB\";\n}\nfunction fmtAge(s) {\n  if (s == null) { return \"\u2014\"; }\n  var d = s / 86400;\n  if (d >= 365) { return (d / 365).toFixed(1) + \"y\"; }\n  if (d >= 7) { return (d / 7).toFixed(1) + \"w\"; }\n  return d.toFixed(1) + \"d\";\n}\n\nvar cpuCores = numField(\"A\");\nvar cpuPct = numField(\"B\");\nvar ramUsed = numField(\"C\");\nvar ramTotal = numField(\"D\");\nvar ready = numField(\"E\");\nvar taints = numField(\"F\");\nvar ageSec = numField(\"G\");\nvar ip = strField(\"H\", \"address\");\n// Node name comes from the query data's own \"node\" label (format:table\n// exposes every label as a field, same mechanism \"address\" above uses),\n// not from getTemplateSrv().replace(\"$node\") - that reads the variable's\n// GLOBAL current value (with multi:true/includeAll:true, the full\n// \"{all, node, names}\" set), not the single value Grafana scopes to\n// this repeated clone's own queries. The queries already resolve\n// correctly per clone (confirmed against live Prometheus per node), so\n// reading the name back out of their result is the reliable path.\nvar nodeName = strField(\"H\", \"node\") || \"?\";\nhtmlNode.querySelector(\"#n-name\").textContent = nodeName;\nvar isCp = numField(\"I\") != null;\n\nhtmlNode.querySelector(\"#n-role\").textContent = isCp ? \"CP\" : \"Worker\";\nhtmlNode.querySelector(\"#n-role\").className = \"role\" + (isCp ? \" cp\" : \"\");\nhtmlNode.querySelector(\"#n-ip\").textContent = ip || \"\u2014\";\nhtmlNode.querySelector(\"#n-cpu\").textContent = (cpuCores != null ? cpuCores + \"c\" : \"\u2014\")\n  + (cpuPct != null ? \" \u00b7 \" + cpuPct.toFixed(1) + \"%\" : \"\");\nhtmlNode.querySelector(\"#n-ram\").textContent = (ramUsed != null && ramTotal != null)\n  ? fmtBytes(ramUsed) + \" / \" + fmtBytes(ramTotal) : \"\u2014\";\nhtmlNode.querySelector(\"#n-age\").textContent = fmtAge(ageSec);\nvar readyEl = htmlNode.querySelector(\"#n-ready\");\nreadyEl.textContent = ready === 1 ? \"Ready\" : \"NotReady\";\nreadyEl.className = ready === 1 ? \"ok\" : \"bad\";\nhtmlNode.querySelector(\"#n-taints\").textContent = taints != null ? taints : \"\u2014\";",
+        "onRender": "function numField(refId) {\n  var frame = data.series.filter(function (s) { return s.refId === refId; })[0];\n  if (!frame) { return null; }\n  var field = frame.fields.filter(function (f) { return f.type === \"number\"; })[0];\n  if (!field || field.values.length === 0) { return null; }\n  var vals = field.values;\n  return vals.get ? vals.get(vals.length - 1) : vals[vals.length - 1];\n}\nfunction fmtBytes(b) {\n  if (b == null) { return \"\u2014\"; }\n  return (b / 1e9).toFixed(1) + \" GB\";\n}\nfunction fmtAge(s) {\n  if (s == null) { return \"\u2014\"; }\n  var d = s / 86400;\n  if (d >= 365) { return (d / 365).toFixed(1) + \"y\"; }\n  if (d >= 7) { return (d / 7).toFixed(1) + \"w\"; }\n  return d.toFixed(1) + \"d\";\n}\n\nvar cpuCores = numField(\"A\");\nvar cpuPct = numField(\"B\");\nvar ramUsed = numField(\"C\");\nvar ramTotal = numField(\"D\");\nvar ready = numField(\"E\");\nvar taints = numField(\"F\");\nvar ageSec = numField(\"G\");\n\nhtmlNode.querySelector(\"#n-cpu\").textContent = (cpuCores != null ? cpuCores + \"c\" : \"\u2014\")\n  + (cpuPct != null ? \" \u00b7 \" + cpuPct.toFixed(1) + \"%\" : \"\");\nhtmlNode.querySelector(\"#n-ram\").textContent = (ramUsed != null && ramTotal != null)\n  ? fmtBytes(ramUsed) + \" / \" + fmtBytes(ramTotal) : \"\u2014\";\nhtmlNode.querySelector(\"#n-age\").textContent = fmtAge(ageSec);\nvar readyEl = htmlNode.querySelector(\"#n-ready\");\nreadyEl.textContent = ready === 1 ? \"Ready\" : \"NotReady\";\nreadyEl.className = ready === 1 ? \"ok\" : \"bad\";\nhtmlNode.querySelector(\"#n-taints\").textContent = taints != null ? taints : \"\u2014\";",
         "renderOnMount": true,
         "panelupdateOnMount": true,
         "centerAlignContent": false,
@@ -703,6 +680,910 @@
     },
     {
       "id": 11,
+      "type": "gapit-htmlgraphics-panel",
+      "title": "",
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 3,
+        "y": 12
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-6l0-2ma\"}"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-6l0-2ma\"}"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-6l0-2ma\"}"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-6l0-2ma\"}"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-6l0-2ma\"}"
+        },
+        {
+          "refId": "F",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "count(kube_node_spec_taint{node=\"talos-6l0-2ma\"}) or vector(0)"
+        },
+        {
+          "refId": "G",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "time() - kube_node_created{node=\"talos-6l0-2ma\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "html": "<div class=\"card\">\n  <div class=\"head\">\n    <span class=\"name\">talos-6l0-2ma</span>\n    <span class=\"role cp\">CP</span>\n  </div>\n  <div class=\"ip\">10.0.6.102</div>\n  <div class=\"grid\">\n    <div><span class=\"lbl\">CPU</span><span id=\"n-cpu\"></span></div>\n    <div><span class=\"lbl\">RAM</span><span id=\"n-ram\"></span></div>\n    <div><span class=\"lbl\">Age</span><span id=\"n-age\"></span></div>\n    <div><span class=\"lbl\">Ready</span><span id=\"n-ready\"></span></div>\n    <div><span class=\"lbl\">Taints</span><span id=\"n-taints\"></span></div>\n  </div>\n</div>",
+        "css": ".card { font-family: inherit; color: #c7c9d1; height: 100%; box-sizing: border-box;\n  padding: 4px 8px; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; }\n.head { display: flex; justify-content: space-between; align-items: baseline; }\n.name { font-weight: 600; font-size: 13px; color: #e4e5ea; }\n.role { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: #1d2230; color: #7fa3e8; }\n.role.cp { background: #16321f; color: #5fc77e; }\n.ip { font-size: 10.5px; color: #8a8d98; }\n.grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 10px; font-size: 12px; margin-top: 3px; }\n.grid > div { display: flex; flex-direction: column; }\n.lbl { font-size: 9.5px; color: #6b6d76; text-transform: uppercase; letter-spacing: .3px; }\n#n-ready.ok { color: #5fc77e; } #n-ready.bad { color: #e05b5b; }",
+        "rootCSS": "",
+        "onInit": "",
+        "onRender": "function numField(refId) {\n  var frame = data.series.filter(function (s) { return s.refId === refId; })[0];\n  if (!frame) { return null; }\n  var field = frame.fields.filter(function (f) { return f.type === \"number\"; })[0];\n  if (!field || field.values.length === 0) { return null; }\n  var vals = field.values;\n  return vals.get ? vals.get(vals.length - 1) : vals[vals.length - 1];\n}\nfunction fmtBytes(b) {\n  if (b == null) { return \"\u2014\"; }\n  return (b / 1e9).toFixed(1) + \" GB\";\n}\nfunction fmtAge(s) {\n  if (s == null) { return \"\u2014\"; }\n  var d = s / 86400;\n  if (d >= 365) { return (d / 365).toFixed(1) + \"y\"; }\n  if (d >= 7) { return (d / 7).toFixed(1) + \"w\"; }\n  return d.toFixed(1) + \"d\";\n}\n\nvar cpuCores = numField(\"A\");\nvar cpuPct = numField(\"B\");\nvar ramUsed = numField(\"C\");\nvar ramTotal = numField(\"D\");\nvar ready = numField(\"E\");\nvar taints = numField(\"F\");\nvar ageSec = numField(\"G\");\n\nhtmlNode.querySelector(\"#n-cpu\").textContent = (cpuCores != null ? cpuCores + \"c\" : \"\u2014\")\n  + (cpuPct != null ? \" \u00b7 \" + cpuPct.toFixed(1) + \"%\" : \"\");\nhtmlNode.querySelector(\"#n-ram\").textContent = (ramUsed != null && ramTotal != null)\n  ? fmtBytes(ramUsed) + \" / \" + fmtBytes(ramTotal) : \"\u2014\";\nhtmlNode.querySelector(\"#n-age\").textContent = fmtAge(ageSec);\nvar readyEl = htmlNode.querySelector(\"#n-ready\");\nreadyEl.textContent = ready === 1 ? \"Ready\" : \"NotReady\";\nreadyEl.className = ready === 1 ? \"ok\" : \"bad\";\nhtmlNode.querySelector(\"#n-taints\").textContent = taints != null ? taints : \"\u2014\";",
+        "renderOnMount": true,
+        "panelupdateOnMount": true,
+        "centerAlignContent": false,
+        "overflow": "hidden",
+        "useGrafanaScrollbar": false,
+        "SVGBaseFix": true,
+        "add100Percentage": true,
+        "dynamicData": false,
+        "dynamicFieldDisplayValues": false,
+        "dynamicProps": false,
+        "dynamicHtmlGraphics": false,
+        "onInitOnResize": false,
+        "codeData": "{}",
+        "importedPanelOptions": "",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "calcsMutation": "standard"
+      }
+    },
+    {
+      "id": 12,
+      "type": "gapit-htmlgraphics-panel",
+      "title": "",
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 6,
+        "y": 12
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-hjv-x6c\"}"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-hjv-x6c\"}"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-hjv-x6c\"}"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-hjv-x6c\"}"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-hjv-x6c\"}"
+        },
+        {
+          "refId": "F",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "count(kube_node_spec_taint{node=\"talos-hjv-x6c\"}) or vector(0)"
+        },
+        {
+          "refId": "G",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "time() - kube_node_created{node=\"talos-hjv-x6c\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "html": "<div class=\"card\">\n  <div class=\"head\">\n    <span class=\"name\">talos-hjv-x6c</span>\n    <span class=\"role cp\">CP</span>\n  </div>\n  <div class=\"ip\">10.0.6.69</div>\n  <div class=\"grid\">\n    <div><span class=\"lbl\">CPU</span><span id=\"n-cpu\"></span></div>\n    <div><span class=\"lbl\">RAM</span><span id=\"n-ram\"></span></div>\n    <div><span class=\"lbl\">Age</span><span id=\"n-age\"></span></div>\n    <div><span class=\"lbl\">Ready</span><span id=\"n-ready\"></span></div>\n    <div><span class=\"lbl\">Taints</span><span id=\"n-taints\"></span></div>\n  </div>\n</div>",
+        "css": ".card { font-family: inherit; color: #c7c9d1; height: 100%; box-sizing: border-box;\n  padding: 4px 8px; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; }\n.head { display: flex; justify-content: space-between; align-items: baseline; }\n.name { font-weight: 600; font-size: 13px; color: #e4e5ea; }\n.role { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: #1d2230; color: #7fa3e8; }\n.role.cp { background: #16321f; color: #5fc77e; }\n.ip { font-size: 10.5px; color: #8a8d98; }\n.grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 10px; font-size: 12px; margin-top: 3px; }\n.grid > div { display: flex; flex-direction: column; }\n.lbl { font-size: 9.5px; color: #6b6d76; text-transform: uppercase; letter-spacing: .3px; }\n#n-ready.ok { color: #5fc77e; } #n-ready.bad { color: #e05b5b; }",
+        "rootCSS": "",
+        "onInit": "",
+        "onRender": "function numField(refId) {\n  var frame = data.series.filter(function (s) { return s.refId === refId; })[0];\n  if (!frame) { return null; }\n  var field = frame.fields.filter(function (f) { return f.type === \"number\"; })[0];\n  if (!field || field.values.length === 0) { return null; }\n  var vals = field.values;\n  return vals.get ? vals.get(vals.length - 1) : vals[vals.length - 1];\n}\nfunction fmtBytes(b) {\n  if (b == null) { return \"\u2014\"; }\n  return (b / 1e9).toFixed(1) + \" GB\";\n}\nfunction fmtAge(s) {\n  if (s == null) { return \"\u2014\"; }\n  var d = s / 86400;\n  if (d >= 365) { return (d / 365).toFixed(1) + \"y\"; }\n  if (d >= 7) { return (d / 7).toFixed(1) + \"w\"; }\n  return d.toFixed(1) + \"d\";\n}\n\nvar cpuCores = numField(\"A\");\nvar cpuPct = numField(\"B\");\nvar ramUsed = numField(\"C\");\nvar ramTotal = numField(\"D\");\nvar ready = numField(\"E\");\nvar taints = numField(\"F\");\nvar ageSec = numField(\"G\");\n\nhtmlNode.querySelector(\"#n-cpu\").textContent = (cpuCores != null ? cpuCores + \"c\" : \"\u2014\")\n  + (cpuPct != null ? \" \u00b7 \" + cpuPct.toFixed(1) + \"%\" : \"\");\nhtmlNode.querySelector(\"#n-ram\").textContent = (ramUsed != null && ramTotal != null)\n  ? fmtBytes(ramUsed) + \" / \" + fmtBytes(ramTotal) : \"\u2014\";\nhtmlNode.querySelector(\"#n-age\").textContent = fmtAge(ageSec);\nvar readyEl = htmlNode.querySelector(\"#n-ready\");\nreadyEl.textContent = ready === 1 ? \"Ready\" : \"NotReady\";\nreadyEl.className = ready === 1 ? \"ok\" : \"bad\";\nhtmlNode.querySelector(\"#n-taints\").textContent = taints != null ? taints : \"\u2014\";",
+        "renderOnMount": true,
+        "panelupdateOnMount": true,
+        "centerAlignContent": false,
+        "overflow": "hidden",
+        "useGrafanaScrollbar": false,
+        "SVGBaseFix": true,
+        "add100Percentage": true,
+        "dynamicData": false,
+        "dynamicFieldDisplayValues": false,
+        "dynamicProps": false,
+        "dynamicHtmlGraphics": false,
+        "onInitOnResize": false,
+        "codeData": "{}",
+        "importedPanelOptions": "",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "calcsMutation": "standard"
+      }
+    },
+    {
+      "id": 13,
+      "type": "gapit-htmlgraphics-panel",
+      "title": "",
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 9,
+        "y": 12
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-hfy-gns\"}"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-hfy-gns\"}"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-hfy-gns\"}"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-hfy-gns\"}"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-hfy-gns\"}"
+        },
+        {
+          "refId": "F",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "count(kube_node_spec_taint{node=\"talos-hfy-gns\"}) or vector(0)"
+        },
+        {
+          "refId": "G",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "time() - kube_node_created{node=\"talos-hfy-gns\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "html": "<div class=\"card\">\n  <div class=\"head\">\n    <span class=\"name\">talos-hfy-gns</span>\n    <span class=\"role\">Worker</span>\n  </div>\n  <div class=\"ip\">10.0.6.109</div>\n  <div class=\"grid\">\n    <div><span class=\"lbl\">CPU</span><span id=\"n-cpu\"></span></div>\n    <div><span class=\"lbl\">RAM</span><span id=\"n-ram\"></span></div>\n    <div><span class=\"lbl\">Age</span><span id=\"n-age\"></span></div>\n    <div><span class=\"lbl\">Ready</span><span id=\"n-ready\"></span></div>\n    <div><span class=\"lbl\">Taints</span><span id=\"n-taints\"></span></div>\n  </div>\n</div>",
+        "css": ".card { font-family: inherit; color: #c7c9d1; height: 100%; box-sizing: border-box;\n  padding: 4px 8px; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; }\n.head { display: flex; justify-content: space-between; align-items: baseline; }\n.name { font-weight: 600; font-size: 13px; color: #e4e5ea; }\n.role { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: #1d2230; color: #7fa3e8; }\n.role.cp { background: #16321f; color: #5fc77e; }\n.ip { font-size: 10.5px; color: #8a8d98; }\n.grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 10px; font-size: 12px; margin-top: 3px; }\n.grid > div { display: flex; flex-direction: column; }\n.lbl { font-size: 9.5px; color: #6b6d76; text-transform: uppercase; letter-spacing: .3px; }\n#n-ready.ok { color: #5fc77e; } #n-ready.bad { color: #e05b5b; }",
+        "rootCSS": "",
+        "onInit": "",
+        "onRender": "function numField(refId) {\n  var frame = data.series.filter(function (s) { return s.refId === refId; })[0];\n  if (!frame) { return null; }\n  var field = frame.fields.filter(function (f) { return f.type === \"number\"; })[0];\n  if (!field || field.values.length === 0) { return null; }\n  var vals = field.values;\n  return vals.get ? vals.get(vals.length - 1) : vals[vals.length - 1];\n}\nfunction fmtBytes(b) {\n  if (b == null) { return \"\u2014\"; }\n  return (b / 1e9).toFixed(1) + \" GB\";\n}\nfunction fmtAge(s) {\n  if (s == null) { return \"\u2014\"; }\n  var d = s / 86400;\n  if (d >= 365) { return (d / 365).toFixed(1) + \"y\"; }\n  if (d >= 7) { return (d / 7).toFixed(1) + \"w\"; }\n  return d.toFixed(1) + \"d\";\n}\n\nvar cpuCores = numField(\"A\");\nvar cpuPct = numField(\"B\");\nvar ramUsed = numField(\"C\");\nvar ramTotal = numField(\"D\");\nvar ready = numField(\"E\");\nvar taints = numField(\"F\");\nvar ageSec = numField(\"G\");\n\nhtmlNode.querySelector(\"#n-cpu\").textContent = (cpuCores != null ? cpuCores + \"c\" : \"\u2014\")\n  + (cpuPct != null ? \" \u00b7 \" + cpuPct.toFixed(1) + \"%\" : \"\");\nhtmlNode.querySelector(\"#n-ram\").textContent = (ramUsed != null && ramTotal != null)\n  ? fmtBytes(ramUsed) + \" / \" + fmtBytes(ramTotal) : \"\u2014\";\nhtmlNode.querySelector(\"#n-age\").textContent = fmtAge(ageSec);\nvar readyEl = htmlNode.querySelector(\"#n-ready\");\nreadyEl.textContent = ready === 1 ? \"Ready\" : \"NotReady\";\nreadyEl.className = ready === 1 ? \"ok\" : \"bad\";\nhtmlNode.querySelector(\"#n-taints\").textContent = taints != null ? taints : \"\u2014\";",
+        "renderOnMount": true,
+        "panelupdateOnMount": true,
+        "centerAlignContent": false,
+        "overflow": "hidden",
+        "useGrafanaScrollbar": false,
+        "SVGBaseFix": true,
+        "add100Percentage": true,
+        "dynamicData": false,
+        "dynamicFieldDisplayValues": false,
+        "dynamicProps": false,
+        "dynamicHtmlGraphics": false,
+        "onInitOnResize": false,
+        "codeData": "{}",
+        "importedPanelOptions": "",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "calcsMutation": "standard"
+      }
+    },
+    {
+      "id": 14,
+      "type": "gapit-htmlgraphics-panel",
+      "title": "",
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 0,
+        "y": 15
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-jcx-enc\"}"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-jcx-enc\"}"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-jcx-enc\"}"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-jcx-enc\"}"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-jcx-enc\"}"
+        },
+        {
+          "refId": "F",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "count(kube_node_spec_taint{node=\"talos-jcx-enc\"}) or vector(0)"
+        },
+        {
+          "refId": "G",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "time() - kube_node_created{node=\"talos-jcx-enc\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "html": "<div class=\"card\">\n  <div class=\"head\">\n    <span class=\"name\">talos-jcx-enc</span>\n    <span class=\"role\">Worker</span>\n  </div>\n  <div class=\"ip\">10.0.6.191</div>\n  <div class=\"grid\">\n    <div><span class=\"lbl\">CPU</span><span id=\"n-cpu\"></span></div>\n    <div><span class=\"lbl\">RAM</span><span id=\"n-ram\"></span></div>\n    <div><span class=\"lbl\">Age</span><span id=\"n-age\"></span></div>\n    <div><span class=\"lbl\">Ready</span><span id=\"n-ready\"></span></div>\n    <div><span class=\"lbl\">Taints</span><span id=\"n-taints\"></span></div>\n  </div>\n</div>",
+        "css": ".card { font-family: inherit; color: #c7c9d1; height: 100%; box-sizing: border-box;\n  padding: 4px 8px; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; }\n.head { display: flex; justify-content: space-between; align-items: baseline; }\n.name { font-weight: 600; font-size: 13px; color: #e4e5ea; }\n.role { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: #1d2230; color: #7fa3e8; }\n.role.cp { background: #16321f; color: #5fc77e; }\n.ip { font-size: 10.5px; color: #8a8d98; }\n.grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 10px; font-size: 12px; margin-top: 3px; }\n.grid > div { display: flex; flex-direction: column; }\n.lbl { font-size: 9.5px; color: #6b6d76; text-transform: uppercase; letter-spacing: .3px; }\n#n-ready.ok { color: #5fc77e; } #n-ready.bad { color: #e05b5b; }",
+        "rootCSS": "",
+        "onInit": "",
+        "onRender": "function numField(refId) {\n  var frame = data.series.filter(function (s) { return s.refId === refId; })[0];\n  if (!frame) { return null; }\n  var field = frame.fields.filter(function (f) { return f.type === \"number\"; })[0];\n  if (!field || field.values.length === 0) { return null; }\n  var vals = field.values;\n  return vals.get ? vals.get(vals.length - 1) : vals[vals.length - 1];\n}\nfunction fmtBytes(b) {\n  if (b == null) { return \"\u2014\"; }\n  return (b / 1e9).toFixed(1) + \" GB\";\n}\nfunction fmtAge(s) {\n  if (s == null) { return \"\u2014\"; }\n  var d = s / 86400;\n  if (d >= 365) { return (d / 365).toFixed(1) + \"y\"; }\n  if (d >= 7) { return (d / 7).toFixed(1) + \"w\"; }\n  return d.toFixed(1) + \"d\";\n}\n\nvar cpuCores = numField(\"A\");\nvar cpuPct = numField(\"B\");\nvar ramUsed = numField(\"C\");\nvar ramTotal = numField(\"D\");\nvar ready = numField(\"E\");\nvar taints = numField(\"F\");\nvar ageSec = numField(\"G\");\n\nhtmlNode.querySelector(\"#n-cpu\").textContent = (cpuCores != null ? cpuCores + \"c\" : \"\u2014\")\n  + (cpuPct != null ? \" \u00b7 \" + cpuPct.toFixed(1) + \"%\" : \"\");\nhtmlNode.querySelector(\"#n-ram\").textContent = (ramUsed != null && ramTotal != null)\n  ? fmtBytes(ramUsed) + \" / \" + fmtBytes(ramTotal) : \"\u2014\";\nhtmlNode.querySelector(\"#n-age\").textContent = fmtAge(ageSec);\nvar readyEl = htmlNode.querySelector(\"#n-ready\");\nreadyEl.textContent = ready === 1 ? \"Ready\" : \"NotReady\";\nreadyEl.className = ready === 1 ? \"ok\" : \"bad\";\nhtmlNode.querySelector(\"#n-taints\").textContent = taints != null ? taints : \"\u2014\";",
+        "renderOnMount": true,
+        "panelupdateOnMount": true,
+        "centerAlignContent": false,
+        "overflow": "hidden",
+        "useGrafanaScrollbar": false,
+        "SVGBaseFix": true,
+        "add100Percentage": true,
+        "dynamicData": false,
+        "dynamicFieldDisplayValues": false,
+        "dynamicProps": false,
+        "dynamicHtmlGraphics": false,
+        "onInitOnResize": false,
+        "codeData": "{}",
+        "importedPanelOptions": "",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "calcsMutation": "standard"
+      }
+    },
+    {
+      "id": 15,
+      "type": "gapit-htmlgraphics-panel",
+      "title": "",
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 3,
+        "y": 15
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-jwk-gs2\"}"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-jwk-gs2\"}"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-jwk-gs2\"}"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-jwk-gs2\"}"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-jwk-gs2\"}"
+        },
+        {
+          "refId": "F",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "count(kube_node_spec_taint{node=\"talos-jwk-gs2\"}) or vector(0)"
+        },
+        {
+          "refId": "G",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "time() - kube_node_created{node=\"talos-jwk-gs2\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "html": "<div class=\"card\">\n  <div class=\"head\">\n    <span class=\"name\">talos-jwk-gs2</span>\n    <span class=\"role\">Worker</span>\n  </div>\n  <div class=\"ip\">10.0.6.101</div>\n  <div class=\"grid\">\n    <div><span class=\"lbl\">CPU</span><span id=\"n-cpu\"></span></div>\n    <div><span class=\"lbl\">RAM</span><span id=\"n-ram\"></span></div>\n    <div><span class=\"lbl\">Age</span><span id=\"n-age\"></span></div>\n    <div><span class=\"lbl\">Ready</span><span id=\"n-ready\"></span></div>\n    <div><span class=\"lbl\">Taints</span><span id=\"n-taints\"></span></div>\n  </div>\n</div>",
+        "css": ".card { font-family: inherit; color: #c7c9d1; height: 100%; box-sizing: border-box;\n  padding: 4px 8px; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; }\n.head { display: flex; justify-content: space-between; align-items: baseline; }\n.name { font-weight: 600; font-size: 13px; color: #e4e5ea; }\n.role { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: #1d2230; color: #7fa3e8; }\n.role.cp { background: #16321f; color: #5fc77e; }\n.ip { font-size: 10.5px; color: #8a8d98; }\n.grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 10px; font-size: 12px; margin-top: 3px; }\n.grid > div { display: flex; flex-direction: column; }\n.lbl { font-size: 9.5px; color: #6b6d76; text-transform: uppercase; letter-spacing: .3px; }\n#n-ready.ok { color: #5fc77e; } #n-ready.bad { color: #e05b5b; }",
+        "rootCSS": "",
+        "onInit": "",
+        "onRender": "function numField(refId) {\n  var frame = data.series.filter(function (s) { return s.refId === refId; })[0];\n  if (!frame) { return null; }\n  var field = frame.fields.filter(function (f) { return f.type === \"number\"; })[0];\n  if (!field || field.values.length === 0) { return null; }\n  var vals = field.values;\n  return vals.get ? vals.get(vals.length - 1) : vals[vals.length - 1];\n}\nfunction fmtBytes(b) {\n  if (b == null) { return \"\u2014\"; }\n  return (b / 1e9).toFixed(1) + \" GB\";\n}\nfunction fmtAge(s) {\n  if (s == null) { return \"\u2014\"; }\n  var d = s / 86400;\n  if (d >= 365) { return (d / 365).toFixed(1) + \"y\"; }\n  if (d >= 7) { return (d / 7).toFixed(1) + \"w\"; }\n  return d.toFixed(1) + \"d\";\n}\n\nvar cpuCores = numField(\"A\");\nvar cpuPct = numField(\"B\");\nvar ramUsed = numField(\"C\");\nvar ramTotal = numField(\"D\");\nvar ready = numField(\"E\");\nvar taints = numField(\"F\");\nvar ageSec = numField(\"G\");\n\nhtmlNode.querySelector(\"#n-cpu\").textContent = (cpuCores != null ? cpuCores + \"c\" : \"\u2014\")\n  + (cpuPct != null ? \" \u00b7 \" + cpuPct.toFixed(1) + \"%\" : \"\");\nhtmlNode.querySelector(\"#n-ram\").textContent = (ramUsed != null && ramTotal != null)\n  ? fmtBytes(ramUsed) + \" / \" + fmtBytes(ramTotal) : \"\u2014\";\nhtmlNode.querySelector(\"#n-age\").textContent = fmtAge(ageSec);\nvar readyEl = htmlNode.querySelector(\"#n-ready\");\nreadyEl.textContent = ready === 1 ? \"Ready\" : \"NotReady\";\nreadyEl.className = ready === 1 ? \"ok\" : \"bad\";\nhtmlNode.querySelector(\"#n-taints\").textContent = taints != null ? taints : \"\u2014\";",
+        "renderOnMount": true,
+        "panelupdateOnMount": true,
+        "centerAlignContent": false,
+        "overflow": "hidden",
+        "useGrafanaScrollbar": false,
+        "SVGBaseFix": true,
+        "add100Percentage": true,
+        "dynamicData": false,
+        "dynamicFieldDisplayValues": false,
+        "dynamicProps": false,
+        "dynamicHtmlGraphics": false,
+        "onInitOnResize": false,
+        "codeData": "{}",
+        "importedPanelOptions": "",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "calcsMutation": "standard"
+      }
+    },
+    {
+      "id": 16,
+      "type": "gapit-htmlgraphics-panel",
+      "title": "",
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 6,
+        "y": 15
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-ly6-852\"}"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-ly6-852\"}"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-ly6-852\"}"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-ly6-852\"}"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-ly6-852\"}"
+        },
+        {
+          "refId": "F",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "count(kube_node_spec_taint{node=\"talos-ly6-852\"}) or vector(0)"
+        },
+        {
+          "refId": "G",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "time() - kube_node_created{node=\"talos-ly6-852\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "html": "<div class=\"card\">\n  <div class=\"head\">\n    <span class=\"name\">talos-ly6-852</span>\n    <span class=\"role\">Worker</span>\n  </div>\n  <div class=\"ip\">10.0.6.67</div>\n  <div class=\"grid\">\n    <div><span class=\"lbl\">CPU</span><span id=\"n-cpu\"></span></div>\n    <div><span class=\"lbl\">RAM</span><span id=\"n-ram\"></span></div>\n    <div><span class=\"lbl\">Age</span><span id=\"n-age\"></span></div>\n    <div><span class=\"lbl\">Ready</span><span id=\"n-ready\"></span></div>\n    <div><span class=\"lbl\">Taints</span><span id=\"n-taints\"></span></div>\n  </div>\n</div>",
+        "css": ".card { font-family: inherit; color: #c7c9d1; height: 100%; box-sizing: border-box;\n  padding: 4px 8px; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; }\n.head { display: flex; justify-content: space-between; align-items: baseline; }\n.name { font-weight: 600; font-size: 13px; color: #e4e5ea; }\n.role { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: #1d2230; color: #7fa3e8; }\n.role.cp { background: #16321f; color: #5fc77e; }\n.ip { font-size: 10.5px; color: #8a8d98; }\n.grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 10px; font-size: 12px; margin-top: 3px; }\n.grid > div { display: flex; flex-direction: column; }\n.lbl { font-size: 9.5px; color: #6b6d76; text-transform: uppercase; letter-spacing: .3px; }\n#n-ready.ok { color: #5fc77e; } #n-ready.bad { color: #e05b5b; }",
+        "rootCSS": "",
+        "onInit": "",
+        "onRender": "function numField(refId) {\n  var frame = data.series.filter(function (s) { return s.refId === refId; })[0];\n  if (!frame) { return null; }\n  var field = frame.fields.filter(function (f) { return f.type === \"number\"; })[0];\n  if (!field || field.values.length === 0) { return null; }\n  var vals = field.values;\n  return vals.get ? vals.get(vals.length - 1) : vals[vals.length - 1];\n}\nfunction fmtBytes(b) {\n  if (b == null) { return \"\u2014\"; }\n  return (b / 1e9).toFixed(1) + \" GB\";\n}\nfunction fmtAge(s) {\n  if (s == null) { return \"\u2014\"; }\n  var d = s / 86400;\n  if (d >= 365) { return (d / 365).toFixed(1) + \"y\"; }\n  if (d >= 7) { return (d / 7).toFixed(1) + \"w\"; }\n  return d.toFixed(1) + \"d\";\n}\n\nvar cpuCores = numField(\"A\");\nvar cpuPct = numField(\"B\");\nvar ramUsed = numField(\"C\");\nvar ramTotal = numField(\"D\");\nvar ready = numField(\"E\");\nvar taints = numField(\"F\");\nvar ageSec = numField(\"G\");\n\nhtmlNode.querySelector(\"#n-cpu\").textContent = (cpuCores != null ? cpuCores + \"c\" : \"\u2014\")\n  + (cpuPct != null ? \" \u00b7 \" + cpuPct.toFixed(1) + \"%\" : \"\");\nhtmlNode.querySelector(\"#n-ram\").textContent = (ramUsed != null && ramTotal != null)\n  ? fmtBytes(ramUsed) + \" / \" + fmtBytes(ramTotal) : \"\u2014\";\nhtmlNode.querySelector(\"#n-age\").textContent = fmtAge(ageSec);\nvar readyEl = htmlNode.querySelector(\"#n-ready\");\nreadyEl.textContent = ready === 1 ? \"Ready\" : \"NotReady\";\nreadyEl.className = ready === 1 ? \"ok\" : \"bad\";\nhtmlNode.querySelector(\"#n-taints\").textContent = taints != null ? taints : \"\u2014\";",
+        "renderOnMount": true,
+        "panelupdateOnMount": true,
+        "centerAlignContent": false,
+        "overflow": "hidden",
+        "useGrafanaScrollbar": false,
+        "SVGBaseFix": true,
+        "add100Percentage": true,
+        "dynamicData": false,
+        "dynamicFieldDisplayValues": false,
+        "dynamicProps": false,
+        "dynamicHtmlGraphics": false,
+        "onInitOnResize": false,
+        "codeData": "{}",
+        "importedPanelOptions": "",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "calcsMutation": "standard"
+      }
+    },
+    {
+      "id": 17,
+      "type": "gapit-htmlgraphics-panel",
+      "title": "",
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 9,
+        "y": 15
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-puf-79s\"}"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-puf-79s\"}"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-puf-79s\"}"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-puf-79s\"}"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-puf-79s\"}"
+        },
+        {
+          "refId": "F",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "count(kube_node_spec_taint{node=\"talos-puf-79s\"}) or vector(0)"
+        },
+        {
+          "refId": "G",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "time() - kube_node_created{node=\"talos-puf-79s\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "html": "<div class=\"card\">\n  <div class=\"head\">\n    <span class=\"name\">talos-puf-79s</span>\n    <span class=\"role\">Worker</span>\n  </div>\n  <div class=\"ip\">10.0.6.136</div>\n  <div class=\"grid\">\n    <div><span class=\"lbl\">CPU</span><span id=\"n-cpu\"></span></div>\n    <div><span class=\"lbl\">RAM</span><span id=\"n-ram\"></span></div>\n    <div><span class=\"lbl\">Age</span><span id=\"n-age\"></span></div>\n    <div><span class=\"lbl\">Ready</span><span id=\"n-ready\"></span></div>\n    <div><span class=\"lbl\">Taints</span><span id=\"n-taints\"></span></div>\n  </div>\n</div>",
+        "css": ".card { font-family: inherit; color: #c7c9d1; height: 100%; box-sizing: border-box;\n  padding: 4px 8px; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; }\n.head { display: flex; justify-content: space-between; align-items: baseline; }\n.name { font-weight: 600; font-size: 13px; color: #e4e5ea; }\n.role { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: #1d2230; color: #7fa3e8; }\n.role.cp { background: #16321f; color: #5fc77e; }\n.ip { font-size: 10.5px; color: #8a8d98; }\n.grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 10px; font-size: 12px; margin-top: 3px; }\n.grid > div { display: flex; flex-direction: column; }\n.lbl { font-size: 9.5px; color: #6b6d76; text-transform: uppercase; letter-spacing: .3px; }\n#n-ready.ok { color: #5fc77e; } #n-ready.bad { color: #e05b5b; }",
+        "rootCSS": "",
+        "onInit": "",
+        "onRender": "function numField(refId) {\n  var frame = data.series.filter(function (s) { return s.refId === refId; })[0];\n  if (!frame) { return null; }\n  var field = frame.fields.filter(function (f) { return f.type === \"number\"; })[0];\n  if (!field || field.values.length === 0) { return null; }\n  var vals = field.values;\n  return vals.get ? vals.get(vals.length - 1) : vals[vals.length - 1];\n}\nfunction fmtBytes(b) {\n  if (b == null) { return \"\u2014\"; }\n  return (b / 1e9).toFixed(1) + \" GB\";\n}\nfunction fmtAge(s) {\n  if (s == null) { return \"\u2014\"; }\n  var d = s / 86400;\n  if (d >= 365) { return (d / 365).toFixed(1) + \"y\"; }\n  if (d >= 7) { return (d / 7).toFixed(1) + \"w\"; }\n  return d.toFixed(1) + \"d\";\n}\n\nvar cpuCores = numField(\"A\");\nvar cpuPct = numField(\"B\");\nvar ramUsed = numField(\"C\");\nvar ramTotal = numField(\"D\");\nvar ready = numField(\"E\");\nvar taints = numField(\"F\");\nvar ageSec = numField(\"G\");\n\nhtmlNode.querySelector(\"#n-cpu\").textContent = (cpuCores != null ? cpuCores + \"c\" : \"\u2014\")\n  + (cpuPct != null ? \" \u00b7 \" + cpuPct.toFixed(1) + \"%\" : \"\");\nhtmlNode.querySelector(\"#n-ram\").textContent = (ramUsed != null && ramTotal != null)\n  ? fmtBytes(ramUsed) + \" / \" + fmtBytes(ramTotal) : \"\u2014\";\nhtmlNode.querySelector(\"#n-age\").textContent = fmtAge(ageSec);\nvar readyEl = htmlNode.querySelector(\"#n-ready\");\nreadyEl.textContent = ready === 1 ? \"Ready\" : \"NotReady\";\nreadyEl.className = ready === 1 ? \"ok\" : \"bad\";\nhtmlNode.querySelector(\"#n-taints\").textContent = taints != null ? taints : \"\u2014\";",
+        "renderOnMount": true,
+        "panelupdateOnMount": true,
+        "centerAlignContent": false,
+        "overflow": "hidden",
+        "useGrafanaScrollbar": false,
+        "SVGBaseFix": true,
+        "add100Percentage": true,
+        "dynamicData": false,
+        "dynamicFieldDisplayValues": false,
+        "dynamicProps": false,
+        "dynamicHtmlGraphics": false,
+        "onInitOnResize": false,
+        "codeData": "{}",
+        "importedPanelOptions": "",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "calcsMutation": "standard"
+      }
+    },
+    {
+      "id": 18,
+      "type": "gapit-htmlgraphics-panel",
+      "title": "",
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 0,
+        "y": 18
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-zr9-r2s\"}"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-zr9-r2s\"}"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-zr9-r2s\"}"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-zr9-r2s\"}"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-zr9-r2s\"}"
+        },
+        {
+          "refId": "F",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "count(kube_node_spec_taint{node=\"talos-zr9-r2s\"}) or vector(0)"
+        },
+        {
+          "refId": "G",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "expr": "time() - kube_node_created{node=\"talos-zr9-r2s\"}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "html": "<div class=\"card\">\n  <div class=\"head\">\n    <span class=\"name\">talos-zr9-r2s</span>\n    <span class=\"role\">Worker</span>\n  </div>\n  <div class=\"ip\">10.0.6.112</div>\n  <div class=\"grid\">\n    <div><span class=\"lbl\">CPU</span><span id=\"n-cpu\"></span></div>\n    <div><span class=\"lbl\">RAM</span><span id=\"n-ram\"></span></div>\n    <div><span class=\"lbl\">Age</span><span id=\"n-age\"></span></div>\n    <div><span class=\"lbl\">Ready</span><span id=\"n-ready\"></span></div>\n    <div><span class=\"lbl\">Taints</span><span id=\"n-taints\"></span></div>\n  </div>\n</div>",
+        "css": ".card { font-family: inherit; color: #c7c9d1; height: 100%; box-sizing: border-box;\n  padding: 4px 8px; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; }\n.head { display: flex; justify-content: space-between; align-items: baseline; }\n.name { font-weight: 600; font-size: 13px; color: #e4e5ea; }\n.role { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: #1d2230; color: #7fa3e8; }\n.role.cp { background: #16321f; color: #5fc77e; }\n.ip { font-size: 10.5px; color: #8a8d98; }\n.grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 10px; font-size: 12px; margin-top: 3px; }\n.grid > div { display: flex; flex-direction: column; }\n.lbl { font-size: 9.5px; color: #6b6d76; text-transform: uppercase; letter-spacing: .3px; }\n#n-ready.ok { color: #5fc77e; } #n-ready.bad { color: #e05b5b; }",
+        "rootCSS": "",
+        "onInit": "",
+        "onRender": "function numField(refId) {\n  var frame = data.series.filter(function (s) { return s.refId === refId; })[0];\n  if (!frame) { return null; }\n  var field = frame.fields.filter(function (f) { return f.type === \"number\"; })[0];\n  if (!field || field.values.length === 0) { return null; }\n  var vals = field.values;\n  return vals.get ? vals.get(vals.length - 1) : vals[vals.length - 1];\n}\nfunction fmtBytes(b) {\n  if (b == null) { return \"\u2014\"; }\n  return (b / 1e9).toFixed(1) + \" GB\";\n}\nfunction fmtAge(s) {\n  if (s == null) { return \"\u2014\"; }\n  var d = s / 86400;\n  if (d >= 365) { return (d / 365).toFixed(1) + \"y\"; }\n  if (d >= 7) { return (d / 7).toFixed(1) + \"w\"; }\n  return d.toFixed(1) + \"d\";\n}\n\nvar cpuCores = numField(\"A\");\nvar cpuPct = numField(\"B\");\nvar ramUsed = numField(\"C\");\nvar ramTotal = numField(\"D\");\nvar ready = numField(\"E\");\nvar taints = numField(\"F\");\nvar ageSec = numField(\"G\");\n\nhtmlNode.querySelector(\"#n-cpu\").textContent = (cpuCores != null ? cpuCores + \"c\" : \"\u2014\")\n  + (cpuPct != null ? \" \u00b7 \" + cpuPct.toFixed(1) + \"%\" : \"\");\nhtmlNode.querySelector(\"#n-ram\").textContent = (ramUsed != null && ramTotal != null)\n  ? fmtBytes(ramUsed) + \" / \" + fmtBytes(ramTotal) : \"\u2014\";\nhtmlNode.querySelector(\"#n-age\").textContent = fmtAge(ageSec);\nvar readyEl = htmlNode.querySelector(\"#n-ready\");\nreadyEl.textContent = ready === 1 ? \"Ready\" : \"NotReady\";\nreadyEl.className = ready === 1 ? \"ok\" : \"bad\";\nhtmlNode.querySelector(\"#n-taints\").textContent = taints != null ? taints : \"\u2014\";",
+        "renderOnMount": true,
+        "panelupdateOnMount": true,
+        "centerAlignContent": false,
+        "overflow": "hidden",
+        "useGrafanaScrollbar": false,
+        "SVGBaseFix": true,
+        "add100Percentage": true,
+        "dynamicData": false,
+        "dynamicFieldDisplayValues": false,
+        "dynamicProps": false,
+        "dynamicHtmlGraphics": false,
+        "onInitOnResize": false,
+        "codeData": "{}",
+        "importedPanelOptions": "",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "calcsMutation": "standard"
+      }
+    },
+    {
+      "id": 19,
       "type": "stat",
       "title": "*.k8s.lysakermoen.com",
       "gridPos": {
@@ -765,7 +1646,7 @@
       }
     },
     {
-      "id": 12,
+      "id": 20,
       "type": "stat",
       "title": "*.lysakermoen.com",
       "gridPos": {
@@ -828,7 +1709,7 @@
       }
     },
     {
-      "id": 13,
+      "id": 21,
       "type": "stat",
       "title": "Mirror sync",
       "gridPos": {
@@ -891,7 +1772,7 @@
       }
     },
     {
-      "id": 14,
+      "id": 22,
       "type": "stat",
       "title": "Mirror update",
       "gridPos": {
@@ -946,7 +1827,7 @@
       }
     },
     {
-      "id": 15,
+      "id": 23,
       "type": "timeseries",
       "title": "Public app request rate + bandwidth",
       "gridPos": {
@@ -1014,7 +1895,7 @@
       }
     },
     {
-      "id": 16,
+      "id": 24,
       "type": "timeseries",
       "title": "Minecraft players online \u2014 history (by server)",
       "gridPos": {
@@ -1060,7 +1941,7 @@
       }
     },
     {
-      "id": 17,
+      "id": 25,
       "type": "table",
       "title": "Issues",
       "gridPos": {
@@ -1185,7 +2066,7 @@
       ]
     },
     {
-      "id": 18,
+      "id": 26,
       "type": "table",
       "title": "ArgoCD apps not Synced/Healthy",
       "gridPos": {
@@ -1324,7 +2205,7 @@
       ]
     },
     {
-      "id": 19,
+      "id": 27,
       "type": "table",
       "title": "Public apps 1/2",
       "gridPos": {
@@ -1448,7 +2329,7 @@
       ]
     },
     {
-      "id": 20,
+      "id": 28,
       "type": "table",
       "title": "Public apps 2/2",
       "gridPos": {
@@ -1572,7 +2453,7 @@
       ]
     },
     {
-      "id": 21,
+      "id": 29,
       "type": "table",
       "title": "Minecraft servers",
       "gridPos": {
@@ -1720,7 +2601,7 @@
       ]
     },
     {
-      "id": 22,
+      "id": 30,
       "type": "logs",
       "title": "Combined server logs (minecraft process only, by display name)",
       "gridPos": {
@@ -1776,24 +2657,6 @@
         },
         "hide": 0,
         "refresh": 1
-      },
-      {
-        "name": "node",
-        "type": "query",
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
-        },
-        "query": "label_values(kube_node_info, node)",
-        "refresh": 1,
-        "multi": true,
-        "includeAll": true,
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
-        "sort": 1,
-        "hide": 2
       }
     ]
   },
