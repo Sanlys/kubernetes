@@ -281,9 +281,25 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Severity"
+              "options": "Alert"
             },
             "properties": [
+              {
+                "id": "custom.width",
+                "value": 230
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": " "
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 8
+              },
               {
                 "id": "mappings",
                 "value": [
@@ -291,15 +307,15 @@
                     "type": "value",
                     "options": {
                       "critical": {
-                        "text": "CRITICAL",
+                        "text": "",
                         "color": "red"
                       },
                       "warning": {
-                        "text": "WARN",
+                        "text": "",
                         "color": "yellow"
                       },
                       "none": {
-                        "text": "-",
+                        "text": "",
                         "color": "text"
                       }
                     }
@@ -330,10 +346,14 @@
               "severity": true,
               "namespace": true
             },
-            "indexByName": {},
+            "indexByName": {
+              " ": 0,
+              "Alert": 1,
+              "Namespace": 2
+            },
             "renameByName": {
               "alertname": "Alert",
-              "severity": "Severity",
+              "severity": " ",
               "namespace": "Namespace"
             }
           }
@@ -465,7 +485,11 @@
               "sync_status": true,
               "health_status": true
             },
-            "indexByName": {},
+            "indexByName": {
+              "App": 0,
+              "Sync": 1,
+              "Health": 2
+            },
             "renameByName": {
               "name": "App",
               "sync_status": "Sync",
@@ -493,7 +517,7 @@
       "type": "timeseries",
       "title": "CPU \u2014 usage/req/limit",
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 4,
         "x": 0,
         "y": 10
@@ -537,7 +561,8 @@
           "custom": {
             "fillOpacity": 10,
             "lineWidth": 2
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -553,7 +578,7 @@
       "type": "timeseries",
       "title": "Memory \u2014 usage/req/limit",
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 4,
         "x": 4,
         "y": 10
@@ -597,7 +622,8 @@
           "custom": {
             "fillOpacity": 10,
             "lineWidth": 2
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -610,10 +636,10 @@
     },
     {
       "id": 10,
-      "type": "timeseries",
-      "title": "Ceph storage \u2014 used/total",
+      "type": "stat",
+      "title": "Ceph storage % used",
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 4,
         "x": 8,
         "y": 10
@@ -624,47 +650,58 @@
       },
       "targets": [
         {
-          "expr": "ceph_cluster_total_used_bytes",
-          "legendFormat": "used",
+          "expr": "100 * ceph_cluster_total_used_bytes / ceph_cluster_total_bytes",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "instant": true,
           "refId": "A"
-        },
-        {
-          "expr": "ceph_cluster_total_bytes",
-          "legendFormat": "total",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "B"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "bytes",
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
+            ]
           }
         },
         "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "background"
       }
     },
     {
       "id": 11,
-      "type": "timeseries",
+      "type": "stat",
       "title": "Ceph PGs clean %",
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 4,
         "x": 12,
         "y": 10
@@ -676,29 +713,49 @@
       "targets": [
         {
           "expr": "100 * sum(ceph_pg_clean) / sum(ceph_pg_total)",
-          "legendFormat": "% clean",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "instant": true,
           "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "green",
+                "value": 95
+              }
+            ]
           }
         },
         "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "background"
       }
     },
     {
@@ -706,7 +763,7 @@
       "type": "stat",
       "title": "Ingress",
       "gridPos": {
-        "h": 5,
+        "h": 3,
         "w": 4,
         "x": 16,
         "y": 10
@@ -760,7 +817,7 @@
       "type": "stat",
       "title": "Egress",
       "gridPos": {
-        "h": 5,
+        "h": 3,
         "w": 4,
         "x": 20,
         "y": 10
@@ -818,7 +875,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 14
       },
       "panels": []
     },
@@ -830,7 +887,7 @@
         "h": 9,
         "w": 17,
         "x": 0,
-        "y": 16
+        "y": 15
       },
       "datasource": {
         "type": "prometheus",
@@ -1087,13 +1144,13 @@
     },
     {
       "id": 16,
-      "type": "stat",
-      "title": "OSD: osd.0",
+      "type": "piechart",
+      "title": "OSD status",
       "gridPos": {
-        "h": 2,
-        "w": 3,
+        "h": 6,
+        "w": 4,
         "x": 17,
-        "y": 16
+        "y": 15
       },
       "datasource": {
         "type": "prometheus",
@@ -1101,70 +1158,91 @@
       },
       "targets": [
         {
-          "expr": "ceph_osd_up{ceph_daemon=\"osd.0\"}",
+          "expr": "sum(ceph_osd_up)",
+          "legendFormat": "Up",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
           "instant": true,
           "refId": "A"
+        },
+        {
+          "expr": "count(ceph_osd_up == 0) or vector(0)",
+          "legendFormat": "Down",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "B"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
           "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Up"
+            },
+            "properties": [
               {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
               }
             ]
           },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "Down"
-                },
-                "1": {
-                  "text": "Up"
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Down"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
                 }
               }
-            }
-          ]
-        },
-        "overrides": []
+            ]
+          }
+        ]
       },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
+        "pieType": "donut",
+        "displayLabels": [
+          "value"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "values": [
+            "value"
           ]
         },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
+        "tooltip": {
+          "mode": "single"
+        }
       }
     },
     {
       "id": 17,
-      "type": "stat",
-      "title": "OSD: osd.1",
+      "type": "table",
+      "title": "Down OSDs",
       "gridPos": {
-        "h": 2,
+        "h": 6,
         "w": 3,
-        "x": 20,
-        "y": 16
+        "x": 21,
+        "y": 15
       },
       "datasource": {
         "type": "prometheus",
@@ -1172,418 +1250,42 @@
       },
       "targets": [
         {
-          "expr": "ceph_osd_up{ceph_daemon=\"osd.1\"}",
+          "expr": "ceph_osd_up == 0",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
           "instant": true,
+          "format": "table",
           "refId": "A"
         }
       ],
       "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "Down"
-                },
-                "1": {
-                  "text": "Up"
-                }
-              }
-            }
-          ]
-        },
+        "defaults": {},
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {
+              "ceph_daemon": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "ceph_daemon": "OSD"
+            }
+          }
+        }
+      ]
     },
     {
       "id": 18,
-      "type": "stat",
-      "title": "OSD: osd.2",
-      "gridPos": {
-        "h": 2,
-        "w": 3,
-        "x": 17,
-        "y": 18
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "ceph_osd_up{ceph_daemon=\"osd.2\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "Down"
-                },
-                "1": {
-                  "text": "Up"
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 19,
-      "type": "stat",
-      "title": "OSD: osd.4",
-      "gridPos": {
-        "h": 2,
-        "w": 3,
-        "x": 20,
-        "y": 18
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "ceph_osd_up{ceph_daemon=\"osd.4\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "Down"
-                },
-                "1": {
-                  "text": "Up"
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 20,
-      "type": "stat",
-      "title": "OSD: osd.5",
-      "gridPos": {
-        "h": 2,
-        "w": 3,
-        "x": 17,
-        "y": 20
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "ceph_osd_up{ceph_daemon=\"osd.5\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "Down"
-                },
-                "1": {
-                  "text": "Up"
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 21,
-      "type": "stat",
-      "title": "OSD: osd.7",
-      "gridPos": {
-        "h": 2,
-        "w": 3,
-        "x": 20,
-        "y": 20
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "ceph_osd_up{ceph_daemon=\"osd.7\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "Down"
-                },
-                "1": {
-                  "text": "Up"
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 22,
-      "type": "stat",
-      "title": "OSD: osd.9",
-      "gridPos": {
-        "h": 2,
-        "w": 3,
-        "x": 17,
-        "y": 22
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "ceph_osd_up{ceph_daemon=\"osd.9\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "Down"
-                },
-                "1": {
-                  "text": "Up"
-                }
-              }
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 23,
       "type": "row",
       "title": "Public apps (traefik-public)",
       "collapsed": false,
@@ -1591,19 +1293,19 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 25
+        "y": 24
       },
       "panels": []
     },
     {
-      "id": 24,
+      "id": 19,
       "type": "table",
       "title": "Public app traffic",
       "gridPos": {
         "h": 12,
-        "w": 18,
+        "w": 12,
         "x": 0,
-        "y": 26
+        "y": 25
       },
       "datasource": {
         "type": "prometheus",
@@ -1633,7 +1335,44 @@
       ],
       "fieldConfig": {
         "defaults": {},
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "App"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 170
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Req/s"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Errors/s"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "showHeader": true,
@@ -1656,7 +1395,11 @@
               "Value #A": true,
               "Value #B": true
             },
-            "indexByName": {},
+            "indexByName": {
+              "App": 0,
+              "Req/s": 1,
+              "Errors/s": 2
+            },
             "renameByName": {
               "app": "App",
               "Value #A": "Req/s",
@@ -1679,14 +1422,14 @@
       ]
     },
     {
-      "id": 25,
+      "id": 20,
       "type": "table",
       "title": "TLS cert expiry",
       "gridPos": {
         "h": 6,
         "w": 6,
-        "x": 18,
-        "y": 26
+        "x": 12,
+        "y": 25
       },
       "datasource": {
         "type": "prometheus",
@@ -1731,14 +1474,14 @@
       ]
     },
     {
-      "id": 26,
+      "id": 21,
       "type": "stat",
       "title": "Arch mirror \u2014 hrs since sync",
       "gridPos": {
         "h": 3,
         "w": 6,
-        "x": 18,
-        "y": 32
+        "x": 12,
+        "y": 31
       },
       "datasource": {
         "type": "prometheus",
@@ -1793,14 +1536,14 @@
       }
     },
     {
-      "id": 27,
+      "id": 22,
       "type": "stat",
       "title": "Arch mirror \u2014 hrs since update",
       "gridPos": {
         "h": 3,
         "w": 6,
-        "x": 18,
-        "y": 35
+        "x": 12,
+        "y": 34
       },
       "datasource": {
         "type": "prometheus",
@@ -1847,14 +1590,14 @@
       }
     },
     {
-      "id": 28,
+      "id": 23,
       "type": "timeseries",
       "title": "Public app request rate + bandwidth",
       "gridPos": {
         "h": 5,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 37
       },
       "datasource": {
         "type": "prometheus",
@@ -1915,7 +1658,7 @@
       }
     },
     {
-      "id": 29,
+      "id": 24,
       "type": "row",
       "title": "Game servers",
       "collapsed": false,
@@ -1923,19 +1666,19 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 43
+        "y": 42
       },
       "panels": []
     },
     {
-      "id": 30,
+      "id": 25,
       "type": "table",
       "title": "Minecraft servers",
       "gridPos": {
         "h": 6,
         "w": 11,
         "x": 0,
-        "y": 44
+        "y": 43
       },
       "datasource": {
         "type": "prometheus",
@@ -2076,14 +1819,14 @@
       ]
     },
     {
-      "id": 31,
+      "id": 26,
       "type": "logs",
       "title": "Combined server logs (minecraft process only, by display name)",
       "gridPos": {
         "h": 6,
         "w": 13,
         "x": 11,
-        "y": 44
+        "y": 43
       },
       "datasource": {
         "type": "loki",
