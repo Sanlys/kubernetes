@@ -112,6 +112,14 @@ grafana:
     existingSecret: grafana-admin
     userKey: admin-user
     passwordKey: admin-password
+  # Status Board: one tile per entity (OSD, node), driven by a plugin
+  # purpose-built for exactly that instead of hand-rolled stat-grid/piechart
+  # workarounds. Chart's grafana subchart installs this via its standard
+  # init-container (grafana-cli plugins install), no extra unsigned-plugin
+  # allowlisting added yet - if it turns out to need one, the Grafana pod's
+  # logs will say so explicitly on next restart.
+  plugins:
+    - grafana-polystat-panel
   grafana.ini:
     security:
       allow_embedding: true
