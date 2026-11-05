@@ -20,8 +20,8 @@
       "type": "stat",
       "title": "Ceph health",
       "gridPos": {
-        "h": 5,
-        "w": 6,
+        "h": 4,
+        "w": 5,
         "x": 0,
         "y": 0
       },
@@ -99,9 +99,9 @@
       "type": "stat",
       "title": "API servers reachable",
       "gridPos": {
-        "h": 5,
-        "w": 4,
-        "x": 6,
+        "h": 4,
+        "w": 3,
+        "x": 5,
         "y": 0
       },
       "datasource": {
@@ -158,9 +158,9 @@
       "type": "grafana-polystat-panel",
       "title": "OSD status",
       "gridPos": {
-        "h": 5,
-        "w": 5,
-        "x": 10,
+        "h": 4,
+        "w": 4,
+        "x": 8,
         "y": 0
       },
       "datasource": {
@@ -264,9 +264,9 @@
       "title": "CPU \u2014 usage/req/limit",
       "gridPos": {
         "h": 4,
-        "w": 5,
+        "w": 4,
         "x": 0,
-        "y": 5
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -325,9 +325,9 @@
       "title": "Memory \u2014 usage/req/limit",
       "gridPos": {
         "h": 4,
-        "w": 5,
-        "x": 5,
-        "y": 5
+        "w": 4,
+        "x": 4,
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -386,9 +386,9 @@
       "title": "Ceph storage used/total",
       "gridPos": {
         "h": 4,
-        "w": 5,
-        "x": 10,
-        "y": 5
+        "w": 4,
+        "x": 8,
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -437,9 +437,9 @@
       "title": "Ceph PGs clean %",
       "gridPos": {
         "h": 4,
-        "w": 7,
+        "w": 6,
         "x": 0,
-        "y": 9
+        "y": 8
       },
       "datasource": {
         "type": "prometheus",
@@ -479,9 +479,9 @@
       "title": "Ingress",
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 7,
-        "y": 9
+        "w": 3,
+        "x": 6,
+        "y": 8
       },
       "datasource": {
         "type": "prometheus",
@@ -525,9 +525,9 @@
       "title": "Egress",
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 11,
-        "y": 9
+        "w": 3,
+        "x": 9,
+        "y": 8
       },
       "datasource": {
         "type": "prometheus",
@@ -571,13 +571,13 @@
       "title": "",
       "gridPos": {
         "h": 3,
-        "w": 5,
+        "w": 3,
         "x": 0,
-        "y": 13
+        "y": 12
       },
       "repeat": "node",
       "repeatDirection": "h",
-      "maxPerRow": 3,
+      "maxPerRow": 4,
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -707,9 +707,9 @@
       "title": "*.k8s.lysakermoen.com",
       "gridPos": {
         "h": 4,
-        "w": 4,
+        "w": 3,
         "x": 0,
-        "y": 22
+        "y": 21
       },
       "datasource": {
         "type": "prometheus",
@@ -770,9 +770,9 @@
       "title": "*.lysakermoen.com",
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 4,
-        "y": 22
+        "w": 3,
+        "x": 3,
+        "y": 21
       },
       "datasource": {
         "type": "prometheus",
@@ -834,8 +834,8 @@
       "gridPos": {
         "h": 4,
         "w": 3,
-        "x": 8,
-        "y": 22
+        "x": 6,
+        "y": 21
       },
       "datasource": {
         "type": "prometheus",
@@ -896,9 +896,9 @@
       "title": "Mirror update",
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 11,
-        "y": 22
+        "w": 3,
+        "x": 9,
+        "y": 21
       },
       "datasource": {
         "type": "prometheus",
@@ -951,9 +951,9 @@
       "title": "Public app request rate + bandwidth",
       "gridPos": {
         "h": 8,
-        "w": 15,
+        "w": 12,
         "x": 0,
-        "y": 26
+        "y": 25
       },
       "datasource": {
         "type": "prometheus",
@@ -1019,9 +1019,9 @@
       "title": "Minecraft players online \u2014 history (by server)",
       "gridPos": {
         "h": 6,
-        "w": 15,
+        "w": 12,
         "x": 0,
-        "y": 34
+        "y": 33
       },
       "datasource": {
         "type": "prometheus",
@@ -1065,8 +1065,8 @@
       "title": "Issues",
       "gridPos": {
         "h": 7,
-        "w": 9,
-        "x": 15,
+        "w": 12,
+        "x": 12,
         "y": 0
       },
       "datasource": {
@@ -1190,8 +1190,8 @@
       "title": "ArgoCD apps not Synced/Healthy",
       "gridPos": {
         "h": 6,
-        "w": 9,
-        "x": 15,
+        "w": 12,
+        "x": 12,
         "y": 7
       },
       "datasource": {
@@ -1329,8 +1329,8 @@
       "title": "Public apps 1/2",
       "gridPos": {
         "h": 9,
-        "w": 5,
-        "x": 15,
+        "w": 6,
+        "x": 12,
         "y": 13
       },
       "datasource": {
@@ -1453,8 +1453,8 @@
       "title": "Public apps 2/2",
       "gridPos": {
         "h": 9,
-        "w": 4,
-        "x": 20,
+        "w": 6,
+        "x": 18,
         "y": 13
       },
       "datasource": {
@@ -1577,8 +1577,8 @@
       "title": "Minecraft servers",
       "gridPos": {
         "h": 6,
-        "w": 9,
-        "x": 15,
+        "w": 12,
+        "x": 12,
         "y": 22
       },
       "datasource": {
@@ -1725,8 +1725,8 @@
       "title": "Combined server logs (minecraft process only, by display name)",
       "gridPos": {
         "h": 8,
-        "w": 9,
-        "x": 15,
+        "w": 12,
+        "x": 12,
         "y": 28
       },
       "datasource": {
