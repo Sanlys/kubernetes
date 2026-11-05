@@ -21,7 +21,7 @@
       "title": "Ceph health",
       "gridPos": {
         "h": 4,
-        "w": 5,
+        "w": 8,
         "x": 0,
         "y": 0
       },
@@ -100,8 +100,8 @@
       "title": "OSD status",
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 5,
+        "w": 8,
+        "x": 8,
         "y": 0
       },
       "datasource": {
@@ -205,8 +205,8 @@
       "title": "Backup (restic)",
       "gridPos": {
         "h": 4,
-        "w": 3,
-        "x": 9,
+        "w": 8,
+        "x": 16,
         "y": 0
       },
       "datasource": {
@@ -267,10 +267,10 @@
       "type": "timeseries",
       "title": "Ceph storage used/total",
       "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 12,
-        "y": 0
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -316,12 +316,12 @@
     {
       "id": 5,
       "type": "timeseries",
-      "title": "Ceph storage used/total by device class",
+      "title": "Ceph storage used \u2014 SSD",
       "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 0
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -329,22 +329,13 @@
       },
       "targets": [
         {
-          "expr": "sum(ceph_osd_stat_bytes_used * on(ceph_daemon) group_left(device_class) ceph_osd_metadata) by (device_class)",
-          "legendFormat": "{{device_class}} used",
+          "expr": "sum(ceph_osd_stat_bytes_used * on(ceph_daemon) group_left(device_class) ceph_osd_metadata{device_class=\"ssd\"})",
+          "legendFormat": "used",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "A"
-        },
-        {
-          "expr": "sum(ceph_osd_stat_bytes * on(ceph_daemon) group_left(device_class) ceph_osd_metadata) by (device_class)",
-          "legendFormat": "{{device_class}} total",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "B"
         }
       ],
       "fieldConfig": {
@@ -367,12 +358,54 @@
     {
       "id": 6,
       "type": "timeseries",
+      "title": "Ceph storage used \u2014 HDD",
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(ceph_osd_stat_bytes_used * on(ceph_daemon) group_left(device_class) ceph_osd_metadata{device_class=\"hdd\"})",
+          "legendFormat": "used",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
       "title": "CPU \u2014 usage/req/limit",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 4
+        "y": 10
       },
       "datasource": {
         "type": "prometheus",
@@ -426,14 +459,14 @@
       }
     },
     {
-      "id": 7,
+      "id": 8,
       "type": "timeseries",
       "title": "Memory \u2014 usage/req/limit",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 4
+        "y": 10
       },
       "datasource": {
         "type": "prometheus",
@@ -487,14 +520,14 @@
       }
     },
     {
-      "id": 8,
+      "id": 9,
       "type": "timeseries",
       "title": "Ceph PGs clean %",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 12
+        "y": 18
       },
       "datasource": {
         "type": "prometheus",
@@ -529,14 +562,14 @@
       }
     },
     {
-      "id": 9,
+      "id": 10,
       "type": "stat",
       "title": "Ingress",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 6,
-        "y": 12
+        "y": 18
       },
       "datasource": {
         "type": "prometheus",
@@ -575,14 +608,14 @@
       }
     },
     {
-      "id": 10,
+      "id": 11,
       "type": "stat",
       "title": "Egress",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 9,
-        "y": 12
+        "y": 18
       },
       "datasource": {
         "type": "prometheus",
@@ -621,14 +654,14 @@
       }
     },
     {
-      "id": 11,
+      "id": 12,
       "type": "stat",
       "title": "*.k8s.lysakermoen.com",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 12,
-        "y": 12
+        "y": 18
       },
       "datasource": {
         "type": "prometheus",
@@ -684,14 +717,14 @@
       }
     },
     {
-      "id": 12,
+      "id": 13,
       "type": "stat",
       "title": "*.lysakermoen.com",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 15,
-        "y": 12
+        "y": 18
       },
       "datasource": {
         "type": "prometheus",
@@ -747,14 +780,14 @@
       }
     },
     {
-      "id": 13,
+      "id": 14,
       "type": "stat",
       "title": "Mirror sync",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 18,
-        "y": 12
+        "y": 18
       },
       "datasource": {
         "type": "prometheus",
@@ -810,14 +843,14 @@
       }
     },
     {
-      "id": 14,
+      "id": 15,
       "type": "stat",
       "title": "Mirror update",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 21,
-        "y": 12
+        "y": 18
       },
       "datasource": {
         "type": "prometheus",
@@ -865,14 +898,14 @@
       }
     },
     {
-      "id": 15,
+      "id": 16,
       "type": "table",
       "title": "Issues",
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 12,
         "x": 0,
-        "y": 16
+        "y": 22
       },
       "datasource": {
         "type": "prometheus",
@@ -990,14 +1023,14 @@
       ]
     },
     {
-      "id": 16,
+      "id": 17,
       "type": "table",
       "title": "ArgoCD apps not Synced/Healthy",
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 12,
         "x": 12,
-        "y": 16
+        "y": 22
       },
       "datasource": {
         "type": "prometheus",
@@ -1129,14 +1162,14 @@
       ]
     },
     {
-      "id": 17,
+      "id": 18,
       "type": "timeseries",
       "title": "Public app request rate + bandwidth",
       "gridPos": {
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 26
       },
       "datasource": {
         "type": "prometheus",
@@ -1197,14 +1230,14 @@
       }
     },
     {
-      "id": 18,
+      "id": 19,
       "type": "timeseries",
       "title": "Minecraft players online \u2014 history (by server)",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 30
+        "y": 34
       },
       "datasource": {
         "type": "prometheus",
@@ -1243,14 +1276,14 @@
       }
     },
     {
-      "id": 19,
+      "id": 20,
       "type": "logs",
       "title": "Combined server logs (minecraft process only, by display name)",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 30
+        "y": 34
       },
       "datasource": {
         "type": "loki",
