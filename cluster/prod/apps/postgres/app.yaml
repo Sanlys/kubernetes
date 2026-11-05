@@ -31,14 +31,21 @@ spec:
             enablePodAntiAffinity: true
             topologyKey: kubernetes.io/hostname
             podAntiAffinityType: required
+            # nodeSelector lives inside CNPG's AffinityConfiguration type
+            # (spec.affinity.nodeSelector on the Cluster CR), not as a
+            # sibling of affinity - it was never actually applied to the
+            # live Cluster despite being declared here, because this
+            # chart's values schema only exposes cluster.affinity as a
+            # pass-through block and has no top-level cluster.nodeSelector
+            # key at all. Confirmed by instance cluster-2's join pod
+            # landing on talos-ly6-852, a node with no cnpg-storage label.
+            nodeSelector:
+              cnpg-storage: "true"
 
           monitoring:
             enabled: true
             podMonitor:
               enabled: true
-
-          nodeSelector:
-            cnpg-storage: "true"
 
           storage:
             size: 20Gi
