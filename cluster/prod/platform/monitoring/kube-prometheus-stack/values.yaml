@@ -118,8 +118,15 @@ grafana:
   # init-container (grafana-cli plugins install), no extra unsigned-plugin
   # allowlisting added yet - if it turns out to need one, the Grafana pod's
   # logs will say so explicitly on next restart.
+  #
+  # gapit-htmlgraphics-panel runs arbitrary JS/HTML authored in the panel
+  # itself with no sandbox - acceptable here only because this cluster has
+  # no live dashboard editing (provisioning-only, GitOps) and anyone with
+  # repo/cluster access already has far more dangerous capabilities than
+  # dashboard JS would add.
   plugins:
     - grafana-polystat-panel
+    - gapit-htmlgraphics-panel
   grafana.ini:
     security:
       allow_embedding: true
