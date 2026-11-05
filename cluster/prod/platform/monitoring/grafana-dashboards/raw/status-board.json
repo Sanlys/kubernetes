@@ -529,7 +529,7 @@
       "type": "stat",
       "title": "talos-3gd-ovr  \u00b7  CP  \u00b7  10.0.6.126",
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 5,
         "x": 0,
         "y": 13
@@ -759,7 +759,7 @@
       "type": "stat",
       "title": "talos-6l0-2ma  \u00b7  CP  \u00b7  10.0.6.102",
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 5,
         "x": 5,
         "y": 13
@@ -989,7 +989,7 @@
       "type": "stat",
       "title": "talos-hjv-x6c  \u00b7  CP  \u00b7  10.0.6.69",
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 5,
         "x": 10,
         "y": 13
@@ -1219,10 +1219,10 @@
       "type": "stat",
       "title": "talos-hfy-gns  \u00b7  Worker  \u00b7  10.0.6.109",
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 5,
         "x": 0,
-        "y": 19
+        "y": 17
       },
       "datasource": {
         "type": "prometheus",
@@ -1449,10 +1449,10 @@
       "type": "stat",
       "title": "talos-jcx-enc  \u00b7  Worker  \u00b7  10.0.6.191",
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 5,
         "x": 5,
-        "y": 19
+        "y": 17
       },
       "datasource": {
         "type": "prometheus",
@@ -1679,10 +1679,10 @@
       "type": "stat",
       "title": "talos-jwk-gs2  \u00b7  Worker  \u00b7  10.0.6.101",
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 5,
         "x": 10,
-        "y": 19
+        "y": 17
       },
       "datasource": {
         "type": "prometheus",
@@ -1909,10 +1909,10 @@
       "type": "stat",
       "title": "talos-ly6-852  \u00b7  Worker  \u00b7  10.0.6.67",
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 5,
         "x": 0,
-        "y": 25
+        "y": 21
       },
       "datasource": {
         "type": "prometheus",
@@ -2139,10 +2139,10 @@
       "type": "stat",
       "title": "talos-puf-79s  \u00b7  Worker  \u00b7  10.0.6.136",
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 5,
         "x": 5,
-        "y": 25
+        "y": 21
       },
       "datasource": {
         "type": "prometheus",
@@ -2369,10 +2369,10 @@
       "type": "stat",
       "title": "talos-zr9-r2s  \u00b7  Worker  \u00b7  10.0.6.112",
       "gridPos": {
-        "h": 6,
+        "h": 4,
         "w": 5,
         "x": 10,
-        "y": 25
+        "y": 21
       },
       "datasource": {
         "type": "prometheus",
@@ -2602,7 +2602,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 31
+        "y": 25
       },
       "datasource": {
         "type": "prometheus",
@@ -2665,7 +2665,7 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 31
+        "y": 25
       },
       "datasource": {
         "type": "prometheus",
@@ -2728,7 +2728,7 @@
         "h": 4,
         "w": 3,
         "x": 8,
-        "y": 31
+        "y": 25
       },
       "datasource": {
         "type": "prometheus",
@@ -2791,7 +2791,7 @@
         "h": 4,
         "w": 4,
         "x": 11,
-        "y": 31
+        "y": 25
       },
       "datasource": {
         "type": "prometheus",
@@ -2846,7 +2846,7 @@
         "h": 8,
         "w": 15,
         "x": 0,
-        "y": 35
+        "y": 29
       },
       "datasource": {
         "type": "prometheus",
@@ -2914,7 +2914,7 @@
         "h": 6,
         "w": 15,
         "x": 0,
-        "y": 43
+        "y": 37
       },
       "datasource": {
         "type": "prometheus",
