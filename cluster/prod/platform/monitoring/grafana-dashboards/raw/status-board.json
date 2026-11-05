@@ -155,7 +155,7 @@
     },
     {
       "id": 3,
-      "type": "grafana-polystat-panel",
+      "type": "piechart",
       "title": "OSD status",
       "gridPos": {
         "h": 5,
@@ -169,51 +169,75 @@
       },
       "targets": [
         {
-          "expr": "ceph_osd_up",
-          "legendFormat": "{{ceph_daemon}}",
+          "expr": "sum(ceph_osd_up)",
+          "legendFormat": "Up",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
           "instant": true,
           "refId": "A"
+        },
+        {
+          "expr": "count(ceph_osd_up == 0) or vector(0)",
+          "legendFormat": "Down",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "B"
         }
       ],
       "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "options": {
-        "globalShape": "square",
-        "autoSizeColumns": true,
-        "autoSizeRows": true,
-        "autoSizePolygons": true,
-        "globalDisplayMode": "all",
-        "globalShowValueEnabled": false,
-        "globalThresholdsConfig": [
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
           {
-            "value": 0,
-            "state": 2,
-            "color": "red"
+            "matcher": {
+              "id": "byName",
+              "options": "Up"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
           },
           {
-            "value": 1,
-            "state": 0,
-            "color": "green"
+            "matcher": {
+              "id": "byName",
+              "options": "Down"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
           }
+        ]
+      },
+      "options": {
+        "pieType": "donut",
+        "displayLabels": [
+          "value"
         ],
-        "globalTooltipsEnabled": true,
-        "globalTooltipsShowValueEnabled": true,
-        "globalTooltipsShowTimestampEnabled": false,
-        "sortByField": "name",
-        "sortByDirection": 1,
-        "overrideConfig": {
-          "overrides": []
+        "legend": {
+          "displayMode": "hidden"
         },
-        "compositeConfig": {
-          "composites": [],
-          "enabled": true,
-          "animationSpeed": "1500"
+        "tooltip": {
+          "mode": "single"
         }
       }
     },
@@ -3219,10 +3243,10 @@
     {
       "id": 27,
       "type": "table",
-      "title": "Public apps (traefik-public)",
+      "title": "Public apps 1/2",
       "gridPos": {
-        "h": 16,
-        "w": 9,
+        "h": 9,
+        "w": 5,
         "x": 15,
         "y": 13
       },
@@ -3232,7 +3256,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
+          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\", exported_service=~\".*svc-forgejo-forgejo-0.*|.*svc-harbor-harbor-core-0.*|.*svc-harbor-harbor-portal-0.*|.*svc-immich-immich-server-0.*|.*svc-linkwarden-linkwarden-0.*|.*svc-media-jellyfin-0.*|.*svc-mirror-mirror-0.*|.*svc-nginx-custom-image-nginx-from-harbor-0.*\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -3242,7 +3266,7 @@
           "refId": "A"
         },
         {
-          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\", code=~\"4..|5..\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
+          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\", code=~\"4..|5..\", exported_service=~\".*svc-forgejo-forgejo-0.*|.*svc-harbor-harbor-core-0.*|.*svc-harbor-harbor-portal-0.*|.*svc-immich-immich-server-0.*|.*svc-linkwarden-linkwarden-0.*|.*svc-media-jellyfin-0.*|.*svc-mirror-mirror-0.*|.*svc-nginx-custom-image-nginx-from-harbor-0.*\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -3263,7 +3287,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 170
+                "value": 140
               }
             ]
           },
@@ -3275,7 +3299,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 80
+                "value": 70
               }
             ]
           },
@@ -3287,7 +3311,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 80
+                "value": 70
               }
             ]
           }
@@ -3343,12 +3367,136 @@
     {
       "id": 28,
       "type": "table",
+      "title": "Public apps 2/2",
+      "gridPos": {
+        "h": 9,
+        "w": 4,
+        "x": 20,
+        "y": 13
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\", exported_service=~\".*svc-nginx-nginx-0.*|.*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*|.*svc-tobbeos-iso-nginx-0.*|.*svc-tobbeos-tobbeos-0.*|.*svc-tools-game-mgr-tools-game-mgr-0.*|.*svc-vaultwarden-vaultwarden-0.*\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\", code=~\"4..|5..\", exported_service=~\".*svc-nginx-nginx-0.*|.*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*|.*svc-tobbeos-iso-nginx-0.*|.*svc-tobbeos-tobbeos-0.*|.*svc-tools-game-mgr-tools-game-mgr-0.*|.*svc-vaultwarden-vaultwarden-0.*\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "App"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 140
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Req/s"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Errors/s"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "app",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {
+              "app": true,
+              "Value #A": true,
+              "Value #B": true
+            },
+            "indexByName": {
+              "app": 0,
+              "Value #A": 1,
+              "Value #B": 2
+            },
+            "renameByName": {
+              "app": "App",
+              "Value #A": "Req/s",
+              "Value #B": "Errors/s"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Req/s",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "type": "table",
       "title": "Minecraft servers",
       "gridPos": {
         "h": 6,
         "w": 9,
         "x": 15,
-        "y": 29
+        "y": 22
       },
       "datasource": {
         "type": "prometheus",
@@ -3489,14 +3637,14 @@
       ]
     },
     {
-      "id": 29,
+      "id": 30,
       "type": "logs",
       "title": "Combined server logs (minecraft process only, by display name)",
       "gridPos": {
         "h": 8,
         "w": 9,
         "x": 15,
-        "y": 35
+        "y": 28
       },
       "datasource": {
         "type": "loki",
