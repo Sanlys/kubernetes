@@ -215,7 +215,7 @@
       },
       "targets": [
         {
-          "expr": "(time() - kube_cronjob_status_last_successful_time{namespace=\"syncthing\", cronjob=\"restic-backup\"}) / 3600",
+          "expr": "time() - kube_cronjob_status_last_successful_time{namespace=\"syncthing\", cronjob=\"restic-backup\"}",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -226,7 +226,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "s",
           "color": {
             "mode": "thresholds",
             "fixedColor": "text"
@@ -240,11 +240,11 @@
               },
               {
                 "color": "yellow",
-                "value": 1
+                "value": 3600
               },
               {
                 "color": "red",
-                "value": 6
+                "value": 21600
               }
             ]
           }
@@ -711,7 +711,7 @@
       },
       "targets": [
         {
-          "expr": "(time() - loki_process_custom_mirror_lastsync_epoch_seconds) / 3600",
+          "expr": "time() - loki_process_custom_mirror_lastsync_epoch_seconds",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -722,7 +722,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "s",
           "color": {
             "mode": "thresholds",
             "fixedColor": "text"
@@ -736,11 +736,11 @@
               },
               {
                 "color": "yellow",
-                "value": 24
+                "value": 86400
               },
               {
                 "color": "red",
-                "value": 72
+                "value": 259200
               }
             ]
           }
@@ -774,7 +774,7 @@
       },
       "targets": [
         {
-          "expr": "(time() - loki_process_custom_mirror_lastupdate_epoch_seconds) / 3600",
+          "expr": "time() - loki_process_custom_mirror_lastupdate_epoch_seconds",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -785,7 +785,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "none",
+          "unit": "s",
           "color": {
             "mode": "thresholds",
             "fixedColor": "text"
@@ -816,116 +816,11 @@
     {
       "id": 14,
       "type": "grafana-polystat-panel",
-      "title": "Nodes",
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 0,
-        "y": 8
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\"}",
-          "legendFormat": "{{node}}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "options": {
-        "autoSizeColumns": true,
-        "layoutNumColumns": 8,
-        "autoSizeRows": true,
-        "layoutNumRows": 8,
-        "layoutDisplayLimit": 100,
-        "autoSizePolygons": true,
-        "globalPolygonSize": "25",
-        "globalPolygonBorderSize": 1,
-        "globalTextFontFamily": "Roboto Mono",
-        "globalAutoScaleFonts": true,
-        "globalLabelFontSize": 12,
-        "globalValueFontSize": 14,
-        "globalCompositeValueFontSize": 14,
-        "globalTextFontAutoColorEnabled": true,
-        "globalTextFontColor": "#000000",
-        "ellipseEnabled": false,
-        "ellipseCharacters": 18,
-        "sortByDirection": 1,
-        "sortByField": "name",
-        "globalTooltipsEnabled": true,
-        "globalTooltipsFontFamily": "Roboto Mono",
-        "globalTooltipsShowTimestampEnabled": false,
-        "globalTooltipsShowValueEnabled": true,
-        "globalShowTooltipColumnHeadersEnabled": true,
-        "tooltipDisplayMode": "all",
-        "tooltipDisplayTextTriggeredEmpty": "OK",
-        "tooltipPrimarySortDirection": 1,
-        "tooltipPrimarySortByField": "thresholdLevel",
-        "tooltipSecondarySortDirection": 1,
-        "tooltipSecondarySortByField": "value",
-        "globalDisplayMode": "all",
-        "globalDisplayTextTriggeredEmpty": "OK",
-        "globalShowValueEnabled": false,
-        "globalShowTimestampEnabled": false,
-        "globalShowTimestampFormat": "YYYY-MM-DD HH:mm:ss",
-        "globalShowTimestampFontSize": 12,
-        "globalShowTimestampPosition": "below_value",
-        "globalShowTimestampYOffset": 0,
-        "globalShape": "hexagon_pointed_top",
-        "globalGradientsEnabled": false,
-        "globalFillColor": "transparent",
-        "globalPolygonBorderColor": "transparent",
-        "globalUnitFormat": "short",
-        "globalOperator": "mean",
-        "globalDecimals": 2,
-        "globalThresholdsConfig": [
-          {
-            "value": 0,
-            "state": 2,
-            "color": "#f53636"
-          },
-          {
-            "value": 1,
-            "state": 0,
-            "color": "green"
-          }
-        ],
-        "globalClickthrough": "",
-        "globalClickthroughSanitizedEnabled": true,
-        "globalClickthroughNewTabEnabled": true,
-        "globalClickthroughCustomTargetEnabled": false,
-        "globalClickthroughCustomTarget": "",
-        "globalRegexPattern": "",
-        "overrideConfig": {
-          "overrides": []
-        },
-        "compositeGlobalAliasingEnabled": false,
-        "compositeConfig": {
-          "composites": [],
-          "enabled": true,
-          "animationSpeed": "1500"
-        }
-      }
-    },
-    {
-      "id": 15,
-      "type": "grafana-polystat-panel",
       "title": "Apps",
       "gridPos": {
         "h": 6,
-        "w": 8,
-        "x": 6,
+        "w": 14,
+        "x": 0,
         "y": 8
       },
       "datasource": {
@@ -1019,7 +914,7 @@
       }
     },
     {
-      "id": 16,
+      "id": 15,
       "type": "table",
       "title": "Issues",
       "gridPos": {
@@ -1144,7 +1039,7 @@
       ]
     },
     {
-      "id": 17,
+      "id": 16,
       "type": "table",
       "title": "ArgoCD apps not Synced/Healthy",
       "gridPos": {
@@ -1283,7 +1178,7 @@
       ]
     },
     {
-      "id": 18,
+      "id": 17,
       "type": "timeseries",
       "title": "Public app request rate + bandwidth",
       "gridPos": {
@@ -1351,7 +1246,7 @@
       }
     },
     {
-      "id": 19,
+      "id": 18,
       "type": "timeseries",
       "title": "Minecraft players online \u2014 history (by server)",
       "gridPos": {
@@ -1397,7 +1292,7 @@
       }
     },
     {
-      "id": 20,
+      "id": 19,
       "type": "logs",
       "title": "Combined server logs (minecraft process only, by display name)",
       "gridPos": {
