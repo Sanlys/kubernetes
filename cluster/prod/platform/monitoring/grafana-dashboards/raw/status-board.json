@@ -57,7 +57,8 @@
         "defaults": {
           "unit": "short",
           "color": {
-            "mode": "thresholds"
+            "mode": "thresholds",
+            "fixedColor": "text"
           },
           "thresholds": {
             "mode": "absolute",
@@ -135,7 +136,8 @@
         "defaults": {
           "unit": "none",
           "color": {
-            "mode": "thresholds"
+            "mode": "thresholds",
+            "fixedColor": "text"
           },
           "thresholds": {
             "mode": "absolute",
@@ -347,9 +349,9 @@
               "namespace": true
             },
             "indexByName": {
-              " ": 0,
-              "Alert": 1,
-              "Namespace": 2
+              "severity": 0,
+              "alertname": 1,
+              "namespace": 2
             },
             "renameByName": {
               "alertname": "Alert",
@@ -486,9 +488,9 @@
               "health_status": true
             },
             "indexByName": {
-              "App": 0,
-              "Sync": 1,
-              "Health": 2
+              "name": 0,
+              "sync_status": 1,
+              "health_status": 2
             },
             "renameByName": {
               "name": "App",
@@ -636,8 +638,8 @@
     },
     {
       "id": 10,
-      "type": "stat",
-      "title": "Ceph storage % used",
+      "type": "timeseries",
+      "title": "Ceph storage used/total",
       "gridPos": {
         "h": 4,
         "w": 4,
@@ -650,55 +652,44 @@
       },
       "targets": [
         {
-          "expr": "100 * ceph_cluster_total_used_bytes / ceph_cluster_total_bytes",
+          "expr": "ceph_cluster_total_used_bytes",
+          "legendFormat": "used",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
           "refId": "A"
+        },
+        {
+          "expr": "ceph_cluster_total_bytes",
+          "legendFormat": "total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 70
-              },
-              {
-                "color": "red",
-                "value": 85
-              }
-            ]
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
           }
         },
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "background"
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
       }
     },
     {
       "id": 11,
-      "type": "stat",
+      "type": "timeseries",
       "title": "Ceph PGs clean %",
       "gridPos": {
         "h": 4,
@@ -713,49 +704,29 @@
       "targets": [
         {
           "expr": "100 * sum(ceph_pg_clean) / sum(ceph_pg_total)",
+          "legendFormat": "clean %",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
           "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 80
-              },
-              {
-                "color": "green",
-                "value": 95
-              }
-            ]
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
           }
         },
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "background"
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
       }
     },
     {
@@ -763,8 +734,8 @@
       "type": "stat",
       "title": "Ingress",
       "gridPos": {
-        "h": 3,
-        "w": 4,
+        "h": 4,
+        "w": 2,
         "x": 16,
         "y": 10
       },
@@ -787,16 +758,8 @@
         "defaults": {
           "unit": "Bps",
           "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
+            "mode": "fixed",
+            "fixedColor": "text"
           }
         },
         "overrides": []
@@ -809,7 +772,7 @@
         },
         "textMode": "auto",
         "graphMode": "area",
-        "colorMode": "background"
+        "colorMode": "none"
       }
     },
     {
@@ -817,9 +780,9 @@
       "type": "stat",
       "title": "Egress",
       "gridPos": {
-        "h": 3,
-        "w": 4,
-        "x": 20,
+        "h": 4,
+        "w": 2,
+        "x": 18,
         "y": 10
       },
       "datasource": {
@@ -841,16 +804,8 @@
         "defaults": {
           "unit": "Bps",
           "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              }
-            ]
+            "mode": "fixed",
+            "fixedColor": "text"
           }
         },
         "overrides": []
@@ -863,7 +818,7 @@
         },
         "textMode": "auto",
         "graphMode": "area",
-        "colorMode": "background"
+        "colorMode": "none"
       }
     },
     {
@@ -1147,8 +1102,8 @@
       "type": "piechart",
       "title": "OSD status",
       "gridPos": {
-        "h": 6,
-        "w": 4,
+        "h": 9,
+        "w": 7,
         "x": 17,
         "y": 15
       },
@@ -1158,67 +1113,44 @@
       },
       "targets": [
         {
-          "expr": "sum(ceph_osd_up)",
-          "legendFormat": "Up",
+          "expr": "ceph_osd_up",
+          "legendFormat": "{{ceph_daemon}}",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
           "instant": true,
           "refId": "A"
-        },
-        {
-          "expr": "count(ceph_osd_up == 0) or vector(0)",
-          "legendFormat": "Down",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "B"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
           }
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Up"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "green"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Down"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "red"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "options": {
         "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "count"
+          ]
+        },
         "displayLabels": [
           "value"
         ],
@@ -1236,56 +1168,6 @@
     },
     {
       "id": 17,
-      "type": "table",
-      "title": "Down OSDs",
-      "gridPos": {
-        "h": 6,
-        "w": 3,
-        "x": 21,
-        "y": 15
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "ceph_osd_up == 0",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm"
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "includeByName": {
-              "ceph_daemon": true
-            },
-            "indexByName": {},
-            "renameByName": {
-              "ceph_daemon": "OSD"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": 18,
       "type": "row",
       "title": "Public apps (traefik-public)",
       "collapsed": false,
@@ -1298,7 +1180,7 @@
       "panels": []
     },
     {
-      "id": 19,
+      "id": 18,
       "type": "table",
       "title": "Public app traffic",
       "gridPos": {
@@ -1396,9 +1278,9 @@
               "Value #B": true
             },
             "indexByName": {
-              "App": 0,
-              "Req/s": 1,
-              "Errors/s": 2
+              "app": 0,
+              "Value #A": 1,
+              "Value #B": 2
             },
             "renameByName": {
               "app": "App",
@@ -1422,7 +1304,7 @@
       ]
     },
     {
-      "id": 20,
+      "id": 19,
       "type": "table",
       "title": "TLS cert expiry",
       "gridPos": {
@@ -1474,7 +1356,7 @@
       ]
     },
     {
-      "id": 21,
+      "id": 20,
       "type": "stat",
       "title": "Arch mirror \u2014 hrs since sync",
       "gridPos": {
@@ -1502,7 +1384,8 @@
         "defaults": {
           "unit": "none",
           "color": {
-            "mode": "thresholds"
+            "mode": "thresholds",
+            "fixedColor": "text"
           },
           "thresholds": {
             "mode": "absolute",
@@ -1536,7 +1419,7 @@
       }
     },
     {
-      "id": 22,
+      "id": 21,
       "type": "stat",
       "title": "Arch mirror \u2014 hrs since update",
       "gridPos": {
@@ -1564,7 +1447,8 @@
         "defaults": {
           "unit": "none",
           "color": {
-            "mode": "thresholds"
+            "mode": "thresholds",
+            "fixedColor": "text"
           },
           "thresholds": {
             "mode": "absolute",
@@ -1590,7 +1474,7 @@
       }
     },
     {
-      "id": 23,
+      "id": 22,
       "type": "timeseries",
       "title": "Public app request rate + bandwidth",
       "gridPos": {
@@ -1658,7 +1542,7 @@
       }
     },
     {
-      "id": 24,
+      "id": 23,
       "type": "row",
       "title": "Game servers",
       "collapsed": false,
@@ -1671,7 +1555,7 @@
       "panels": []
     },
     {
-      "id": 25,
+      "id": 24,
       "type": "table",
       "title": "Minecraft servers",
       "gridPos": {
@@ -1819,7 +1703,7 @@
       ]
     },
     {
-      "id": 26,
+      "id": 25,
       "type": "logs",
       "title": "Combined server logs (minecraft process only, by display name)",
       "gridPos": {
