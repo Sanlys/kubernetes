@@ -17,26 +17,13 @@
   "panels": [
     {
       "id": 1,
-      "type": "row",
-      "title": "Cluster health",
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "panels": []
-    },
-    {
-      "id": 2,
       "type": "stat",
       "title": "Ceph health",
       "gridPos": {
         "h": 5,
-        "w": 3,
+        "w": 5,
         "x": 0,
-        "y": 1
+        "y": 0
       },
       "datasource": {
         "type": "prometheus",
@@ -108,14 +95,14 @@
       }
     },
     {
-      "id": 3,
+      "id": 2,
       "type": "stat",
       "title": "API servers reachable",
       "gridPos": {
         "h": 5,
-        "w": 2,
-        "x": 3,
-        "y": 1
+        "w": 3,
+        "x": 5,
+        "y": 0
       },
       "datasource": {
         "type": "prometheus",
@@ -167,14 +154,14 @@
       }
     },
     {
-      "id": 4,
-      "type": "table",
-      "title": "Ceph active issues",
+      "id": 3,
+      "type": "piechart",
+      "title": "OSD status",
       "gridPos": {
         "h": 5,
-        "w": 6,
-        "x": 5,
-        "y": 6
+        "w": 7,
+        "x": 8,
+        "y": 0
       },
       "datasource": {
         "type": "prometheus",
@@ -182,7 +169,2830 @@
       },
       "targets": [
         {
-          "expr": "ceph_health_detail{name!~\"AUTH_INSECURE_CLIENT_KEY_TYPE|AUTH_INSECURE_KEYS_ALLOWED|AUTH_INSECURE_KEYS_CREATABLE\"} == 1",
+          "expr": "sum(ceph_osd_up)",
+          "legendFormat": "Up",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "count(ceph_osd_up == 0) or vector(0)",
+          "legendFormat": "Down",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Up"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Down"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "pieType": "donut",
+        "displayLabels": [
+          "value"
+        ],
+        "legend": {
+          "displayMode": "hidden"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "CPU \u2014 usage/req/limit",
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 0,
+        "y": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]))",
+          "legendFormat": "usage",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A"
+        },
+        {
+          "expr": "sum(kube_pod_container_resource_requests{resource=\"cpu\"})",
+          "legendFormat": "req",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B"
+        },
+        {
+          "expr": "sum(kube_pod_container_resource_limits{resource=\"cpu\"})",
+          "legendFormat": "limit",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Memory \u2014 usage/req/limit",
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 5,
+        "y": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"})",
+          "legendFormat": "usage",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A"
+        },
+        {
+          "expr": "sum(kube_pod_container_resource_requests{resource=\"memory\"})",
+          "legendFormat": "req",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B"
+        },
+        {
+          "expr": "sum(kube_pod_container_resource_limits{resource=\"memory\"})",
+          "legendFormat": "limit",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Ceph storage used/total",
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 10,
+        "y": 5
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "ceph_cluster_total_used_bytes",
+          "legendFormat": "used",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A"
+        },
+        {
+          "expr": "ceph_cluster_total_bytes",
+          "legendFormat": "total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Ceph PGs clean %",
+      "gridPos": {
+        "h": 4,
+        "w": 7,
+        "x": 0,
+        "y": 9
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "100 * sum(ceph_pg_clean) / sum(ceph_pg_total)",
+          "legendFormat": "clean %",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Ingress",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 7,
+        "y": 9
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(node_network_receive_bytes_total{device!~\"lo|lxc.*|cilium_.*|sit0|teql0|tunl0|ip6tnl0|dummy0\"}[5m]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "none"
+      }
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "Egress",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 11,
+        "y": 9
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(node_network_transmit_bytes_total{device!~\"lo|lxc.*|cilium_.*|sit0|teql0|tunl0|ip6tnl0|dummy0\"}[5m]))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "none"
+      }
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "talos-3gd-ovr  \u00b7  CP  \u00b7  10.0.6.126",
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 0,
+        "y": 13
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-3gd-ovr\"}",
+          "legendFormat": "CPU cores",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-3gd-ovr\"}",
+          "legendFormat": "CPU %",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-3gd-ovr\"}",
+          "legendFormat": "RAM used",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "C"
+        },
+        {
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-3gd-ovr\"}",
+          "legendFormat": "RAM total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "D"
+        },
+        {
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-3gd-ovr\"}",
+          "legendFormat": "Ready",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "E"
+        },
+        {
+          "expr": "count(kube_node_spec_taint{node=\"talos-3gd-ovr\"}) or vector(0)",
+          "legendFormat": "Taints",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "F"
+        },
+        {
+          "expr": "time() - kube_node_created{node=\"talos-3gd-ovr\"}",
+          "legendFormat": "Age",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "G"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU cores"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM used"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM total"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Taints"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Age"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ready"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "NotReady",
+                        "color": "red"
+                      },
+                      "1": {
+                        "text": "Ready",
+                        "color": "green"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": true,
+          "fields": ""
+        },
+        "textMode": "value_and_name",
+        "graphMode": "none",
+        "colorMode": "background",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "talos-6l0-2ma  \u00b7  CP  \u00b7  10.0.6.102",
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 5,
+        "y": 13
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-6l0-2ma\"}",
+          "legendFormat": "CPU cores",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-6l0-2ma\"}",
+          "legendFormat": "CPU %",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-6l0-2ma\"}",
+          "legendFormat": "RAM used",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "C"
+        },
+        {
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-6l0-2ma\"}",
+          "legendFormat": "RAM total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "D"
+        },
+        {
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-6l0-2ma\"}",
+          "legendFormat": "Ready",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "E"
+        },
+        {
+          "expr": "count(kube_node_spec_taint{node=\"talos-6l0-2ma\"}) or vector(0)",
+          "legendFormat": "Taints",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "F"
+        },
+        {
+          "expr": "time() - kube_node_created{node=\"talos-6l0-2ma\"}",
+          "legendFormat": "Age",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "G"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU cores"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM used"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM total"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Taints"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Age"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ready"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "NotReady",
+                        "color": "red"
+                      },
+                      "1": {
+                        "text": "Ready",
+                        "color": "green"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": true,
+          "fields": ""
+        },
+        "textMode": "value_and_name",
+        "graphMode": "none",
+        "colorMode": "background",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "talos-hjv-x6c  \u00b7  CP  \u00b7  10.0.6.69",
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 10,
+        "y": 13
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-hjv-x6c\"}",
+          "legendFormat": "CPU cores",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-hjv-x6c\"}",
+          "legendFormat": "CPU %",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-hjv-x6c\"}",
+          "legendFormat": "RAM used",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "C"
+        },
+        {
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-hjv-x6c\"}",
+          "legendFormat": "RAM total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "D"
+        },
+        {
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-hjv-x6c\"}",
+          "legendFormat": "Ready",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "E"
+        },
+        {
+          "expr": "count(kube_node_spec_taint{node=\"talos-hjv-x6c\"}) or vector(0)",
+          "legendFormat": "Taints",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "F"
+        },
+        {
+          "expr": "time() - kube_node_created{node=\"talos-hjv-x6c\"}",
+          "legendFormat": "Age",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "G"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU cores"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM used"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM total"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Taints"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Age"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ready"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "NotReady",
+                        "color": "red"
+                      },
+                      "1": {
+                        "text": "Ready",
+                        "color": "green"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": true,
+          "fields": ""
+        },
+        "textMode": "value_and_name",
+        "graphMode": "none",
+        "colorMode": "background",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "talos-hfy-gns  \u00b7  Worker  \u00b7  10.0.6.109",
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 0,
+        "y": 19
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-hfy-gns\"}",
+          "legendFormat": "CPU cores",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-hfy-gns\"}",
+          "legendFormat": "CPU %",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-hfy-gns\"}",
+          "legendFormat": "RAM used",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "C"
+        },
+        {
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-hfy-gns\"}",
+          "legendFormat": "RAM total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "D"
+        },
+        {
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-hfy-gns\"}",
+          "legendFormat": "Ready",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "E"
+        },
+        {
+          "expr": "count(kube_node_spec_taint{node=\"talos-hfy-gns\"}) or vector(0)",
+          "legendFormat": "Taints",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "F"
+        },
+        {
+          "expr": "time() - kube_node_created{node=\"talos-hfy-gns\"}",
+          "legendFormat": "Age",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "G"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU cores"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM used"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM total"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Taints"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Age"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ready"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "NotReady",
+                        "color": "red"
+                      },
+                      "1": {
+                        "text": "Ready",
+                        "color": "green"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": true,
+          "fields": ""
+        },
+        "textMode": "value_and_name",
+        "graphMode": "none",
+        "colorMode": "background",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "talos-jcx-enc  \u00b7  Worker  \u00b7  10.0.6.191",
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 5,
+        "y": 19
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-jcx-enc\"}",
+          "legendFormat": "CPU cores",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-jcx-enc\"}",
+          "legendFormat": "CPU %",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-jcx-enc\"}",
+          "legendFormat": "RAM used",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "C"
+        },
+        {
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-jcx-enc\"}",
+          "legendFormat": "RAM total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "D"
+        },
+        {
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-jcx-enc\"}",
+          "legendFormat": "Ready",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "E"
+        },
+        {
+          "expr": "count(kube_node_spec_taint{node=\"talos-jcx-enc\"}) or vector(0)",
+          "legendFormat": "Taints",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "F"
+        },
+        {
+          "expr": "time() - kube_node_created{node=\"talos-jcx-enc\"}",
+          "legendFormat": "Age",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "G"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU cores"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM used"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM total"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Taints"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Age"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ready"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "NotReady",
+                        "color": "red"
+                      },
+                      "1": {
+                        "text": "Ready",
+                        "color": "green"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": true,
+          "fields": ""
+        },
+        "textMode": "value_and_name",
+        "graphMode": "none",
+        "colorMode": "background",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "talos-jwk-gs2  \u00b7  Worker  \u00b7  10.0.6.101",
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 10,
+        "y": 19
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-jwk-gs2\"}",
+          "legendFormat": "CPU cores",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-jwk-gs2\"}",
+          "legendFormat": "CPU %",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-jwk-gs2\"}",
+          "legendFormat": "RAM used",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "C"
+        },
+        {
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-jwk-gs2\"}",
+          "legendFormat": "RAM total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "D"
+        },
+        {
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-jwk-gs2\"}",
+          "legendFormat": "Ready",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "E"
+        },
+        {
+          "expr": "count(kube_node_spec_taint{node=\"talos-jwk-gs2\"}) or vector(0)",
+          "legendFormat": "Taints",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "F"
+        },
+        {
+          "expr": "time() - kube_node_created{node=\"talos-jwk-gs2\"}",
+          "legendFormat": "Age",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "G"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU cores"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM used"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM total"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Taints"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Age"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ready"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "NotReady",
+                        "color": "red"
+                      },
+                      "1": {
+                        "text": "Ready",
+                        "color": "green"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": true,
+          "fields": ""
+        },
+        "textMode": "value_and_name",
+        "graphMode": "none",
+        "colorMode": "background",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 16,
+      "type": "stat",
+      "title": "talos-ly6-852  \u00b7  Worker  \u00b7  10.0.6.67",
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 0,
+        "y": 25
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-ly6-852\"}",
+          "legendFormat": "CPU cores",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-ly6-852\"}",
+          "legendFormat": "CPU %",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-ly6-852\"}",
+          "legendFormat": "RAM used",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "C"
+        },
+        {
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-ly6-852\"}",
+          "legendFormat": "RAM total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "D"
+        },
+        {
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-ly6-852\"}",
+          "legendFormat": "Ready",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "E"
+        },
+        {
+          "expr": "count(kube_node_spec_taint{node=\"talos-ly6-852\"}) or vector(0)",
+          "legendFormat": "Taints",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "F"
+        },
+        {
+          "expr": "time() - kube_node_created{node=\"talos-ly6-852\"}",
+          "legendFormat": "Age",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "G"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU cores"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM used"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM total"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Taints"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Age"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ready"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "NotReady",
+                        "color": "red"
+                      },
+                      "1": {
+                        "text": "Ready",
+                        "color": "green"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": true,
+          "fields": ""
+        },
+        "textMode": "value_and_name",
+        "graphMode": "none",
+        "colorMode": "background",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 17,
+      "type": "stat",
+      "title": "talos-puf-79s  \u00b7  Worker  \u00b7  10.0.6.136",
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 5,
+        "y": 25
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-puf-79s\"}",
+          "legendFormat": "CPU cores",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-puf-79s\"}",
+          "legendFormat": "CPU %",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-puf-79s\"}",
+          "legendFormat": "RAM used",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "C"
+        },
+        {
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-puf-79s\"}",
+          "legendFormat": "RAM total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "D"
+        },
+        {
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-puf-79s\"}",
+          "legendFormat": "Ready",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "E"
+        },
+        {
+          "expr": "count(kube_node_spec_taint{node=\"talos-puf-79s\"}) or vector(0)",
+          "legendFormat": "Taints",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "F"
+        },
+        {
+          "expr": "time() - kube_node_created{node=\"talos-puf-79s\"}",
+          "legendFormat": "Age",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "G"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU cores"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM used"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM total"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Taints"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Age"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ready"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "NotReady",
+                        "color": "red"
+                      },
+                      "1": {
+                        "text": "Ready",
+                        "color": "green"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": true,
+          "fields": ""
+        },
+        "textMode": "value_and_name",
+        "graphMode": "none",
+        "colorMode": "background",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 18,
+      "type": "stat",
+      "title": "talos-zr9-r2s  \u00b7  Worker  \u00b7  10.0.6.112",
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 10,
+        "y": 25
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "kube_node_status_capacity{resource=\"cpu\", node=\"talos-zr9-r2s\"}",
+          "legendFormat": "CPU cores",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "(100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})) and on(node) kube_node_info{node=\"talos-zr9-r2s\"}",
+          "legendFormat": "CPU %",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "B"
+        },
+        {
+          "expr": "(sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info)) and on(node) kube_node_info{node=\"talos-zr9-r2s\"}",
+          "legendFormat": "RAM used",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "C"
+        },
+        {
+          "expr": "kube_node_status_capacity{resource=\"memory\", node=\"talos-zr9-r2s\"}",
+          "legendFormat": "RAM total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "D"
+        },
+        {
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"true\", node=\"talos-zr9-r2s\"}",
+          "legendFormat": "Ready",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "E"
+        },
+        {
+          "expr": "count(kube_node_spec_taint{node=\"talos-zr9-r2s\"}) or vector(0)",
+          "legendFormat": "Taints",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "F"
+        },
+        {
+          "expr": "time() - kube_node_created{node=\"talos-zr9-r2s\"}",
+          "legendFormat": "Age",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "G"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU cores"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU %"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM used"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM total"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Taints"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Age"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ready"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "NotReady",
+                        "color": "red"
+                      },
+                      "1": {
+                        "text": "Ready",
+                        "color": "green"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "green",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "values": true,
+          "fields": ""
+        },
+        "textMode": "value_and_name",
+        "graphMode": "none",
+        "colorMode": "background",
+        "orientation": "auto"
+      }
+    },
+    {
+      "id": 19,
+      "type": "stat",
+      "title": "*.k8s.lysakermoen.com",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 31
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "min(traefik_tls_certs_not_after{cn=\"*.k8s.lysakermoen.com\"} - time()) / 86400",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "d",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "text"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 14
+              },
+              {
+                "color": "green",
+                "value": 30
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 20,
+      "type": "stat",
+      "title": "*.lysakermoen.com",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 31
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "min(traefik_tls_certs_not_after{cn=\"*.lysakermoen.com\"} - time()) / 86400",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "d",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "text"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 14
+              },
+              {
+                "color": "green",
+                "value": 30
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 21,
+      "type": "stat",
+      "title": "Mirror sync",
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 8,
+        "y": 31
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "(time() - loki_process_custom_mirror_lastsync_epoch_seconds) / 3600",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "text"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 24
+              },
+              {
+                "color": "red",
+                "value": 72
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 22,
+      "type": "stat",
+      "title": "Mirror update",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 11,
+        "y": 31
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "(time() - loki_process_custom_mirror_lastupdate_epoch_seconds) / 3600",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "text"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 23,
+      "type": "timeseries",
+      "title": "Public app request rate + bandwidth",
+      "gridPos": {
+        "h": 8,
+        "w": 15,
+        "x": 0,
+        "y": 35
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
+          "legendFormat": "{{app}} (req/s)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_responses_bytes_total{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
+          "legendFormat": "{{app}} (B/s)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*\\(B/s\\)$"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "Bps"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 24,
+      "type": "timeseries",
+      "title": "Minecraft players online \u2014 history (by server)",
+      "gridPos": {
+        "h": 6,
+        "w": 15,
+        "x": 0,
+        "y": 43
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum by (server) (label_replace(label_replace(label_replace(label_replace(sum by (server_host) (minecraft_status_players_online_count), \"server\", \"Daur's stream\", \"server_host\", `mc-paper\\.minecraft-server\\.svc\\.cluster\\.local`), \"server\", \"Temporary (Slimeyteacup)\", \"server_host\", `mc-paper-temporary\\.minecraft-server-temporary\\.svc\\.cluster\\.local`), \"server\", \"Slimey's server\", \"server_host\", `mc-paper\\.minecraft-slimey\\.svc\\.cluster\\.local`), \"server\", \"Vanilla\", \"server_host\", `mc-vanilla\\.minecraft-vanilla\\.svc\\.cluster\\.local`))",
+          "legendFormat": "{{server}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "fillOpacity": 60,
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 25,
+      "type": "table",
+      "title": "Issues",
+      "gridPos": {
+        "h": 7,
+        "w": 9,
+        "x": 15,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "label_replace(label_replace(ceph_health_detail{name!~\"AUTH_INSECURE_CLIENT_KEY_TYPE|AUTH_INSECURE_KEYS_ALLOWED|AUTH_INSECURE_KEYS_CREATABLE\"} == 1, \"issue\", \"$1\", \"name\", \"(.*)\"), \"source\", \"Ceph\", \"\", \"\")",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -190,6 +3000,16 @@
           "instant": true,
           "format": "table",
           "refId": "A"
+        },
+        {
+          "expr": "label_replace(label_replace(ALERTS{alertstate=\"firing\", alertname!=\"Watchdog\"}, \"issue\", \"$1\", \"alertname\", \"(.*)\"), \"source\", \"K8s\", \"\", \"\")",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "B"
         }
       ],
       "fieldConfig": {
@@ -208,114 +3028,20 @@
                     "type": "value",
                     "options": {
                       "HEALTH_WARN": {
-                        "text": "WARN",
+                        "text": "Warning",
                         "color": "yellow"
                       },
                       "HEALTH_ERR": {
-                        "text": "ERROR",
-                        "color": "red"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background",
-                  "applyToRow": true
-                }
-              },
-              {
-                "id": "custom.hideFrom.viz",
-                "value": true
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm"
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "includeByName": {
-              "name": true,
-              "severity": true
-            },
-            "indexByName": {},
-            "renameByName": {
-              "name": "Issue",
-              "severity": "Severity"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "type": "table",
-      "title": "Firing alerts",
-      "gridPos": {
-        "h": 5,
-        "w": 7,
-        "x": 11,
-        "y": 6
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "ALERTS{alertstate=\"firing\", alertname!=\"Watchdog\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Alert"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 230
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Severity"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "critical": {
                         "text": "Critical",
                         "color": "red"
                       },
                       "warning": {
                         "text": "Warning",
                         "color": "yellow"
+                      },
+                      "critical": {
+                        "text": "Critical",
+                        "color": "red"
                       },
                       "none": {
                         "text": "",
@@ -346,37 +3072,44 @@
       },
       "transformations": [
         {
+          "id": "merge",
+          "options": {}
+        },
+        {
           "id": "organize",
           "options": {
             "excludeByName": {},
             "includeByName": {
-              "alertname": true,
-              "severity": true,
-              "namespace": true
+              "source": true,
+              "issue": true,
+              "namespace": true,
+              "severity": true
             },
             "indexByName": {
-              "severity": 0,
-              "alertname": 1,
-              "namespace": 2
+              "source": 0,
+              "issue": 1,
+              "namespace": 2,
+              "severity": 3
             },
             "renameByName": {
-              "alertname": "Alert",
-              "severity": "Severity",
-              "namespace": "Namespace"
+              "source": "Source",
+              "issue": "Issue",
+              "namespace": "Namespace",
+              "severity": "Severity"
             }
           }
         }
       ]
     },
     {
-      "id": 6,
+      "id": 26,
       "type": "table",
       "title": "ArgoCD apps not Synced/Healthy",
       "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 18,
-        "y": 6
+        "h": 6,
+        "w": 9,
+        "x": 15,
+        "y": 7
       },
       "datasource": {
         "type": "prometheus",
@@ -508,715 +3241,14 @@
       ]
     },
     {
-      "id": 7,
-      "type": "row",
-      "title": "Compute, storage & network",
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 11
-      },
-      "panels": []
-    },
-    {
-      "id": 8,
-      "type": "timeseries",
-      "title": "CPU \u2014 usage/req/limit",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 0,
-        "y": 12
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]))",
-          "legendFormat": "usage",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "A"
-        },
-        {
-          "expr": "sum(kube_pod_container_resource_requests{resource=\"cpu\"})",
-          "legendFormat": "req",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "B"
-        },
-        {
-          "expr": "sum(kube_pod_container_resource_limits{resource=\"cpu\"})",
-          "legendFormat": "limit",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "C"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2
-          },
-          "min": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      }
-    },
-    {
-      "id": 9,
-      "type": "timeseries",
-      "title": "Memory \u2014 usage/req/limit",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
-        "y": 12
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"})",
-          "legendFormat": "usage",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "A"
-        },
-        {
-          "expr": "sum(kube_pod_container_resource_requests{resource=\"memory\"})",
-          "legendFormat": "req",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "B"
-        },
-        {
-          "expr": "sum(kube_pod_container_resource_limits{resource=\"memory\"})",
-          "legendFormat": "limit",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "C"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2
-          },
-          "min": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      }
-    },
-    {
-      "id": 10,
-      "type": "timeseries",
-      "title": "Ceph storage used/total",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 8,
-        "y": 12
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "ceph_cluster_total_used_bytes",
-          "legendFormat": "used",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "A"
-        },
-        {
-          "expr": "ceph_cluster_total_bytes",
-          "legendFormat": "total",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      }
-    },
-    {
-      "id": 11,
-      "type": "timeseries",
-      "title": "Ceph PGs clean %",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 12,
-        "y": 12
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "100 * sum(ceph_pg_clean) / sum(ceph_pg_total)",
-          "legendFormat": "clean %",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      }
-    },
-    {
-      "id": 12,
-      "type": "stat",
-      "title": "Ingress",
-      "gridPos": {
-        "h": 4,
-        "w": 2,
-        "x": 16,
-        "y": 12
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(rate(node_network_receive_bytes_total{device!~\"lo|lxc.*|cilium_.*|sit0|teql0|tunl0|ip6tnl0|dummy0\"}[5m]))",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "Bps",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "text"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "none"
-      }
-    },
-    {
-      "id": 13,
-      "type": "stat",
-      "title": "Egress",
-      "gridPos": {
-        "h": 4,
-        "w": 2,
-        "x": 18,
-        "y": 12
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(rate(node_network_transmit_bytes_total{device!~\"lo|lxc.*|cilium_.*|sit0|teql0|tunl0|ip6tnl0|dummy0\"}[5m]))",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "Bps",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "text"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "none"
-      }
-    },
-    {
-      "id": 14,
-      "type": "row",
-      "title": "Nodes & Ceph OSDs",
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 16
-      },
-      "panels": []
-    },
-    {
-      "id": 15,
+      "id": 27,
       "type": "table",
-      "title": "Nodes",
-      "gridPos": {
-        "h": 9,
-        "w": 17,
-        "x": 0,
-        "y": 17
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"cpu\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "A"
-        },
-        {
-          "expr": "100 * sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info) / on(node) sum by (node) (kube_node_status_capacity{resource=\"memory\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "B"
-        },
-        {
-          "expr": "sum by (node) (kube_node_status_condition{condition=\"Ready\",status=\"true\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "C"
-        },
-        {
-          "expr": "sum by (node, role) (kube_node_role{role=\"control-plane\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "D"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "CPU %"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "percent"
-              },
-              {
-                "id": "min",
-                "value": 0
-              },
-              {
-                "id": "max",
-                "value": 100
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": null
-                    },
-                    {
-                      "color": "yellow",
-                      "value": 60
-                    },
-                    {
-                      "color": "red",
-                      "value": 85
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "gauge",
-                  "mode": "gradient"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Memory %"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "percent"
-              },
-              {
-                "id": "min",
-                "value": 0
-              },
-              {
-                "id": "max",
-                "value": 100
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": null
-                    },
-                    {
-                      "color": "yellow",
-                      "value": 60
-                    },
-                    {
-                      "color": "red",
-                      "value": 85
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "gauge",
-                  "mode": "gradient"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Ready"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "0": {
-                        "text": "NotReady",
-                        "color": "red"
-                      },
-                      "1": {
-                        "text": "Ready",
-                        "color": "green"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Role"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "control-plane": {
-                        "text": "Control plane"
-                      }
-                    }
-                  },
-                  {
-                    "type": "special",
-                    "options": {
-                      "match": "null",
-                      "result": {
-                        "text": "Worker"
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm"
-      },
-      "transformations": [
-        {
-          "id": "joinByField",
-          "options": {
-            "byField": "node",
-            "mode": "outer"
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "includeByName": {
-              "node": true,
-              "Value #A": true,
-              "Value #B": true,
-              "Value #C": true,
-              "role": true
-            },
-            "indexByName": {},
-            "renameByName": {
-              "node": "Node",
-              "Value #A": "CPU %",
-              "Value #B": "Memory %",
-              "Value #C": "Ready",
-              "role": "Role"
-            }
-          }
-        },
-        {
-          "id": "sortBy",
-          "options": {
-            "fields": {},
-            "sort": [
-              {
-                "field": "Role"
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "id": 16,
-      "type": "piechart",
-      "title": "OSD status",
-      "gridPos": {
-        "h": 9,
-        "w": 7,
-        "x": 17,
-        "y": 17
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(ceph_osd_up)",
-          "legendFormat": "Up",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        },
-        {
-          "expr": "count(ceph_osd_up == 0) or vector(0)",
-          "legendFormat": "Down",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Up"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "green"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Down"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "red"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "pieType": "donut",
-        "displayLabels": [
-          "value"
-        ],
-        "legend": {
-          "displayMode": "list",
-          "placement": "right",
-          "values": [
-            "value"
-          ]
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      }
-    },
-    {
-      "id": 17,
-      "type": "row",
       "title": "Public apps (traefik-public)",
-      "collapsed": false,
       "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 26
-      },
-      "panels": []
-    },
-    {
-      "id": 18,
-      "type": "table",
-      "title": "Public app traffic",
-      "gridPos": {
-        "h": 12,
-        "w": 12,
-        "x": 0,
-        "y": 27
+        "h": 16,
+        "w": 9,
+        "x": 15,
+        "y": 13
       },
       "datasource": {
         "type": "prometheus",
@@ -1333,265 +3365,14 @@
       ]
     },
     {
-      "id": 19,
-      "type": "table",
-      "title": "TLS cert expiry",
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 12,
-        "y": 27
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "(min by (cn) (traefik_tls_certs_not_after) - time()) / 86400",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm"
-      },
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "includeByName": {
-              "cn": true,
-              "Value": true
-            },
-            "indexByName": {},
-            "renameByName": {
-              "cn": "Certificate",
-              "Value": "Days left"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": 20,
-      "type": "stat",
-      "title": "Arch mirror \u2014 hrs since sync",
-      "gridPos": {
-        "h": 3,
-        "w": 6,
-        "x": 12,
-        "y": 33
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "(time() - loki_process_custom_mirror_lastsync_epoch_seconds) / 3600",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "color": {
-            "mode": "thresholds",
-            "fixedColor": "text"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 24
-              },
-              {
-                "color": "red",
-                "value": 72
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 21,
-      "type": "stat",
-      "title": "Arch mirror \u2014 hrs since update",
-      "gridPos": {
-        "h": 3,
-        "w": 6,
-        "x": 12,
-        "y": 36
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "(time() - loki_process_custom_mirror_lastupdate_epoch_seconds) / 3600",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "color": {
-            "mode": "thresholds",
-            "fixedColor": "text"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 22,
-      "type": "timeseries",
-      "title": "Public app request rate + bandwidth",
-      "gridPos": {
-        "h": 5,
-        "w": 24,
-        "x": 0,
-        "y": 39
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
-          "legendFormat": "{{app}} (req/s)",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "A"
-        },
-        {
-          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_responses_bytes_total{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
-          "legendFormat": "{{app}} (B/s)",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "reqps",
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*\\(B/s\\)$"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "Bps"
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      }
-    },
-    {
-      "id": 23,
-      "type": "row",
-      "title": "Game servers",
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 44
-      },
-      "panels": []
-    },
-    {
-      "id": 24,
+      "id": 28,
       "type": "table",
       "title": "Minecraft servers",
       "gridPos": {
         "h": 6,
-        "w": 11,
-        "x": 0,
-        "y": 45
+        "w": 9,
+        "x": 15,
+        "y": 29
       },
       "datasource": {
         "type": "prometheus",
@@ -1732,14 +3513,14 @@
       ]
     },
     {
-      "id": 25,
+      "id": 29,
       "type": "logs",
       "title": "Combined server logs (minecraft process only, by display name)",
       "gridPos": {
-        "h": 6,
-        "w": 13,
-        "x": 11,
-        "y": 45
+        "h": 8,
+        "w": 9,
+        "x": 15,
+        "y": 35
       },
       "datasource": {
         "type": "loki",
