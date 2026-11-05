@@ -1946,7 +1946,7 @@
       "title": "Issues",
       "gridPos": {
         "h": 7,
-        "w": 12,
+        "w": 8,
         "x": 12,
         "y": 0
       },
@@ -2071,7 +2071,7 @@
       "title": "ArgoCD apps not Synced/Healthy",
       "gridPos": {
         "h": 6,
-        "w": 12,
+        "w": 8,
         "x": 12,
         "y": 7
       },
@@ -2210,7 +2210,7 @@
       "title": "Public apps",
       "gridPos": {
         "h": 9,
-        "w": 12,
+        "w": 8,
         "x": 12,
         "y": 13
       },
@@ -2310,7 +2310,7 @@
       "title": "Minecraft servers",
       "gridPos": {
         "h": 6,
-        "w": 12,
+        "w": 8,
         "x": 12,
         "y": 22
       },
@@ -2458,7 +2458,7 @@
       "title": "Combined server logs (minecraft process only, by display name)",
       "gridPos": {
         "h": 8,
-        "w": 12,
+        "w": 8,
         "x": 12,
         "y": 28
       },
