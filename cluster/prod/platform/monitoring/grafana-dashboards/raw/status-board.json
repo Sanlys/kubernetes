@@ -33,8 +33,8 @@
       "type": "stat",
       "title": "Ceph health",
       "gridPos": {
-        "h": 2,
-        "w": 5,
+        "h": 4,
+        "w": 3,
         "x": 0,
         "y": 1
       },
@@ -112,10 +112,10 @@
       "type": "stat",
       "title": "API servers reachable",
       "gridPos": {
-        "h": 2,
-        "w": 5,
-        "x": 0,
-        "y": 3
+        "h": 4,
+        "w": 2,
+        "x": 3,
+        "y": 1
       },
       "datasource": {
         "type": "prometheus",
@@ -222,8 +222,13 @@
               {
                 "id": "custom.cellOptions",
                 "value": {
-                  "type": "color-background"
+                  "type": "color-background",
+                  "applyToRow": true
                 }
+              },
+              {
+                "id": "custom.hideFrom.viz",
+                "value": true
               }
             ]
           }
@@ -295,13 +300,9 @@
           {
             "matcher": {
               "id": "byName",
-              "options": " "
+              "options": "Severity"
             },
             "properties": [
-              {
-                "id": "custom.width",
-                "value": 8
-              },
               {
                 "id": "mappings",
                 "value": [
@@ -309,11 +310,11 @@
                     "type": "value",
                     "options": {
                       "critical": {
-                        "text": "",
+                        "text": "Critical",
                         "color": "red"
                       },
                       "warning": {
-                        "text": "",
+                        "text": "Warning",
                         "color": "yellow"
                       },
                       "none": {
@@ -327,8 +328,13 @@
               {
                 "id": "custom.cellOptions",
                 "value": {
-                  "type": "color-background"
+                  "type": "color-background",
+                  "applyToRow": true
                 }
+              },
+              {
+                "id": "custom.hideFrom.viz",
+                "value": true
               }
             ]
           }
@@ -355,7 +361,7 @@
             },
             "renameByName": {
               "alertname": "Alert",
-              "severity": " ",
+              "severity": "Severity",
               "namespace": "Namespace"
             }
           }
@@ -1099,7 +1105,7 @@
     },
     {
       "id": 16,
-      "type": "piechart",
+      "type": "state-timeline",
       "title": "OSD status",
       "gridPos": {
         "h": 9,
@@ -1119,7 +1125,6 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
           "refId": "A"
         }
       ],
@@ -1140,26 +1145,33 @@
                 "value": 1
               }
             ]
-          }
+          },
+          "custom": {
+            "fillOpacity": 100,
+            "lineWidth": 0
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "Down"
+                },
+                "1": {
+                  "text": "Up"
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
       "options": {
-        "pieType": "donut",
-        "reduceOptions": {
-          "calcs": [
-            "count"
-          ]
-        },
-        "displayLabels": [
-          "value"
-        ],
+        "mergeValues": true,
+        "showValue": "never",
+        "rowHeight": 0.9,
         "legend": {
-          "displayMode": "list",
-          "placement": "right",
-          "values": [
-            "value"
-          ]
+          "displayMode": "hidden"
         },
         "tooltip": {
           "mode": "single"
