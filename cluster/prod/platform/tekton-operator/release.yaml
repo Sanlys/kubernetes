@@ -11158,7 +11158,7 @@ spec:
                 configMapKeyRef:
                   key: DEFAULT_TARGET_NAMESPACE
                   name: tekton-config-defaults
-          image: ghcr.io/tektoncd/operator/operator-303303c315a48490ba6517859ef65b77:v0.81.3@sha256:c24e2d234ab655d7134aaebde7443708466b8bb8af788d9b0d68ebc91e362e3c
+          image: ghcr.io/tektoncd/operator/operator-303303c315a48490ba6517859ef65b77:v0.81.3@sha256:bfa58839797d34476393a1bd3508e51863771e232d86ef0a591ef487246750b3
           imagePullPolicy: IfNotPresent
           name: tekton-operator-lifecycle
           securityContext:
@@ -11195,7 +11195,7 @@ spec:
               value: tekton.dev/operator
             - name: CONFIG_LEADERELECTION_NAME
               value: tekton-operator-controller-config-leader-election
-          image: ghcr.io/tektoncd/operator/operator-303303c315a48490ba6517859ef65b77:v0.81.3@sha256:c24e2d234ab655d7134aaebde7443708466b8bb8af788d9b0d68ebc91e362e3c
+          image: ghcr.io/tektoncd/operator/operator-303303c315a48490ba6517859ef65b77:v0.81.3@sha256:bfa58839797d34476393a1bd3508e51863771e232d86ef0a591ef487246750b3
           imagePullPolicy: IfNotPresent
           name: tekton-operator-cluster-operations
           securityContext:
