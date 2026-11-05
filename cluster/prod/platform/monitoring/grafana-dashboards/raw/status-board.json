@@ -21,7 +21,7 @@
       "title": "Ceph health",
       "gridPos": {
         "h": 5,
-        "w": 5,
+        "w": 6,
         "x": 0,
         "y": 0
       },
@@ -100,8 +100,8 @@
       "title": "API servers reachable",
       "gridPos": {
         "h": 5,
-        "w": 3,
-        "x": 5,
+        "w": 4,
+        "x": 6,
         "y": 0
       },
       "datasource": {
@@ -155,12 +155,12 @@
     },
     {
       "id": 3,
-      "type": "piechart",
+      "type": "grafana-polystat-panel",
       "title": "OSD status",
       "gridPos": {
         "h": 5,
-        "w": 7,
-        "x": 8,
+        "w": 5,
+        "x": 10,
         "y": 0
       },
       "datasource": {
@@ -169,75 +169,51 @@
       },
       "targets": [
         {
-          "expr": "sum(ceph_osd_up)",
-          "legendFormat": "Up",
+          "expr": "ceph_osd_up",
+          "legendFormat": "{{ceph_daemon}}",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
           "instant": true,
           "refId": "A"
-        },
-        {
-          "expr": "count(ceph_osd_up == 0) or vector(0)",
-          "legendFormat": "Down",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "B"
         }
       ],
       "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Up"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "green"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Down"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "fixed",
-                  "fixedColor": "red"
-                }
-              }
-            ]
-          }
-        ]
+        "defaults": {},
+        "overrides": []
       },
       "options": {
-        "pieType": "donut",
-        "displayLabels": [
-          "value"
+        "globalShape": "square",
+        "autoSizeColumns": true,
+        "autoSizeRows": true,
+        "autoSizePolygons": true,
+        "globalDisplayMode": "all",
+        "globalShowValueEnabled": false,
+        "globalThresholdsConfig": [
+          {
+            "value": 0,
+            "state": 2,
+            "color": "red"
+          },
+          {
+            "value": 1,
+            "state": 0,
+            "color": "green"
+          }
         ],
-        "legend": {
-          "displayMode": "hidden"
+        "globalTooltipsEnabled": true,
+        "globalTooltipsShowValueEnabled": true,
+        "globalTooltipsShowTimestampEnabled": false,
+        "sortByField": "name",
+        "sortByDirection": 1,
+        "overrideConfig": {
+          "overrides": []
         },
-        "tooltip": {
-          "mode": "single"
+        "compositeConfig": {
+          "composites": [],
+          "enabled": true,
+          "animationSpeed": "1500"
         }
       }
     },
@@ -3537,7 +3513,7 @@
         }
       ],
       "options": {
-        "showTime": true,
+        "showTime": false,
         "wrapLogMessage": true,
         "sortOrder": "Descending",
         "enableLogDetails": true
