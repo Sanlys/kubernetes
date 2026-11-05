@@ -316,7 +316,7 @@
     {
       "id": 5,
       "type": "timeseries",
-      "title": "Ceph storage used \u2014 SSD",
+      "title": "Ceph storage used/total \u2014 SSD",
       "gridPos": {
         "h": 6,
         "w": 8,
@@ -336,6 +336,15 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "A"
+        },
+        {
+          "expr": "sum(ceph_osd_stat_bytes * on(ceph_daemon) group_left(device_class) ceph_osd_metadata{device_class=\"ssd\"})",
+          "legendFormat": "total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B"
         }
       ],
       "fieldConfig": {
@@ -358,7 +367,7 @@
     {
       "id": 6,
       "type": "timeseries",
-      "title": "Ceph storage used \u2014 HDD",
+      "title": "Ceph storage used/total \u2014 HDD",
       "gridPos": {
         "h": 6,
         "w": 8,
@@ -378,6 +387,15 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "A"
+        },
+        {
+          "expr": "sum(ceph_osd_stat_bytes * on(ceph_daemon) group_left(device_class) ceph_osd_metadata{device_class=\"hdd\"})",
+          "legendFormat": "total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B"
         }
       ],
       "fieldConfig": {
