@@ -112,21 +112,21 @@ grafana:
     existingSecret: grafana-admin
     userKey: admin-user
     passwordKey: admin-password
-  # Status Board: one tile per entity (OSD, node), driven by a plugin
-  # purpose-built for exactly that instead of hand-rolled stat-grid/piechart
-  # workarounds. Chart's grafana subchart installs this via its standard
-  # init-container (grafana-cli plugins install), no extra unsigned-plugin
-  # allowlisting added yet - if it turns out to need one, the Grafana pod's
-  # logs will say so explicitly on next restart.
+  # Status Board: one tile per entity (OSD, nodes, apps), driven by a
+  # plugin purpose-built for exactly that instead of hand-rolled
+  # stat-grid/piechart workarounds. Chart's grafana subchart installs
+  # this via its standard init-container (grafana-cli plugins install),
+  # no extra unsigned-plugin allowlisting added yet - if it turns out to
+  # need one, the Grafana pod's logs will say so explicitly on next
+  # restart.
   #
-  # gapit-htmlgraphics-panel runs arbitrary JS/HTML authored in the panel
-  # itself with no sandbox - acceptable here only because this cluster has
-  # no live dashboard editing (provisioning-only, GitOps) and anyone with
-  # repo/cluster access already has far more dangerous capabilities than
-  # dashboard JS would add.
+  # gapit-htmlgraphics-panel (HTML cards, used briefly for node detail)
+  # was removed again - nodes moved to the same polystat hex-grid
+  # pattern as everything else, so nothing on this dashboard uses it
+  # anymore. Dropping it removes the arbitrary-JS-execution tradeoff
+  # that came with it, since nothing needs that capability now.
   plugins:
     - grafana-polystat-panel
-    - gapit-htmlgraphics-panel
   grafana.ini:
     security:
       allow_embedding: true
