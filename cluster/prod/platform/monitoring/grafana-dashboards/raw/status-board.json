@@ -265,12 +265,114 @@
     {
       "id": 4,
       "type": "timeseries",
-      "title": "CPU \u2014 usage/req/limit",
+      "title": "Ceph storage used/total",
       "gridPos": {
         "h": 4,
-        "w": 4,
+        "w": 6,
         "x": 12,
         "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "ceph_cluster_total_used_bytes",
+          "legendFormat": "used",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A"
+        },
+        {
+          "expr": "ceph_cluster_total_bytes",
+          "legendFormat": "total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Ceph storage used/total by device class",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(ceph_osd_stat_bytes_used * on(ceph_daemon) group_left(device_class) ceph_osd_metadata) by (device_class)",
+          "legendFormat": "{{device_class}} used",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A"
+        },
+        {
+          "expr": "sum(ceph_osd_stat_bytes * on(ceph_daemon) group_left(device_class) ceph_osd_metadata) by (device_class)",
+          "legendFormat": "{{device_class}} total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "CPU \u2014 usage/req/limit",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -324,14 +426,14 @@
       }
     },
     {
-      "id": 5,
+      "id": 7,
       "type": "timeseries",
       "title": "Memory \u2014 usage/req/limit",
       "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 16,
-        "y": 0
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -385,65 +487,14 @@
       }
     },
     {
-      "id": 6,
-      "type": "timeseries",
-      "title": "Ceph storage used/total",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 20,
-        "y": 0
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "ceph_cluster_total_used_bytes",
-          "legendFormat": "used",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "A"
-        },
-        {
-          "expr": "ceph_cluster_total_bytes",
-          "legendFormat": "total",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      }
-    },
-    {
-      "id": 7,
+      "id": 8,
       "type": "timeseries",
       "title": "Ceph PGs clean %",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 4
+        "y": 12
       },
       "datasource": {
         "type": "prometheus",
@@ -478,14 +529,14 @@
       }
     },
     {
-      "id": 8,
+      "id": 9,
       "type": "stat",
       "title": "Ingress",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 6,
-        "y": 4
+        "y": 12
       },
       "datasource": {
         "type": "prometheus",
@@ -524,14 +575,14 @@
       }
     },
     {
-      "id": 9,
+      "id": 10,
       "type": "stat",
       "title": "Egress",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 9,
-        "y": 4
+        "y": 12
       },
       "datasource": {
         "type": "prometheus",
@@ -570,14 +621,14 @@
       }
     },
     {
-      "id": 10,
+      "id": 11,
       "type": "stat",
       "title": "*.k8s.lysakermoen.com",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 12,
-        "y": 4
+        "y": 12
       },
       "datasource": {
         "type": "prometheus",
@@ -633,14 +684,14 @@
       }
     },
     {
-      "id": 11,
+      "id": 12,
       "type": "stat",
       "title": "*.lysakermoen.com",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 15,
-        "y": 4
+        "y": 12
       },
       "datasource": {
         "type": "prometheus",
@@ -696,14 +747,14 @@
       }
     },
     {
-      "id": 12,
+      "id": 13,
       "type": "stat",
       "title": "Mirror sync",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 18,
-        "y": 4
+        "y": 12
       },
       "datasource": {
         "type": "prometheus",
@@ -759,14 +810,14 @@
       }
     },
     {
-      "id": 13,
+      "id": 14,
       "type": "stat",
       "title": "Mirror update",
       "gridPos": {
         "h": 4,
         "w": 3,
         "x": 21,
-        "y": 4
+        "y": 12
       },
       "datasource": {
         "type": "prometheus",
@@ -814,114 +865,14 @@
       }
     },
     {
-      "id": 14,
-      "type": "grafana-polystat-panel",
-      "title": "Apps",
-      "gridPos": {
-        "h": 6,
-        "w": 14,
-        "x": 0,
-        "y": 8
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "(sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))) or (label_replace(label_replace(label_replace(label_replace(label_replace(sum by (server_host) (minecraft_status_healthy), \"server\", \"Daur's stream\", \"server_host\", `mc-paper\\.minecraft-server\\.svc\\.cluster\\.local`), \"server\", \"Temporary (Slimeyteacup)\", \"server_host\", `mc-paper-temporary\\.minecraft-server-temporary\\.svc\\.cluster\\.local`), \"server\", \"Slimey's server\", \"server_host\", `mc-paper\\.minecraft-slimey\\.svc\\.cluster\\.local`), \"server\", \"Vanilla\", \"server_host\", `mc-vanilla\\.minecraft-vanilla\\.svc\\.cluster\\.local`), \"app\", \"$1\", \"server\", \"(.*)\"))",
-          "legendFormat": "{{app}}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "options": {
-        "autoSizeColumns": true,
-        "layoutNumColumns": 8,
-        "autoSizeRows": true,
-        "layoutNumRows": 8,
-        "layoutDisplayLimit": 100,
-        "autoSizePolygons": true,
-        "globalPolygonSize": "25",
-        "globalPolygonBorderSize": 1,
-        "globalTextFontFamily": "Roboto Mono",
-        "globalAutoScaleFonts": true,
-        "globalLabelFontSize": 12,
-        "globalValueFontSize": 14,
-        "globalCompositeValueFontSize": 14,
-        "globalTextFontAutoColorEnabled": true,
-        "globalTextFontColor": "#000000",
-        "ellipseEnabled": true,
-        "ellipseCharacters": 14,
-        "sortByDirection": 1,
-        "sortByField": "name",
-        "globalTooltipsEnabled": true,
-        "globalTooltipsFontFamily": "Roboto Mono",
-        "globalTooltipsShowTimestampEnabled": false,
-        "globalTooltipsShowValueEnabled": true,
-        "globalShowTooltipColumnHeadersEnabled": true,
-        "tooltipDisplayMode": "all",
-        "tooltipDisplayTextTriggeredEmpty": "OK",
-        "tooltipPrimarySortDirection": 1,
-        "tooltipPrimarySortByField": "thresholdLevel",
-        "tooltipSecondarySortDirection": 1,
-        "tooltipSecondarySortByField": "value",
-        "globalDisplayMode": "all",
-        "globalDisplayTextTriggeredEmpty": "OK",
-        "globalShowValueEnabled": false,
-        "globalShowTimestampEnabled": false,
-        "globalShowTimestampFormat": "YYYY-MM-DD HH:mm:ss",
-        "globalShowTimestampFontSize": 12,
-        "globalShowTimestampPosition": "below_value",
-        "globalShowTimestampYOffset": 0,
-        "globalShape": "hexagon_pointed_top",
-        "globalGradientsEnabled": false,
-        "globalFillColor": "transparent",
-        "globalPolygonBorderColor": "transparent",
-        "globalUnitFormat": "short",
-        "globalOperator": "mean",
-        "globalDecimals": 2,
-        "globalThresholdsConfig": [
-          {
-            "value": 0,
-            "state": 0,
-            "color": "green"
-          }
-        ],
-        "globalClickthrough": "",
-        "globalClickthroughSanitizedEnabled": true,
-        "globalClickthroughNewTabEnabled": true,
-        "globalClickthroughCustomTargetEnabled": false,
-        "globalClickthroughCustomTarget": "",
-        "globalRegexPattern": "",
-        "overrideConfig": {
-          "overrides": []
-        },
-        "compositeGlobalAliasingEnabled": false,
-        "compositeConfig": {
-          "composites": [],
-          "enabled": true,
-          "animationSpeed": "1500"
-        }
-      }
-    },
-    {
       "id": 15,
       "type": "table",
       "title": "Issues",
       "gridPos": {
         "h": 6,
-        "w": 5,
-        "x": 14,
-        "y": 8
+        "w": 12,
+        "x": 0,
+        "y": 16
       },
       "datasource": {
         "type": "prometheus",
@@ -1044,9 +995,9 @@
       "title": "ArgoCD apps not Synced/Healthy",
       "gridPos": {
         "h": 6,
-        "w": 5,
-        "x": 19,
-        "y": 8
+        "w": 12,
+        "x": 12,
+        "y": 16
       },
       "datasource": {
         "type": "prometheus",
@@ -1185,7 +1136,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 22
       },
       "datasource": {
         "type": "prometheus",
@@ -1253,7 +1204,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 22
+        "y": 30
       },
       "datasource": {
         "type": "prometheus",
@@ -1299,7 +1250,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 22
+        "y": 30
       },
       "datasource": {
         "type": "loki",
