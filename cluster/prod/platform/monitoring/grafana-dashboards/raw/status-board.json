@@ -265,8 +265,8 @@
       "gridPos": {
         "h": 4,
         "w": 4,
-        "x": 0,
-        "y": 4
+        "x": 12,
+        "y": 0
       },
       "datasource": {
         "type": "prometheus",
@@ -326,8 +326,8 @@
       "gridPos": {
         "h": 4,
         "w": 4,
-        "x": 4,
-        "y": 4
+        "x": 16,
+        "y": 0
       },
       "datasource": {
         "type": "prometheus",
@@ -387,8 +387,8 @@
       "gridPos": {
         "h": 4,
         "w": 4,
-        "x": 8,
-        "y": 4
+        "x": 20,
+        "y": 0
       },
       "datasource": {
         "type": "prometheus",
@@ -439,7 +439,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 8
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -481,7 +481,7 @@
         "h": 4,
         "w": 3,
         "x": 6,
-        "y": 8
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -527,7 +527,7 @@
         "h": 4,
         "w": 3,
         "x": 9,
-        "y": 8
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -567,13 +567,257 @@
     },
     {
       "id": 10,
+      "type": "stat",
+      "title": "*.k8s.lysakermoen.com",
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 12,
+        "y": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "min(traefik_tls_certs_not_after{cn=\"*.k8s.lysakermoen.com\"} - time()) / 86400",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "d",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "text"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 14
+              },
+              {
+                "color": "green",
+                "value": 30
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "*.lysakermoen.com",
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 15,
+        "y": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "min(traefik_tls_certs_not_after{cn=\"*.lysakermoen.com\"} - time()) / 86400",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "d",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "text"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 14
+              },
+              {
+                "color": "green",
+                "value": 30
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Mirror sync",
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 18,
+        "y": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "(time() - loki_process_custom_mirror_lastsync_epoch_seconds) / 3600",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "text"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 24
+              },
+              {
+                "color": "red",
+                "value": 72
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "Mirror update",
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 21,
+        "y": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "(time() - loki_process_custom_mirror_lastupdate_epoch_seconds) / 3600",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "text"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 14,
       "type": "gapit-htmlgraphics-panel",
       "title": "",
       "gridPos": {
         "h": 3,
         "w": 4,
         "x": 0,
-        "y": 12
+        "y": 8
       },
       "datasource": {
         "type": "prometheus",
@@ -679,14 +923,14 @@
       }
     },
     {
-      "id": 11,
+      "id": 15,
       "type": "gapit-htmlgraphics-panel",
       "title": "",
       "gridPos": {
         "h": 3,
         "w": 4,
         "x": 4,
-        "y": 12
+        "y": 8
       },
       "datasource": {
         "type": "prometheus",
@@ -792,14 +1036,14 @@
       }
     },
     {
-      "id": 12,
+      "id": 16,
       "type": "gapit-htmlgraphics-panel",
       "title": "",
       "gridPos": {
         "h": 3,
         "w": 4,
         "x": 8,
-        "y": 12
+        "y": 8
       },
       "datasource": {
         "type": "prometheus",
@@ -905,14 +1149,14 @@
       }
     },
     {
-      "id": 13,
+      "id": 17,
       "type": "gapit-htmlgraphics-panel",
       "title": "",
       "gridPos": {
         "h": 3,
         "w": 4,
         "x": 0,
-        "y": 15
+        "y": 11
       },
       "datasource": {
         "type": "prometheus",
@@ -1018,14 +1262,14 @@
       }
     },
     {
-      "id": 14,
+      "id": 18,
       "type": "gapit-htmlgraphics-panel",
       "title": "",
       "gridPos": {
         "h": 3,
         "w": 4,
         "x": 4,
-        "y": 15
+        "y": 11
       },
       "datasource": {
         "type": "prometheus",
@@ -1131,14 +1375,14 @@
       }
     },
     {
-      "id": 15,
+      "id": 19,
       "type": "gapit-htmlgraphics-panel",
       "title": "",
       "gridPos": {
         "h": 3,
         "w": 4,
         "x": 8,
-        "y": 15
+        "y": 11
       },
       "datasource": {
         "type": "prometheus",
@@ -1244,14 +1488,14 @@
       }
     },
     {
-      "id": 16,
+      "id": 20,
       "type": "gapit-htmlgraphics-panel",
       "title": "",
       "gridPos": {
         "h": 3,
         "w": 4,
         "x": 0,
-        "y": 18
+        "y": 14
       },
       "datasource": {
         "type": "prometheus",
@@ -1357,14 +1601,14 @@
       }
     },
     {
-      "id": 17,
+      "id": 21,
       "type": "gapit-htmlgraphics-panel",
       "title": "",
       "gridPos": {
         "h": 3,
         "w": 4,
         "x": 4,
-        "y": 18
+        "y": 14
       },
       "datasource": {
         "type": "prometheus",
@@ -1470,14 +1714,14 @@
       }
     },
     {
-      "id": 18,
+      "id": 22,
       "type": "gapit-htmlgraphics-panel",
       "title": "",
       "gridPos": {
         "h": 3,
         "w": 4,
         "x": 8,
-        "y": 18
+        "y": 14
       },
       "datasource": {
         "type": "prometheus",
@@ -1583,258 +1827,14 @@
       }
     },
     {
-      "id": 19,
-      "type": "stat",
-      "title": "*.k8s.lysakermoen.com",
-      "gridPos": {
-        "h": 4,
-        "w": 3,
-        "x": 0,
-        "y": 21
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "min(traefik_tls_certs_not_after{cn=\"*.k8s.lysakermoen.com\"} - time()) / 86400",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "d",
-          "color": {
-            "mode": "thresholds",
-            "fixedColor": "text"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 14
-              },
-              {
-                "color": "green",
-                "value": 30
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 20,
-      "type": "stat",
-      "title": "*.lysakermoen.com",
-      "gridPos": {
-        "h": 4,
-        "w": 3,
-        "x": 3,
-        "y": 21
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "min(traefik_tls_certs_not_after{cn=\"*.lysakermoen.com\"} - time()) / 86400",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "d",
-          "color": {
-            "mode": "thresholds",
-            "fixedColor": "text"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 14
-              },
-              {
-                "color": "green",
-                "value": 30
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 21,
-      "type": "stat",
-      "title": "Mirror sync",
-      "gridPos": {
-        "h": 4,
-        "w": 3,
-        "x": 6,
-        "y": 21
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "(time() - loki_process_custom_mirror_lastsync_epoch_seconds) / 3600",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "color": {
-            "mode": "thresholds",
-            "fixedColor": "text"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 24
-              },
-              {
-                "color": "red",
-                "value": 72
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 22,
-      "type": "stat",
-      "title": "Mirror update",
-      "gridPos": {
-        "h": 4,
-        "w": 3,
-        "x": 9,
-        "y": 21
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "(time() - loki_process_custom_mirror_lastupdate_epoch_seconds) / 3600",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "none",
-          "color": {
-            "mode": "thresholds",
-            "fixedColor": "text"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
       "id": 23,
-      "type": "timeseries",
-      "title": "Public app request rate + bandwidth",
+      "type": "grafana-polystat-panel",
+      "title": "Apps",
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
-        "x": 0,
-        "y": 25
+        "x": 12,
+        "y": 8
       },
       "datasource": {
         "type": "prometheus",
@@ -1842,113 +1842,134 @@
       },
       "targets": [
         {
-          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
-          "legendFormat": "{{app}} (req/s)",
+          "expr": "(sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))) or (label_replace(label_replace(label_replace(label_replace(label_replace(sum by (server_host) (minecraft_status_healthy), \"server\", \"Daur's stream\", \"server_host\", `mc-paper\\.minecraft-server\\.svc\\.cluster\\.local`), \"server\", \"Temporary (Slimeyteacup)\", \"server_host\", `mc-paper-temporary\\.minecraft-server-temporary\\.svc\\.cluster\\.local`), \"server\", \"Slimey's server\", \"server_host\", `mc-paper\\.minecraft-slimey\\.svc\\.cluster\\.local`), \"server\", \"Vanilla\", \"server_host\", `mc-vanilla\\.minecraft-vanilla\\.svc\\.cluster\\.local`), \"app\", \"$1\", \"server\", \"(.*)\"))",
+          "legendFormat": "{{app}}",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "instant": true,
           "refId": "A"
-        },
-        {
-          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_responses_bytes_total{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
-          "legendFormat": "{{app}} (B/s)",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "B"
         }
       ],
       "fieldConfig": {
-        "defaults": {
-          "unit": "reqps",
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*\\(B/s\\)$"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "Bps"
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              }
-            ]
-          }
-        ]
+        "defaults": {},
+        "overrides": []
       },
       "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
+        "autoSizeColumns": true,
+        "layoutNumColumns": 8,
+        "autoSizeRows": true,
+        "layoutNumRows": 8,
+        "layoutDisplayLimit": 100,
+        "autoSizePolygons": true,
+        "globalPolygonSize": "25",
+        "globalPolygonBorderSize": 1,
+        "globalTextFontFamily": "Roboto Mono",
+        "globalAutoScaleFonts": true,
+        "globalLabelFontSize": 12,
+        "globalValueFontSize": 14,
+        "globalCompositeValueFontSize": 14,
+        "globalTextFontAutoColorEnabled": true,
+        "globalTextFontColor": "#000000",
+        "ellipseEnabled": false,
+        "ellipseCharacters": 18,
+        "sortByDirection": 1,
+        "sortByField": "name",
+        "globalTooltipsEnabled": true,
+        "globalTooltipsFontFamily": "Roboto Mono",
+        "globalTooltipsShowTimestampEnabled": false,
+        "globalTooltipsShowValueEnabled": true,
+        "globalShowTooltipColumnHeadersEnabled": true,
+        "tooltipDisplayMode": "all",
+        "tooltipDisplayTextTriggeredEmpty": "OK",
+        "tooltipPrimarySortDirection": 1,
+        "tooltipPrimarySortByField": "thresholdLevel",
+        "tooltipSecondarySortDirection": 1,
+        "tooltipSecondarySortByField": "value",
+        "globalDisplayMode": "all",
+        "globalDisplayTextTriggeredEmpty": "OK",
+        "globalShowValueEnabled": false,
+        "globalShowTimestampEnabled": false,
+        "globalShowTimestampFormat": "YYYY-MM-DD HH:mm:ss",
+        "globalShowTimestampFontSize": 12,
+        "globalShowTimestampPosition": "below_value",
+        "globalShowTimestampYOffset": 0,
+        "globalShape": "hexagon_pointed_top",
+        "globalGradientsEnabled": false,
+        "globalFillColor": "transparent",
+        "globalPolygonBorderColor": "transparent",
+        "globalUnitFormat": "short",
+        "globalOperator": "mean",
+        "globalDecimals": 2,
+        "globalThresholdsConfig": [
+          {
+            "value": 0,
+            "state": 0,
+            "color": "green"
+          }
+        ],
+        "globalClickthrough": "",
+        "globalClickthroughSanitizedEnabled": true,
+        "globalClickthroughNewTabEnabled": true,
+        "globalClickthroughCustomTargetEnabled": false,
+        "globalClickthroughCustomTarget": "",
+        "globalRegexPattern": "",
+        "overrideConfig": {
+          "overrides": [
+            {
+              "label": "Game servers",
+              "metricName": "^(Daur's stream|Temporary \\(Slimeyteacup\\)|Slimey's server|Vanilla)$",
+              "alias": "",
+              "thresholds": [
+                {
+                  "value": 0,
+                  "state": 2,
+                  "color": "#f53636"
+                },
+                {
+                  "value": 1,
+                  "state": 0,
+                  "color": "#4c8bf5"
+                }
+              ],
+              "colors": [],
+              "unitFormat": "short",
+              "decimals": "2",
+              "scaledDecimals": null,
+              "enabled": true,
+              "operatorName": "",
+              "prefix": "",
+              "suffix": "",
+              "clickThrough": "",
+              "clickThroughSanitize": true,
+              "clickThroughOpenNewTab": true,
+              "clickThroughCustomTargetEnabled": false,
+              "clickThroughCustomTarget": "",
+              "showTimestampEnabled": false,
+              "showTimestampFormat": "YYYY-MM-DD HH:mm:ss",
+              "showTimestampYOffset": 0,
+              "order": 0
+            }
+          ]
+        },
+        "compositeGlobalAliasingEnabled": false,
+        "compositeConfig": {
+          "composites": [],
+          "enabled": true,
+          "animationSpeed": "1500"
         }
       }
     },
     {
       "id": 24,
-      "type": "timeseries",
-      "title": "Minecraft players online \u2014 history (by server)",
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 0,
-        "y": 33
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum by (server) (label_replace(label_replace(label_replace(label_replace(sum by (server_host) (minecraft_status_players_online_count), \"server\", \"Daur's stream\", \"server_host\", `mc-paper\\.minecraft-server\\.svc\\.cluster\\.local`), \"server\", \"Temporary (Slimeyteacup)\", \"server_host\", `mc-paper-temporary\\.minecraft-server-temporary\\.svc\\.cluster\\.local`), \"server\", \"Slimey's server\", \"server_host\", `mc-paper\\.minecraft-slimey\\.svc\\.cluster\\.local`), \"server\", \"Vanilla\", \"server_host\", `mc-vanilla\\.minecraft-vanilla\\.svc\\.cluster\\.local`))",
-          "legendFormat": "{{server}}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "fillOpacity": 60,
-            "lineWidth": 2,
-            "stacking": {
-              "mode": "normal",
-              "group": "A"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      }
-    },
-    {
-      "id": 25,
       "type": "table",
       "title": "Issues",
       "gridPos": {
         "h": 7,
-        "w": 8,
-        "x": 12,
-        "y": 0
+        "w": 12,
+        "x": 0,
+        "y": 17
       },
       "datasource": {
         "type": "prometheus",
@@ -2066,14 +2087,14 @@
       ]
     },
     {
-      "id": 26,
+      "id": 25,
       "type": "table",
       "title": "ArgoCD apps not Synced/Healthy",
       "gridPos": {
-        "h": 6,
-        "w": 8,
+        "h": 7,
+        "w": 12,
         "x": 12,
-        "y": 7
+        "y": 17
       },
       "datasource": {
         "type": "prometheus",
@@ -2205,14 +2226,14 @@
       ]
     },
     {
-      "id": 27,
-      "type": "grafana-polystat-panel",
-      "title": "Public apps",
+      "id": 26,
+      "type": "timeseries",
+      "title": "Public app request rate + bandwidth",
       "gridPos": {
-        "h": 9,
-        "w": 8,
-        "x": 12,
-        "y": 13
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 24
       },
       "datasource": {
         "type": "prometheus",
@@ -2221,98 +2242,66 @@
       "targets": [
         {
           "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
-          "legendFormat": "{{app}}",
+          "legendFormat": "{{app}} (req/s)",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
           "refId": "A"
+        },
+        {
+          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_responses_bytes_total{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
+          "legendFormat": "{{app}} (B/s)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B"
         }
       ],
       "fieldConfig": {
-        "defaults": {},
-        "overrides": []
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*\\(B/s\\)$"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "Bps"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              }
+            ]
+          }
+        ]
       },
       "options": {
-        "autoSizeColumns": true,
-        "layoutNumColumns": 8,
-        "autoSizeRows": true,
-        "layoutNumRows": 8,
-        "layoutDisplayLimit": 100,
-        "autoSizePolygons": true,
-        "globalPolygonSize": "25",
-        "globalPolygonBorderSize": 1,
-        "globalTextFontFamily": "Roboto Mono",
-        "globalAutoScaleFonts": true,
-        "globalLabelFontSize": 12,
-        "globalValueFontSize": 14,
-        "globalCompositeValueFontSize": 14,
-        "globalTextFontAutoColorEnabled": true,
-        "globalTextFontColor": "#000000",
-        "ellipseEnabled": false,
-        "ellipseCharacters": 18,
-        "sortByDirection": 1,
-        "sortByField": "name",
-        "globalTooltipsEnabled": true,
-        "globalTooltipsFontFamily": "Roboto Mono",
-        "globalTooltipsShowTimestampEnabled": false,
-        "globalTooltipsShowValueEnabled": true,
-        "globalShowTooltipColumnHeadersEnabled": true,
-        "tooltipDisplayMode": "all",
-        "tooltipDisplayTextTriggeredEmpty": "OK",
-        "tooltipPrimarySortDirection": 1,
-        "tooltipPrimarySortByField": "thresholdLevel",
-        "tooltipSecondarySortDirection": 1,
-        "tooltipSecondarySortByField": "value",
-        "globalDisplayMode": "all",
-        "globalDisplayTextTriggeredEmpty": "OK",
-        "globalShowValueEnabled": false,
-        "globalShowTimestampEnabled": false,
-        "globalShowTimestampFormat": "YYYY-MM-DD HH:mm:ss",
-        "globalShowTimestampFontSize": 12,
-        "globalShowTimestampPosition": "below_value",
-        "globalShowTimestampYOffset": 0,
-        "globalShape": "hexagon_pointed_top",
-        "globalGradientsEnabled": false,
-        "globalFillColor": "transparent",
-        "globalPolygonBorderColor": "transparent",
-        "globalUnitFormat": "short",
-        "globalOperator": "mean",
-        "globalDecimals": 2,
-        "globalThresholdsConfig": [
-          {
-            "value": 0,
-            "state": 0,
-            "color": "green"
-          }
-        ],
-        "globalClickthrough": "",
-        "globalClickthroughSanitizedEnabled": true,
-        "globalClickthroughNewTabEnabled": true,
-        "globalClickthroughCustomTargetEnabled": false,
-        "globalClickthroughCustomTarget": "",
-        "globalRegexPattern": "",
-        "overrideConfig": {
-          "overrides": []
-        },
-        "compositeGlobalAliasingEnabled": false,
-        "compositeConfig": {
-          "composites": [],
-          "enabled": true,
-          "animationSpeed": "1500"
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
         }
       }
     },
     {
-      "id": 28,
-      "type": "table",
-      "title": "Minecraft servers",
+      "id": 27,
+      "type": "timeseries",
+      "title": "Minecraft players online \u2014 history (by server)",
       "gridPos": {
-        "h": 6,
-        "w": 8,
-        "x": 12,
-        "y": 22
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 32
       },
       "datasource": {
         "type": "prometheus",
@@ -2320,147 +2309,45 @@
       },
       "targets": [
         {
-          "expr": "sum by (server_host, server_port) (minecraft_status_players_online_count)",
+          "expr": "sum by (server) (label_replace(label_replace(label_replace(label_replace(sum by (server_host) (minecraft_status_players_online_count), \"server\", \"Daur's stream\", \"server_host\", `mc-paper\\.minecraft-server\\.svc\\.cluster\\.local`), \"server\", \"Temporary (Slimeyteacup)\", \"server_host\", `mc-paper-temporary\\.minecraft-server-temporary\\.svc\\.cluster\\.local`), \"server\", \"Slimey's server\", \"server_host\", `mc-paper\\.minecraft-slimey\\.svc\\.cluster\\.local`), \"server\", \"Vanilla\", \"server_host\", `mc-vanilla\\.minecraft-vanilla\\.svc\\.cluster\\.local`))",
+          "legendFormat": "{{server}}",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
-          "format": "table",
           "refId": "A"
-        },
-        {
-          "expr": "sum by (server_host) (minecraft_status_players_max_count)",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "B"
-        },
-        {
-          "expr": "sum by (server_host) (minecraft_status_healthy)",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "C"
         }
       ],
       "fieldConfig": {
-        "defaults": {},
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Server"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "mc-paper.minecraft-server.svc.cluster.local": {
-                        "text": "Daur's stream"
-                      },
-                      "mc-paper-temporary.minecraft-server-temporary.svc.cluster.local": {
-                        "text": "Temporary (Slimeyteacup)"
-                      },
-                      "mc-paper.minecraft-slimey.svc.cluster.local": {
-                        "text": "Slimey's server"
-                      },
-                      "mc-vanilla.minecraft-vanilla.svc.cluster.local": {
-                        "text": "Vanilla"
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Healthy"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "0": {
-                        "text": "Down",
-                        "color": "red"
-                      },
-                      "1": {
-                        "text": "Up",
-                        "color": "green"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm"
-      },
-      "transformations": [
-        {
-          "id": "joinByField",
-          "options": {
-            "byField": "server_host",
-            "mode": "outer"
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "includeByName": {
-              "server_host": true,
-              "server_port": true,
-              "Value #A": true,
-              "Value #B": true,
-              "Value #C": true
-            },
-            "indexByName": {},
-            "renameByName": {
-              "server_host": "Server",
-              "server_port": "Port",
-              "Value #A": "Online",
-              "Value #B": "Max",
-              "Value #C": "Healthy"
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "fillOpacity": 60,
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
             }
           }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
         }
-      ]
+      }
     },
     {
-      "id": 29,
+      "id": 28,
       "type": "logs",
       "title": "Combined server logs (minecraft process only, by display name)",
       "gridPos": {
         "h": 8,
-        "w": 8,
+        "w": 12,
         "x": 12,
-        "y": 28
+        "y": 32
       },
       "datasource": {
         "type": "loki",
