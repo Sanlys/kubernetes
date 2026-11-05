@@ -570,7 +570,7 @@
       "type": "gapit-htmlgraphics-panel",
       "title": "",
       "gridPos": {
-        "h": 5,
+        "h": 3,
         "w": 5,
         "x": 0,
         "y": 13
@@ -673,10 +673,10 @@
       },
       "options": {
         "html": "<div class=\"card\">\n  <div class=\"head\">\n    <span class=\"name\" id=\"n-name\"></span>\n    <span class=\"role\" id=\"n-role\"></span>\n  </div>\n  <div class=\"ip\" id=\"n-ip\"></div>\n  <div class=\"grid\">\n    <div><span class=\"lbl\">CPU</span><span id=\"n-cpu\"></span></div>\n    <div><span class=\"lbl\">RAM</span><span id=\"n-ram\"></span></div>\n    <div><span class=\"lbl\">Age</span><span id=\"n-age\"></span></div>\n    <div><span class=\"lbl\">Ready</span><span id=\"n-ready\"></span></div>\n    <div><span class=\"lbl\">Taints</span><span id=\"n-taints\"></span></div>\n  </div>\n</div>",
-        "css": ".card { font-family: inherit; color: #c7c9d1; height: 100%; box-sizing: border-box;\n  padding: 6px 10px; display: flex; flex-direction: column; gap: 3px; }\n.head { display: flex; justify-content: space-between; align-items: baseline; }\n.name { font-weight: 600; font-size: 13px; color: #e4e5ea; }\n.role { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: #1d2230; color: #7fa3e8; }\n.role.cp { background: #16321f; color: #5fc77e; }\n.ip { font-size: 10.5px; color: #8a8d98; }\n.grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 10px; font-size: 12px; margin-top: 3px; }\n.grid > div { display: flex; flex-direction: column; }\n.lbl { font-size: 9.5px; color: #6b6d76; text-transform: uppercase; letter-spacing: .3px; }\n#n-ready.ok { color: #5fc77e; } #n-ready.bad { color: #e05b5b; }",
+        "css": ".card { font-family: inherit; color: #c7c9d1; height: 100%; box-sizing: border-box;\n  padding: 4px 8px; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; }\n.head { display: flex; justify-content: space-between; align-items: baseline; }\n.name { font-weight: 600; font-size: 13px; color: #e4e5ea; }\n.role { font-size: 9px; padding: 1px 6px; border-radius: 3px; background: #1d2230; color: #7fa3e8; }\n.role.cp { background: #16321f; color: #5fc77e; }\n.ip { font-size: 10.5px; color: #8a8d98; }\n.grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 3px 10px; font-size: 12px; margin-top: 3px; }\n.grid > div { display: flex; flex-direction: column; }\n.lbl { font-size: 9.5px; color: #6b6d76; text-transform: uppercase; letter-spacing: .3px; }\n#n-ready.ok { color: #5fc77e; } #n-ready.bad { color: #e05b5b; }",
         "rootCSS": "",
-        "onInit": "var nodeName = getTemplateSrv().replace(\"$node\");\nhtmlNode.querySelector(\"#n-name\").textContent = nodeName;",
-        "onRender": "function numField(refId) {\n  var frame = data.series.filter(function (s) { return s.refId === refId; })[0];\n  if (!frame) { return null; }\n  var field = frame.fields.filter(function (f) { return f.type === \"number\"; })[0];\n  if (!field || field.values.length === 0) { return null; }\n  var vals = field.values;\n  return vals.get ? vals.get(vals.length - 1) : vals[vals.length - 1];\n}\nfunction strField(refId, fieldName) {\n  var frame = data.series.filter(function (s) { return s.refId === refId; })[0];\n  if (!frame) { return null; }\n  var field = frame.fields.filter(function (f) { return f.name === fieldName; })[0];\n  if (!field || field.values.length === 0) { return null; }\n  var vals = field.values;\n  return vals.get ? vals.get(vals.length - 1) : vals[vals.length - 1];\n}\nfunction fmtBytes(b) {\n  if (b == null) { return \"\u2014\"; }\n  return (b / 1e9).toFixed(1) + \" GB\";\n}\nfunction fmtAge(s) {\n  if (s == null) { return \"\u2014\"; }\n  var d = s / 86400;\n  if (d >= 365) { return (d / 365).toFixed(1) + \"y\"; }\n  if (d >= 7) { return (d / 7).toFixed(1) + \"w\"; }\n  return d.toFixed(1) + \"d\";\n}\n\nvar cpuCores = numField(\"A\");\nvar cpuPct = numField(\"B\");\nvar ramUsed = numField(\"C\");\nvar ramTotal = numField(\"D\");\nvar ready = numField(\"E\");\nvar taints = numField(\"F\");\nvar ageSec = numField(\"G\");\nvar ip = strField(\"H\", \"address\");\nvar isCp = numField(\"I\") != null;\n\nhtmlNode.querySelector(\"#n-role\").textContent = isCp ? \"CP\" : \"Worker\";\nhtmlNode.querySelector(\"#n-role\").className = \"role\" + (isCp ? \" cp\" : \"\");\nhtmlNode.querySelector(\"#n-ip\").textContent = ip || \"\u2014\";\nhtmlNode.querySelector(\"#n-cpu\").textContent = (cpuCores != null ? cpuCores + \"c\" : \"\u2014\")\n  + (cpuPct != null ? \" \u00b7 \" + cpuPct.toFixed(1) + \"%\" : \"\");\nhtmlNode.querySelector(\"#n-ram\").textContent = (ramUsed != null && ramTotal != null)\n  ? fmtBytes(ramUsed) + \" / \" + fmtBytes(ramTotal) : \"\u2014\";\nhtmlNode.querySelector(\"#n-age\").textContent = fmtAge(ageSec);\nvar readyEl = htmlNode.querySelector(\"#n-ready\");\nreadyEl.textContent = ready === 1 ? \"Ready\" : \"NotReady\";\nreadyEl.className = ready === 1 ? \"ok\" : \"bad\";\nhtmlNode.querySelector(\"#n-taints\").textContent = taints != null ? taints : \"\u2014\";",
+        "onInit": "",
+        "onRender": "function numField(refId) {\n  var frame = data.series.filter(function (s) { return s.refId === refId; })[0];\n  if (!frame) { return null; }\n  var field = frame.fields.filter(function (f) { return f.type === \"number\"; })[0];\n  if (!field || field.values.length === 0) { return null; }\n  var vals = field.values;\n  return vals.get ? vals.get(vals.length - 1) : vals[vals.length - 1];\n}\nfunction strField(refId, fieldName) {\n  var frame = data.series.filter(function (s) { return s.refId === refId; })[0];\n  if (!frame) { return null; }\n  var field = frame.fields.filter(function (f) { return f.name === fieldName; })[0];\n  if (!field || field.values.length === 0) { return null; }\n  var vals = field.values;\n  return vals.get ? vals.get(vals.length - 1) : vals[vals.length - 1];\n}\nfunction fmtBytes(b) {\n  if (b == null) { return \"\u2014\"; }\n  return (b / 1e9).toFixed(1) + \" GB\";\n}\nfunction fmtAge(s) {\n  if (s == null) { return \"\u2014\"; }\n  var d = s / 86400;\n  if (d >= 365) { return (d / 365).toFixed(1) + \"y\"; }\n  if (d >= 7) { return (d / 7).toFixed(1) + \"w\"; }\n  return d.toFixed(1) + \"d\";\n}\n\nvar cpuCores = numField(\"A\");\nvar cpuPct = numField(\"B\");\nvar ramUsed = numField(\"C\");\nvar ramTotal = numField(\"D\");\nvar ready = numField(\"E\");\nvar taints = numField(\"F\");\nvar ageSec = numField(\"G\");\nvar ip = strField(\"H\", \"address\");\n// Node name comes from the query data's own \"node\" label (format:table\n// exposes every label as a field, same mechanism \"address\" above uses),\n// not from getTemplateSrv().replace(\"$node\") - that reads the variable's\n// GLOBAL current value (with multi:true/includeAll:true, the full\n// \"{all, node, names}\" set), not the single value Grafana scopes to\n// this repeated clone's own queries. The queries already resolve\n// correctly per clone (confirmed against live Prometheus per node), so\n// reading the name back out of their result is the reliable path.\nvar nodeName = strField(\"H\", \"node\") || \"?\";\nhtmlNode.querySelector(\"#n-name\").textContent = nodeName;\nvar isCp = numField(\"I\") != null;\n\nhtmlNode.querySelector(\"#n-role\").textContent = isCp ? \"CP\" : \"Worker\";\nhtmlNode.querySelector(\"#n-role\").className = \"role\" + (isCp ? \" cp\" : \"\");\nhtmlNode.querySelector(\"#n-ip\").textContent = ip || \"\u2014\";\nhtmlNode.querySelector(\"#n-cpu\").textContent = (cpuCores != null ? cpuCores + \"c\" : \"\u2014\")\n  + (cpuPct != null ? \" \u00b7 \" + cpuPct.toFixed(1) + \"%\" : \"\");\nhtmlNode.querySelector(\"#n-ram\").textContent = (ramUsed != null && ramTotal != null)\n  ? fmtBytes(ramUsed) + \" / \" + fmtBytes(ramTotal) : \"\u2014\";\nhtmlNode.querySelector(\"#n-age\").textContent = fmtAge(ageSec);\nvar readyEl = htmlNode.querySelector(\"#n-ready\");\nreadyEl.textContent = ready === 1 ? \"Ready\" : \"NotReady\";\nreadyEl.className = ready === 1 ? \"ok\" : \"bad\";\nhtmlNode.querySelector(\"#n-taints\").textContent = taints != null ? taints : \"\u2014\";",
         "renderOnMount": true,
         "panelupdateOnMount": true,
         "centerAlignContent": false,
@@ -709,7 +709,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 28
+        "y": 22
       },
       "datasource": {
         "type": "prometheus",
@@ -772,7 +772,7 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 28
+        "y": 22
       },
       "datasource": {
         "type": "prometheus",
@@ -835,7 +835,7 @@
         "h": 4,
         "w": 3,
         "x": 8,
-        "y": 28
+        "y": 22
       },
       "datasource": {
         "type": "prometheus",
@@ -898,7 +898,7 @@
         "h": 4,
         "w": 4,
         "x": 11,
-        "y": 28
+        "y": 22
       },
       "datasource": {
         "type": "prometheus",
@@ -953,7 +953,7 @@
         "h": 8,
         "w": 15,
         "x": 0,
-        "y": 32
+        "y": 26
       },
       "datasource": {
         "type": "prometheus",
@@ -1021,7 +1021,7 @@
         "h": 6,
         "w": 15,
         "x": 0,
-        "y": 40
+        "y": 34
       },
       "datasource": {
         "type": "prometheus",
