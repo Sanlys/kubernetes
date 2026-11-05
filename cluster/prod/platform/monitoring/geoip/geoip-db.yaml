@@ -16,9 +16,9 @@ spec:
   resources:
     requests:
       # Was 200Mi, sized for country-only (~5MB uncompressed). City-Lite is
-      # tens of MB, and the sync script briefly holds both the old file and
-      # a full temp download at once - trivial against the ~47TB free in
-      # the Ceph pool either way.
+      # ~127MB uncompressed (confirmed directly), and the sync script
+      # briefly holds both the old file and a full temp download at once -
+      # trivial against the ~47TB free in the Ceph pool either way.
       storage: 512Mi
 ---
 apiVersion: v1
@@ -90,8 +90,16 @@ spec:
                 - name: script
                   mountPath: /script
               resources:
-                requests: { cpu: "50m", memory: "64Mi" }
-                limits: { memory: "128Mi" }
+                # Was 128Mi - too small. The City-Lite mmdb is ~127MB
+                # uncompressed (confirmed directly, not the "tens of MB" the
+                # storage comment above assumed), and curl/gunzip writing
+                # that to the CephFS-backed PVC pushes dirty page-cache
+                # usage up near the limit before it's flushed, triggering
+                # an OOM kill even though actual anonymous memory use is
+                # small. 512Mi gives real headroom for the ~190MB peak
+                # on-disk footprint (gz + decompressed coexisting briefly).
+                requests: { cpu: "50m", memory: "128Mi" }
+                limits: { memory: "512Mi" }
           volumes:
             - name: geoip
               persistentVolumeClaim:

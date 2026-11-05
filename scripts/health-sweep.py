@@ -207,8 +207,15 @@ def check_alerts(state, report):
         # set (e.g. KubePodNotReady), and gets the namespace prefixed.
         ns = labels.get("namespace")
         pod_tag = f"{ns}/{labels['pod']}" if ns and labels.get("pod") else labels.get("pod")
+        job_name_tag = f"{ns}/{labels['job_name']}" if ns and labels.get("job_name") else labels.get("job_name")
         tag = (
             labels.get("deployment") or labels.get("statefulset") or labels.get("daemonset")
+            # job_name (e.g. KubeJobFailed) names the actual batch Job -
+            # found via geoip-db-sync-29897640 showing up tagged as the
+            # kube-state-metrics exporter's own pod instead, the same
+            # mistagging class the deployment/statefulset/daemonset
+            # priority above already fixed, just missing this one label.
+            or job_name_tag
             or labels.get("node") or pod_tag or labels.get("instance") or ""
         )
         current[fp] = f"{labels.get('alertname')} ({tag})" if tag else labels.get("alertname", fp)
