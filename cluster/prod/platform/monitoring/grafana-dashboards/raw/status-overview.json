@@ -18,7 +18,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Platform",
+      "title": "Platform: Ceph health",
       "gridPos": {
         "h": 4,
         "w": 8,
@@ -100,12 +100,13 @@
           "url": "/d/status-platform",
           "targetBlank": false
         }
-      ]
+      ],
+      "description": "ceph_health_status: 0=OK, 1=WARN, 2=ERR. See the Platform board's Issues/PGs State panels for what's actually wrong."
     },
     {
       "id": 2,
       "type": "stat",
-      "title": "Hardware",
+      "title": "Hardware: node problems",
       "gridPos": {
         "h": 4,
         "w": 8,
@@ -118,7 +119,7 @@
       },
       "targets": [
         {
-          "expr": "sum(kube_node_status_condition{condition=~\"DiskPressure|MemoryPressure|PIDPressure\", status=\"true\"}) or sum(kube_node_spec_unschedulable)",
+          "expr": "sum(kube_node_status_condition{condition=~\"DiskPressure|MemoryPressure|PIDPressure\", status=\"true\"}) or sum(kube_node_spec_unschedulable) or vector(0)",
           "legendFormat": null,
           "datasource": {
             "type": "prometheus",
@@ -147,7 +148,18 @@
                 "value": 1
               }
             ]
-          }
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK",
+                  "color": "green"
+                }
+              }
+            }
+          ]
         },
         "overrides": []
       },
@@ -167,12 +179,13 @@
           "url": "/d/status-hardware",
           "targetBlank": false
         }
-      ]
+      ],
+      "description": "Count of nodes under DiskPressure, MemoryPressure, PIDPressure, or cordoned. 0 is good; any other number is that many nodes with a real problem - see the Hardware board's Node status table."
     },
     {
       "id": 3,
       "type": "stat",
-      "title": "Apps/Services",
+      "title": "Apps/Services: 5xx error rate",
       "gridPos": {
         "h": 4,
         "w": 8,
@@ -238,15 +251,16 @@
           "url": "/d/status-apps",
           "targetBlank": false
         }
-      ]
+      ],
+      "description": "% of all requests across every public app returning a 5xx in the last 5m. See the Apps/Services board for which app."
     },
     {
       "id": 4,
-      "type": "stat",
-      "title": "Cluster CPU",
+      "type": "timeseries",
+      "title": "Cluster CPU \u2014 used vs. allocatable",
       "gridPos": {
-        "h": 4,
-        "w": 6,
+        "h": 8,
+        "w": 8,
         "x": 0,
         "y": 4
       },
@@ -256,45 +270,50 @@
       },
       "targets": [
         {
-          "expr": "100 * sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m])) / sum(kube_node_status_allocatable{resource=\"cpu\"})",
-          "legendFormat": null,
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]))",
+          "legendFormat": "used",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
           "refId": "A"
+        },
+        {
+          "expr": "sum(kube_node_status_allocatable{resource=\"cpu\"})",
+          "legendFormat": "allocatable",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "text"
-          }
+          "unit": "short",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          },
+          "min": 0
         },
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "none"
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
       }
     },
     {
       "id": 5,
-      "type": "stat",
-      "title": "Cluster RAM",
+      "type": "timeseries",
+      "title": "Cluster RAM \u2014 used vs. allocatable",
       "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 6,
+        "h": 8,
+        "w": 8,
+        "x": 8,
         "y": 4
       },
       "datasource": {
@@ -303,45 +322,50 @@
       },
       "targets": [
         {
-          "expr": "100 * sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"}) / sum(kube_node_status_allocatable{resource=\"memory\"})",
-          "legendFormat": null,
+          "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"})",
+          "legendFormat": "used",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
           "refId": "A"
+        },
+        {
+          "expr": "sum(kube_node_status_allocatable{resource=\"memory\"})",
+          "legendFormat": "allocatable",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "text"
-          }
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          },
+          "min": 0
         },
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "none"
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
       }
     },
     {
       "id": 6,
-      "type": "stat",
-      "title": "Ceph storage",
+      "type": "timeseries",
+      "title": "Ceph storage \u2014 used vs. total",
       "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 12,
+        "h": 8,
+        "w": 8,
+        "x": 16,
         "y": 4
       },
       "datasource": {
@@ -350,110 +374,51 @@
       },
       "targets": [
         {
-          "expr": "100 * ceph_cluster_total_used_bytes / ceph_cluster_total_bytes",
-          "legendFormat": null,
+          "expr": "ceph_cluster_total_used_bytes",
+          "legendFormat": "used",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
           "refId": "A"
+        },
+        {
+          "expr": "ceph_cluster_total_bytes",
+          "legendFormat": "total",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "text"
-          }
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          },
+          "min": 0
         },
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "none"
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
       }
     },
     {
       "id": 7,
-      "type": "stat",
-      "title": "Backup (restic)",
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 4
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "time() - kube_cronjob_status_last_successful_time{namespace=\"syncthing\", cronjob=\"restic-backup\"}",
-          "legendFormat": null,
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "color": {
-            "mode": "thresholds",
-            "fixedColor": "text"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 3600
-              },
-              {
-                "color": "red",
-                "value": 21600
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 8,
       "type": "table",
       "title": "Issues",
       "gridPos": {
         "h": 6,
-        "w": 12,
+        "w": 10,
         "x": 0,
-        "y": 8
+        "y": 12
       },
       "datasource": {
         "type": "prometheus",
@@ -571,14 +536,78 @@
       ]
     },
     {
+      "id": 8,
+      "type": "stat",
+      "title": "Backup (restic)",
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 20,
+        "y": 12
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "time() - kube_cronjob_status_last_successful_time{namespace=\"syncthing\", cronjob=\"restic-backup\"}",
+          "legendFormat": null,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "text"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 3600
+              },
+              {
+                "color": "red",
+                "value": 21600
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "background"
+      }
+    },
+    {
       "id": 9,
       "type": "table",
       "title": "ArgoCD apps not Synced/Healthy",
       "gridPos": {
         "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 8
+        "w": 10,
+        "x": 10,
+        "y": 12
       },
       "datasource": {
         "type": "prometheus",

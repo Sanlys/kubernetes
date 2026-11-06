@@ -858,12 +858,8 @@
         "defaults": {
           "unit": "short",
           "custom": {
-            "fillOpacity": 60,
+            "fillOpacity": 10,
             "lineWidth": 2,
-            "stacking": {
-              "mode": "normal",
-              "group": "A"
-            },
             "spanNulls": true
           }
         },

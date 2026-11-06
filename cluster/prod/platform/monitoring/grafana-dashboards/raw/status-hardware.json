@@ -138,7 +138,7 @@
       },
       "targets": [
         {
-          "expr": "topk(1, 100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) kube_node_status_allocatable{resource=\"cpu\"})",
+          "expr": "topk(1, 100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info)) / on(node) kube_node_status_allocatable{resource=\"cpu\"})",
           "legendFormat": "{{node}}",
           "datasource": {
             "type": "prometheus",
@@ -245,7 +245,7 @@
       },
       "targets": [
         {
-          "expr": "100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) kube_node_status_allocatable{resource=\"cpu\"}",
+          "expr": "100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info)) / on(node) kube_node_status_allocatable{resource=\"cpu\"}",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -415,7 +415,7 @@
       },
       "targets": [
         {
-          "expr": "100 * sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info) / on(node) kube_node_status_allocatable{resource=\"memory\"}",
+          "expr": "100 * sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info)) / on(node) kube_node_status_allocatable{resource=\"memory\"}",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -717,7 +717,7 @@
       },
       "targets": [
         {
-          "expr": "100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) kube_pod_info) / on(node) kube_node_status_allocatable{resource=\"cpu\"}",
+          "expr": "100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info)) / on(node) kube_node_status_allocatable{resource=\"cpu\"}",
           "legendFormat": "{{node}}",
           "datasource": {
             "type": "prometheus",
@@ -763,7 +763,7 @@
       },
       "targets": [
         {
-          "expr": "100 * sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) kube_pod_info) / on(node) kube_node_status_allocatable{resource=\"memory\"}",
+          "expr": "100 * sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info)) / on(node) kube_node_status_allocatable{resource=\"memory\"}",
           "legendFormat": "{{node}}",
           "datasource": {
             "type": "prometheus",
@@ -819,7 +819,7 @@
           "refId": "A"
         },
         {
-          "expr": "kube_node_info",
+          "expr": "(count by(node)(kube_node_spec_taint{key=\"node-role.kubernetes.io/control-plane\"})) or (sum by(node)(kube_node_info) * 0)",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -829,7 +829,7 @@
           "refId": "B"
         },
         {
-          "expr": "label_replace(time() - (node_boot_time_seconds * on(instance) group_left(nodename) node_uname_info), \"node\", \"$1\", \"nodename\", \"(.*)\")",
+          "expr": "kube_node_info",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -837,6 +837,26 @@
           "instant": true,
           "format": "table",
           "refId": "C"
+        },
+        {
+          "expr": "(count by(node)(kube_node_spec_taint)) or (sum by(node)(kube_node_info) * 0)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "D"
+        },
+        {
+          "expr": "label_replace(time() - (node_boot_time_seconds * on(instance) group_left(nodename) node_uname_info), \"node\", \"$1\", \"nodename\", \"(.*)\")",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "E"
         }
       ],
       "fieldConfig": {
@@ -879,6 +899,30 @@
                 "value": "s"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Role"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "control-plane"
+                      },
+                      "0": {
+                        "text": "worker"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
           }
         ]
       },
@@ -907,20 +951,26 @@
             "includeByName": {
               "node": true,
               "Value #A": true,
+              "Value #B": true,
               "os_image": true,
-              "Value #C": true
+              "Value #D": true,
+              "Value #E": true
             },
             "indexByName": {
               "node": 0,
               "Value #A": 1,
-              "os_image": 2,
-              "Value #C": 3
+              "Value #B": 2,
+              "os_image": 3,
+              "Value #D": 4,
+              "Value #E": 5
             },
             "renameByName": {
               "node": "Node",
               "Value #A": "Ready",
+              "Value #B": "Role",
               "os_image": "OS",
-              "Value #C": "Uptime"
+              "Value #D": "Taints",
+              "Value #E": "Uptime"
             }
           }
         }
