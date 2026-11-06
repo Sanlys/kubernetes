@@ -124,9 +124,24 @@ grafana:
   # was removed again - nodes moved to the same polystat hex-grid
   # pattern as everything else, so nothing on this dashboard uses it
   # anymore. Dropping it removes the arbitrary-JS-execution tradeoff
-  # that came with it, since nothing needs that capability now.
+  # that came with it, since nothing needed that capability at the time.
+  #
+  # volkovlabs-echarts-panel (Business Charts) reintroduces that same
+  # tradeoff deliberately, 2026-11-06: Grafana has no native way to give
+  # each row of a table its own gauge-bar threshold/target (confirmed
+  # twice - Grafana docs/community for "config from query results" +
+  # value mappings, and empirically: user tested it live, the technique
+  # colors the mapped text but not the gauge bar fill). This plugin
+  # renders a JS-function-returned Apache ECharts option built from the
+  # live query data, which can compute a true per-row bullet chart
+  # (measure bar + target tick + qualitative range bands, each sourced
+  # from that row's own request/limit) - the only path found that
+  # actually achieves this. Now maintained by Grafana Labs (originally
+  # VolkovLabs), signed/cataloged - no unsigned-plugin allowlist
+  # expected; Grafana pod logs will say so on next restart if wrong.
   plugins:
     - grafana-polystat-panel
+    - volkovlabs-echarts-panel
   grafana.ini:
     security:
       allow_embedding: true
