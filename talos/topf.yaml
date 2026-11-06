@@ -30,11 +30,6 @@ nodes:
     role: worker
     schematicId: "@schematic-worker.yaml"
 
-  - host: talos-jwk-gs2
-    ip: 10.0.6.101
-    role: worker
-    schematicId: "@schematic-worker.yaml"
-
   - host: talos-ly6-852
     ip: 10.0.6.67
     role: worker
