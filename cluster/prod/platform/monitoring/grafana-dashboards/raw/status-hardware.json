@@ -21,7 +21,7 @@
       "title": "Nodes Ready",
       "gridPos": {
         "h": 4,
-        "w": 6,
+        "w": 4,
         "x": 0,
         "y": 0
       },
@@ -68,8 +68,8 @@
       "title": "Cordoned / NotReady",
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 6,
+        "w": 4,
+        "x": 4,
         "y": 0
       },
       "datasource": {
@@ -128,8 +128,8 @@
       "title": "Hottest node (CPU)",
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 12,
+        "w": 4,
+        "x": 8,
         "y": 0
       },
       "datasource": {
@@ -175,8 +175,8 @@
       "title": "Nodes under DiskPressure",
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
+        "w": 4,
+        "x": 12,
         "y": 0
       },
       "datasource": {
@@ -231,11 +231,105 @@
     },
     {
       "id": 5,
-      "type": "table",
-      "title": "CPU \u2014 usage / requests / limit by node",
+      "type": "stat",
+      "title": "Total CPU cores",
       "gridPos": {
-        "h": 10,
-        "w": 12,
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(kube_node_status_allocatable{resource=\"cpu\"})",
+          "legendFormat": null,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "none"
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Total RAM",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(kube_node_status_allocatable{resource=\"memory\"})",
+          "legendFormat": null,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "none"
+      }
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "CPU / RAM \u2014 usage vs. requests vs. limit by node",
+      "gridPos": {
+        "h": 11,
+        "w": 24,
         "x": 0,
         "y": 4
       },
@@ -245,7 +339,7 @@
       },
       "targets": [
         {
-          "expr": "100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info)) / on(node) kube_node_status_allocatable{resource=\"cpu\"}",
+          "expr": "100 * (sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))) / (sum by (node) (kube_pod_container_resource_requests{resource=\"cpu\"}))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -255,7 +349,7 @@
           "refId": "A"
         },
         {
-          "expr": "100 * sum by (node) (kube_pod_container_resource_requests{resource=\"cpu\"}) / on(node) kube_node_status_allocatable{resource=\"cpu\"}",
+          "expr": "sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -265,7 +359,7 @@
           "refId": "B"
         },
         {
-          "expr": "100 * sum by (node) (kube_pod_container_resource_limits{resource=\"cpu\"}) / on(node) kube_node_status_allocatable{resource=\"cpu\"}",
+          "expr": "sum by (node) (kube_pod_container_resource_requests{resource=\"cpu\"})",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -273,6 +367,56 @@
           "instant": true,
           "format": "table",
           "refId": "C"
+        },
+        {
+          "expr": "sum by (node) (kube_pod_container_resource_limits{resource=\"cpu\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "D"
+        },
+        {
+          "expr": "100 * (sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))) / (sum by (node) (kube_pod_container_resource_requests{resource=\"memory\"}))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "E"
+        },
+        {
+          "expr": "sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "F"
+        },
+        {
+          "expr": "sum by (node) (kube_pod_container_resource_requests{resource=\"memory\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "G"
+        },
+        {
+          "expr": "sum by (node) (kube_pod_container_resource_limits{resource=\"memory\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "H"
         }
       ],
       "fieldConfig": {
@@ -281,7 +425,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Usage %"
+              "options": "CPU"
             },
             "properties": [
               {
@@ -297,18 +441,38 @@
               },
               {
                 "id": "max",
-                "value": 150
+                "value": 200
               },
               {
                 "id": "unit",
                 "value": "percent"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 100
+                    },
+                    {
+                      "color": "red",
+                      "value": 150
+                    }
+                  ]
+                }
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "Requests %"
+              "options": "RAM"
             },
             "properties": [
               {
@@ -324,38 +488,103 @@
               },
               {
                 "id": "max",
-                "value": 150
+                "value": 200
               },
               {
                 "id": "unit",
                 "value": "percent"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 100
+                    },
+                    {
+                      "color": "red",
+                      "value": 150
+                    }
+                  ]
+                }
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "Limit %"
+              "options": "CPU Used"
             },
             "properties": [
               {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "gauge",
-                  "mode": "gradient"
-                }
-              },
-              {
-                "id": "min",
-                "value": 0
-              },
-              {
-                "id": "max",
-                "value": 150
-              },
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU Req"
+            },
+            "properties": [
               {
                 "id": "unit",
-                "value": "percent"
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "CPU Limit"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM Used"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM Req"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RAM Limit"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
               }
             ]
           }
@@ -381,203 +610,48 @@
               "node": true,
               "Value #A": true,
               "Value #B": true,
-              "Value #C": true
+              "Value #C": true,
+              "Value #D": true,
+              "Value #E": true,
+              "Value #F": true,
+              "Value #G": true,
+              "Value #H": true
             },
             "indexByName": {
               "node": 0,
               "Value #A": 1,
               "Value #B": 2,
-              "Value #C": 3
+              "Value #C": 3,
+              "Value #D": 4,
+              "Value #E": 5,
+              "Value #F": 6,
+              "Value #G": 7,
+              "Value #H": 8
             },
             "renameByName": {
               "node": "Node",
-              "Value #A": "Usage %",
-              "Value #B": "Requests %",
-              "Value #C": "Limit %"
+              "Value #A": "CPU",
+              "Value #B": "CPU Used",
+              "Value #C": "CPU Req",
+              "Value #D": "CPU Limit",
+              "Value #E": "RAM",
+              "Value #F": "RAM Used",
+              "Value #G": "RAM Req",
+              "Value #H": "RAM Limit"
             }
           }
         }
       ]
     },
     {
-      "id": 6,
-      "type": "table",
-      "title": "RAM \u2014 usage / requests / limit by node",
-      "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 12,
-        "y": 4
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "100 * sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info)) / on(node) kube_node_status_allocatable{resource=\"memory\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "A"
-        },
-        {
-          "expr": "100 * sum by (node) (kube_pod_container_resource_requests{resource=\"memory\"}) / on(node) kube_node_status_allocatable{resource=\"memory\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "B"
-        },
-        {
-          "expr": "100 * sum by (node) (kube_pod_container_resource_limits{resource=\"memory\"}) / on(node) kube_node_status_allocatable{resource=\"memory\"}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "C"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Usage %"
-            },
-            "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "gauge",
-                  "mode": "gradient"
-                }
-              },
-              {
-                "id": "min",
-                "value": 0
-              },
-              {
-                "id": "max",
-                "value": 150
-              },
-              {
-                "id": "unit",
-                "value": "percent"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Requests %"
-            },
-            "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "gauge",
-                  "mode": "gradient"
-                }
-              },
-              {
-                "id": "min",
-                "value": 0
-              },
-              {
-                "id": "max",
-                "value": 150
-              },
-              {
-                "id": "unit",
-                "value": "percent"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Limit %"
-            },
-            "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "gauge",
-                  "mode": "gradient"
-                }
-              },
-              {
-                "id": "min",
-                "value": 0
-              },
-              {
-                "id": "max",
-                "value": 150
-              },
-              {
-                "id": "unit",
-                "value": "percent"
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "showHeader": true,
-        "cellHeight": "sm"
-      },
-      "transformations": [
-        {
-          "id": "joinByField",
-          "options": {
-            "byField": "node",
-            "mode": "outer"
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "includeByName": {
-              "node": true,
-              "Value #A": true,
-              "Value #B": true,
-              "Value #C": true
-            },
-            "indexByName": {
-              "node": 0,
-              "Value #A": 1,
-              "Value #B": 2,
-              "Value #C": 3
-            },
-            "renameByName": {
-              "node": "Node",
-              "Value #A": "Usage %",
-              "Value #B": "Requests %",
-              "Value #C": "Limit %"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": 7,
+      "id": 8,
       "type": "bargauge",
       "title": "CPU saturation (PSI) by node",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 15
       },
       "datasource": {
         "type": "prometheus",
@@ -636,14 +710,14 @@
       }
     },
     {
-      "id": 8,
+      "id": 9,
       "type": "bargauge",
       "title": "RAM saturation (PSI) by node",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 14
+        "y": 15
       },
       "datasource": {
         "type": "prometheus",
@@ -702,14 +776,14 @@
       }
     },
     {
-      "id": 9,
+      "id": 10,
       "type": "timeseries",
       "title": "CPU usage history \u2014 all nodes",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 22
+        "y": 23
       },
       "datasource": {
         "type": "prometheus",
@@ -717,53 +791,7 @@
       },
       "targets": [
         {
-          "expr": "100 * sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info)) / on(node) kube_node_status_allocatable{resource=\"cpu\"}",
-          "legendFormat": "{{node}}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true,
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      }
-    },
-    {
-      "id": 10,
-      "type": "timeseries",
-      "title": "RAM usage history \u2014 all nodes",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 22
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "100 * sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info)) / on(node) kube_node_status_allocatable{resource=\"memory\"}",
+          "expr": "100 * (sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))) / on(node) kube_node_status_allocatable{resource=\"cpu\"}",
           "legendFormat": "{{node}}",
           "datasource": {
             "type": "prometheus",
@@ -795,13 +823,59 @@
     },
     {
       "id": 11,
+      "type": "timeseries",
+      "title": "RAM usage history \u2014 all nodes",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 23
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "100 * (sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))) / on(node) kube_node_status_allocatable{resource=\"memory\"}",
+          "legendFormat": "{{node}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 12,
       "type": "table",
       "title": "Node status",
       "gridPos": {
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 31
       },
       "datasource": {
         "type": "prometheus",
@@ -977,14 +1051,14 @@
       ]
     },
     {
-      "id": 12,
+      "id": 13,
       "type": "table",
       "title": "Disks (Ceph-backing)",
       "gridPos": {
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 39
       },
       "datasource": {
         "type": "prometheus",
