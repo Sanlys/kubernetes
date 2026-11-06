@@ -69,7 +69,7 @@ spec:
               memory: 1Gi
 
         - name: rclone-sync
-          image: rclone/rclone:1.75
+          image: rclone/rclone:1.76
           env:
             - name: BUCKET_NAME
               valueFrom:
