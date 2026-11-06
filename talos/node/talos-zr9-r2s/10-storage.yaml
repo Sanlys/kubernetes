@@ -10,3 +10,9 @@ apiVersion: v1alpha1
 kind: KubeNodeConfig
 labels:
   cnpg-storage: "true"
+  # 12th Gen Intel i9-12900HK, strong P-core boost clocks - comparable or
+  # better single-thread performance than talos-puf-79s (Ryzen 9 5900HX),
+  # the other node carrying this label. Confirmed 2026-11-06. Latency-
+  # sensitive single-threaded workloads (the Minecraft servers) select on
+  # this label instead of pinning to a hostname.
+  high-single-core-perf: "true"

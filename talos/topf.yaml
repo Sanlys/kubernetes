@@ -43,4 +43,6 @@ nodes:
   - host: talos-zr9-r2s
     ip: 10.0.6.112
     role: worker
-    schematicId: "@schematic-worker.yaml"
+    # Own schematic (not the shared worker one): needs an extra kernel arg
+    # to work around its USB dock's UASP instability. See schematic-zr9-r2s.yaml.
+    schematicId: "@schematic-zr9-r2s.yaml"

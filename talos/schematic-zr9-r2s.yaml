@@ -1,0 +1,16 @@
+# Same extensions as schematic-worker.yaml, plus a kernel arg specific to
+# this node: its external USB-SATA dock (ASMedia 174c:55aa) can't hold the
+# UAS link under sustained write load - see node/talos-zr9-r2s/10-storage.yaml
+# and the 2026-11-06 osd.3 crash for the full story. Talos 1.14+ dropped
+# machine.install.extraKernelArgs in favor of baking kernel args into the
+# installer image via an Image Factory schematic, so this node needs its
+# own schematic instead of the shared worker one.
+customization:
+  systemExtensions:
+    officialExtensions:
+      - siderolabs/fuse3
+      - siderolabs/nfs-utils
+      - siderolabs/nfsd
+      - siderolabs/nfsrahead
+  extraKernelArgs:
+    - usb-storage.quirks=174c:55aa:u
