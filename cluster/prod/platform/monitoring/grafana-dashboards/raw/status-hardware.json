@@ -723,6 +723,8 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "instant": false,
+          "range": true,
           "refId": "A"
         }
       ],
@@ -794,6 +796,8 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
+          "instant": false,
+          "range": true,
           "refId": "A"
         }
       ],
@@ -879,7 +883,7 @@
           "refId": "B"
         },
         {
-          "expr": "time() - (node_boot_time_seconds * on(instance) group_left(nodename) node_uname_info)",
+          "expr": "label_replace(time() - (node_boot_time_seconds * on(instance) group_left(nodename) node_uname_info), \"node\", \"$1\", \"nodename\", \"(.*)\")",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"

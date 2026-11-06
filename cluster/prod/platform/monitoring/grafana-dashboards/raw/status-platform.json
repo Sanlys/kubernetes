@@ -633,17 +633,8 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
-          "refId": "A"
-        },
-        {
-          "expr": "100 * sum(ceph_pg_clean) / sum(ceph_pg_total)",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
           "instant": false,
-          "refId": "B"
+          "refId": "A"
         }
       ],
       "fieldConfig": {
