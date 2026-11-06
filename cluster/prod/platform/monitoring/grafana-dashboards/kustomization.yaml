@@ -99,9 +99,18 @@ configMapGenerator:
   - name: dashboard-smb-gateway
     files:
       - raw/smb-gateway.json
-  - name: dashboard-status-board
+  - name: dashboard-status-overview
     files:
-      - raw/status-board.json
+      - raw/status-overview.json
+  - name: dashboard-status-platform
+    files:
+      - raw/status-platform.json
+  - name: dashboard-status-hardware
+    files:
+      - raw/status-hardware.json
+  - name: dashboard-status-apps
+    files:
+      - raw/status-apps.json
   - name: dashboard-traefik-kubernetes
     files:
       - raw/traefik-kubernetes.json
