@@ -328,7 +328,7 @@
       "type": "table",
       "title": "Nodes",
       "gridPos": {
-        "h": 16,
+        "h": 14,
         "w": 24,
         "x": 0,
         "y": 4
@@ -389,7 +389,7 @@
           "refId": "E"
         },
         {
-          "expr": "100 * (sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))) / (sum by (node) (kube_node_status_allocatable{resource=\"cpu\"}))",
+          "expr": "sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -399,7 +399,7 @@
           "refId": "F"
         },
         {
-          "expr": "sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))",
+          "expr": "sum by (node) (kube_node_status_allocatable{resource=\"cpu\"})",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -409,7 +409,7 @@
           "refId": "G"
         },
         {
-          "expr": "sum by (node) (kube_node_status_allocatable{resource=\"cpu\"})",
+          "expr": "sum by (node) (kube_pod_container_resource_requests{resource=\"cpu\"})",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -419,7 +419,7 @@
           "refId": "H"
         },
         {
-          "expr": "sum by (node) (kube_pod_container_resource_requests{resource=\"cpu\"})",
+          "expr": "sum by (node) (kube_pod_container_resource_limits{resource=\"cpu\"})",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -429,7 +429,7 @@
           "refId": "I"
         },
         {
-          "expr": "sum by (node) (kube_pod_container_resource_limits{resource=\"cpu\"})",
+          "expr": "label_replace(100 * (rate(node_pressure_cpu_waiting_seconds_total[5m]) * on(instance) group_left(nodename) node_uname_info), \"node\", \"$1\", \"nodename\", \"(.*)\")",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -439,7 +439,7 @@
           "refId": "J"
         },
         {
-          "expr": "label_replace(100 * (rate(node_pressure_cpu_waiting_seconds_total[5m]) * on(instance) group_left(nodename) node_uname_info), \"node\", \"$1\", \"nodename\", \"(.*)\")",
+          "expr": "sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -449,7 +449,7 @@
           "refId": "K"
         },
         {
-          "expr": "100 * (sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))) / (sum by (node) (kube_node_status_allocatable{resource=\"memory\"}))",
+          "expr": "sum by (node) (kube_node_status_allocatable{resource=\"memory\"})",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -459,7 +459,7 @@
           "refId": "L"
         },
         {
-          "expr": "sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))",
+          "expr": "sum by (node) (kube_pod_container_resource_requests{resource=\"memory\"})",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -469,7 +469,7 @@
           "refId": "M"
         },
         {
-          "expr": "sum by (node) (kube_node_status_allocatable{resource=\"memory\"})",
+          "expr": "sum by (node) (kube_pod_container_resource_limits{resource=\"memory\"})",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -479,26 +479,6 @@
           "refId": "N"
         },
         {
-          "expr": "sum by (node) (kube_pod_container_resource_requests{resource=\"memory\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "O"
-        },
-        {
-          "expr": "sum by (node) (kube_pod_container_resource_limits{resource=\"memory\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "P"
-        },
-        {
           "expr": "label_replace(100 * (rate(node_pressure_memory_waiting_seconds_total[5m]) * on(instance) group_left(nodename) node_uname_info), \"node\", \"$1\", \"nodename\", \"(.*)\")",
           "datasource": {
             "type": "prometheus",
@@ -506,7 +486,7 @@
           },
           "instant": true,
           "format": "table",
-          "refId": "Q"
+          "refId": "O"
         }
       ],
       "fieldConfig": {
@@ -571,102 +551,6 @@
                     }
                   }
                 ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "CPU"
-            },
-            "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "gauge",
-                  "mode": "lcd",
-                  "valueDisplayMode": "hidden"
-                }
-              },
-              {
-                "id": "min",
-                "value": 0
-              },
-              {
-                "id": "max",
-                "value": 100
-              },
-              {
-                "id": "unit",
-                "value": "percent"
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": null
-                    },
-                    {
-                      "color": "yellow",
-                      "value": 70
-                    },
-                    {
-                      "color": "red",
-                      "value": 90
-                    }
-                  ]
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "RAM"
-            },
-            "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "gauge",
-                  "mode": "lcd",
-                  "valueDisplayMode": "hidden"
-                }
-              },
-              {
-                "id": "min",
-                "value": 0
-              },
-              {
-                "id": "max",
-                "value": 100
-              },
-              {
-                "id": "unit",
-                "value": "percent"
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": null
-                    },
-                    {
-                      "color": "yellow",
-                      "value": 70
-                    },
-                    {
-                      "color": "red",
-                      "value": 90
-                    }
-                  ]
-                }
               }
             ]
           },
@@ -882,9 +766,7 @@
               "Value #L": true,
               "Value #M": true,
               "Value #N": true,
-              "Value #O": true,
-              "Value #P": true,
-              "Value #Q": true
+              "Value #O": true
             },
             "indexByName": {
               "node": 0,
@@ -902,9 +784,7 @@
               "Value #L": 12,
               "Value #M": 13,
               "Value #N": 14,
-              "Value #O": 15,
-              "Value #P": 16,
-              "Value #Q": 17
+              "Value #O": 15
             },
             "renameByName": {
               "node": "Node",
@@ -913,18 +793,16 @@
               "os_image": "OS",
               "Value #D": "Taints",
               "Value #E": "Uptime",
-              "Value #F": "CPU",
-              "Value #G": "CPU Used",
-              "Value #H": "CPU Capacity",
-              "Value #I": "CPU Req",
-              "Value #J": "CPU Limit",
-              "Value #K": "CPU PSI",
-              "Value #L": "RAM",
-              "Value #M": "RAM Used",
-              "Value #N": "RAM Capacity",
-              "Value #O": "RAM Req",
-              "Value #P": "RAM Limit",
-              "Value #Q": "RAM PSI"
+              "Value #F": "CPU Used",
+              "Value #G": "CPU Capacity",
+              "Value #H": "CPU Req",
+              "Value #I": "CPU Limit",
+              "Value #J": "CPU PSI",
+              "Value #K": "RAM Used",
+              "Value #L": "RAM Capacity",
+              "Value #M": "RAM Req",
+              "Value #N": "RAM Limit",
+              "Value #O": "RAM PSI"
             }
           }
         }
@@ -932,13 +810,269 @@
     },
     {
       "id": 8,
+      "type": "volkovlabs-echarts-panel",
+      "title": "CPU \u2014 usage vs. request/limit (bullet)",
+      "pluginVersion": "7.3.0",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (node) (kube_node_status_allocatable{resource=\"cpu\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "B"
+        },
+        {
+          "expr": "sum by (node) (kube_pod_container_resource_requests{resource=\"cpu\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "C"
+        },
+        {
+          "expr": "sum by (node) (kube_pod_container_resource_limits{resource=\"cpu\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "D"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "node",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {
+              "node": true,
+              "Value #A": true,
+              "Value #B": true,
+              "Value #C": true,
+              "Value #D": true
+            },
+            "indexByName": {
+              "node": 0,
+              "Value #A": 1,
+              "Value #B": 2,
+              "Value #C": 3,
+              "Value #D": 4
+            },
+            "renameByName": {
+              "node": "node",
+              "Value #A": "usage",
+              "Value #B": "capacity",
+              "Value #C": "request",
+              "Value #D": "limit"
+            }
+          }
+        }
+      ],
+      "options": {
+        "renderer": "canvas",
+        "map": "none",
+        "editorMode": "code",
+        "getOption": "\nconst col = (name) => {\n  for (const s of context.panel.data.series) {\n    const f = s.fields.find((f) => f.name === name);\n    if (f) return f.values;\n  }\n  return [];\n};\nconst nodes = col('node');\nconst usage = col('usage');\nconst capacity = col('capacity');\nconst request = col('request');\nconst limit = col('limit');\nconst fmt = (v) => (v == null ? '' : v.toFixed(2));\n\nconst usagePct = usage.map((v,i) => capacity[i] ? 100*v/capacity[i] : 0);\nconst reqPct = request.map((v,i) => capacity[i] ? 100*v/capacity[i] : 0);\nconst limPct = limit.map((v,i) => capacity[i] ? 100*v/capacity[i] : 0);\nconst bandLow = reqPct;\nconst bandMid = limPct.map((v,i) => Math.max(0, v - reqPct[i]));\nconst bandHigh = limPct.map((v,i) => Math.max(0, 100 - v));\n\nreturn {\n  grid: { left: 140, right: 70, top: 10, bottom: 30 },\n  xAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: '{value}%' } },\n  yAxis: { type: 'category', inverse: true, data: nodes },\n  tooltip: {\n    trigger: 'axis', axisPointer: { type: 'shadow' },\n    formatter: (params) => {\n      const i = params[0].dataIndex;\n      return nodes[i] + '<br/>Used: ' + fmt(usage[i]) + ' / ' + fmt(capacity[i]) + ' cores' +\n             '<br/>Request: ' + fmt(request[i]) + '  Limit: ' + fmt(limit[i]);\n    }\n  },\n  series: [\n    { name: 'under request', type: 'bar', stack: 'bands', barWidth: '55%', silent: true, z: 1,\n      itemStyle: { color: '#37872D' }, data: bandLow },\n    { name: 'over request', type: 'bar', stack: 'bands', barWidth: '55%', silent: true, z: 1,\n      itemStyle: { color: '#E0B400' }, data: bandMid },\n    { name: 'over limit', type: 'bar', stack: 'bands', barWidth: '55%', silent: true, z: 1,\n      itemStyle: { color: '#C4162A' }, data: bandHigh },\n    { name: 'Usage', type: 'bar', barWidth: '18%', barGap: '-100%', z: 3,\n      itemStyle: { color: '#1F2937' },\n      label: { show: true, position: 'right', formatter: (p) => fmt(usage[p.dataIndex]) + ' / ' + fmt(capacity[p.dataIndex]) },\n      data: usagePct },\n    { name: 'Request', type: 'scatter', symbol: 'rect', symbolSize: [3, 20], z: 4,\n      itemStyle: { color: '#000000' }, data: reqPct.map((v,i) => [v, i]) },\n    { name: 'Limit', type: 'scatter', symbol: 'rect', symbolSize: [3, 20], z: 4,\n      itemStyle: { color: '#8F3BF7' }, data: limPct.map((v,i) => [v, i]) }\n  ]\n};\n",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        },
+        "visualEditor": {
+          "code": "",
+          "dataset": [],
+          "series": []
+        },
+        "baidu": {
+          "key": "",
+          "callback": "bmapReady"
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "google": {
+          "key": "",
+          "callback": "gmapReady"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "volkovlabs-echarts-panel",
+      "title": "RAM \u2014 usage vs. request/limit (bullet)",
+      "pluginVersion": "7.3.0",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (node) (kube_node_status_allocatable{resource=\"memory\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "B"
+        },
+        {
+          "expr": "sum by (node) (kube_pod_container_resource_requests{resource=\"memory\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "C"
+        },
+        {
+          "expr": "sum by (node) (kube_pod_container_resource_limits{resource=\"memory\"})",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "D"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "node",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {
+              "node": true,
+              "Value #A": true,
+              "Value #B": true,
+              "Value #C": true,
+              "Value #D": true
+            },
+            "indexByName": {
+              "node": 0,
+              "Value #A": 1,
+              "Value #B": 2,
+              "Value #C": 3,
+              "Value #D": 4
+            },
+            "renameByName": {
+              "node": "node",
+              "Value #A": "usage",
+              "Value #B": "capacity",
+              "Value #C": "request",
+              "Value #D": "limit"
+            }
+          }
+        }
+      ],
+      "options": {
+        "renderer": "canvas",
+        "map": "none",
+        "editorMode": "code",
+        "getOption": "\nconst col = (name) => {\n  for (const s of context.panel.data.series) {\n    const f = s.fields.find((f) => f.name === name);\n    if (f) return f.values;\n  }\n  return [];\n};\nconst nodes = col('node');\nconst usage = col('usage');\nconst capacity = col('capacity');\nconst request = col('request');\nconst limit = col('limit');\nconst fmt = (v) => {\n  if (v == null) return '';\n  const units = ['B','KiB','MiB','GiB','TiB'];\n  let i = 0; let x = v;\n  while (x >= 1024 && i < units.length - 1) { x /= 1024; i++; }\n  return x.toFixed(1) + ' ' + units[i];\n};\n\nconst usagePct = usage.map((v,i) => capacity[i] ? 100*v/capacity[i] : 0);\nconst reqPct = request.map((v,i) => capacity[i] ? 100*v/capacity[i] : 0);\nconst limPct = limit.map((v,i) => capacity[i] ? 100*v/capacity[i] : 0);\nconst bandLow = reqPct;\nconst bandMid = limPct.map((v,i) => Math.max(0, v - reqPct[i]));\nconst bandHigh = limPct.map((v,i) => Math.max(0, 100 - v));\n\nreturn {\n  grid: { left: 140, right: 70, top: 10, bottom: 30 },\n  xAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: '{value}%' } },\n  yAxis: { type: 'category', inverse: true, data: nodes },\n  tooltip: {\n    trigger: 'axis', axisPointer: { type: 'shadow' },\n    formatter: (params) => {\n      const i = params[0].dataIndex;\n      return nodes[i] + '<br/>Used: ' + fmt(usage[i]) + ' / ' + fmt(capacity[i]) + '' +\n             '<br/>Request: ' + fmt(request[i]) + '  Limit: ' + fmt(limit[i]);\n    }\n  },\n  series: [\n    { name: 'under request', type: 'bar', stack: 'bands', barWidth: '55%', silent: true, z: 1,\n      itemStyle: { color: '#37872D' }, data: bandLow },\n    { name: 'over request', type: 'bar', stack: 'bands', barWidth: '55%', silent: true, z: 1,\n      itemStyle: { color: '#E0B400' }, data: bandMid },\n    { name: 'over limit', type: 'bar', stack: 'bands', barWidth: '55%', silent: true, z: 1,\n      itemStyle: { color: '#C4162A' }, data: bandHigh },\n    { name: 'Usage', type: 'bar', barWidth: '18%', barGap: '-100%', z: 3,\n      itemStyle: { color: '#1F2937' },\n      label: { show: true, position: 'right', formatter: (p) => fmt(usage[p.dataIndex]) + ' / ' + fmt(capacity[p.dataIndex]) },\n      data: usagePct },\n    { name: 'Request', type: 'scatter', symbol: 'rect', symbolSize: [3, 20], z: 4,\n      itemStyle: { color: '#000000' }, data: reqPct.map((v,i) => [v, i]) },\n    { name: 'Limit', type: 'scatter', symbol: 'rect', symbolSize: [3, 20], z: 4,\n      itemStyle: { color: '#8F3BF7' }, data: limPct.map((v,i) => [v, i]) }\n  ]\n};\n",
+        "editor": {
+          "format": "auto"
+        },
+        "themeEditor": {
+          "name": "default",
+          "config": "{}"
+        },
+        "visualEditor": {
+          "code": "",
+          "dataset": [],
+          "series": []
+        },
+        "baidu": {
+          "key": "",
+          "callback": "bmapReady"
+        },
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "google": {
+          "key": "",
+          "callback": "gmapReady"
+        }
+      }
+    },
+    {
+      "id": 10,
       "type": "timeseries",
       "title": "CPU usage history \u2014 all nodes",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 20
+        "y": 28
       },
       "datasource": {
         "type": "prometheus",
@@ -977,14 +1111,14 @@
       }
     },
     {
-      "id": 9,
+      "id": 11,
       "type": "timeseries",
       "title": "RAM usage history \u2014 all nodes",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 20
+        "y": 28
       },
       "datasource": {
         "type": "prometheus",
@@ -1023,14 +1157,14 @@
       }
     },
     {
-      "id": 10,
+      "id": 12,
       "type": "table",
       "title": "Disks (Ceph-backing)",
       "gridPos": {
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 28
+        "y": 36
       },
       "datasource": {
         "type": "prometheus",
