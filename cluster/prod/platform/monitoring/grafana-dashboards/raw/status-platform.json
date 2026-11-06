@@ -523,7 +523,7 @@
       "title": "Max available CPU (single node)",
       "gridPos": {
         "h": 4,
-        "w": 6,
+        "w": 8,
         "x": 0,
         "y": 18
       },
@@ -570,8 +570,8 @@
       "title": "Max available RAM (single node)",
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 6,
+        "w": 8,
+        "x": 8,
         "y": 18
       },
       "datasource": {
@@ -614,58 +614,11 @@
     {
       "id": 11,
       "type": "stat",
-      "title": "PGs clean",
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 12,
-        "y": 18
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "100 * sum(ceph_pg_clean) / sum(ceph_pg_total)",
-          "legendFormat": null,
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": false,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "text"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "none"
-      }
-    },
-    {
-      "id": 12,
-      "type": "stat",
       "title": "Platform pod restarts",
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
+        "w": 8,
+        "x": 16,
         "y": 18
       },
       "datasource": {
@@ -706,6 +659,228 @@
       }
     },
     {
+      "id": 12,
+      "type": "timeseries",
+      "title": "PGs State",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(ceph_pg_active)",
+          "legendFormat": "Active",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A"
+        },
+        {
+          "expr": "sum(ceph_pg_clean)",
+          "legendFormat": "Clean",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "B"
+        },
+        {
+          "expr": "sum(ceph_pg_peering)",
+          "legendFormat": "Peering",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "C"
+        },
+        {
+          "expr": "sum(ceph_pg_degraded)",
+          "legendFormat": "Degraded",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "D"
+        },
+        {
+          "expr": "sum(ceph_pg_stale)",
+          "legendFormat": "Stale",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "E"
+        },
+        {
+          "expr": "sum(ceph_pg_undersized)",
+          "legendFormat": "Undersized",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "F"
+        },
+        {
+          "expr": "sum(ceph_pg_incomplete)",
+          "legendFormat": "Incomplete",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "G"
+        },
+        {
+          "expr": "sum(ceph_pg_forced_backfill)",
+          "legendFormat": "Forced Backfill",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "H"
+        },
+        {
+          "expr": "sum(ceph_pg_forced_recovery)",
+          "legendFormat": "Forced Recovery",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "I"
+        },
+        {
+          "expr": "sum(ceph_pg_creating)",
+          "legendFormat": "Creating",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "J"
+        },
+        {
+          "expr": "sum(ceph_pg_wait_backfill)",
+          "legendFormat": "Wait Backfill",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "K"
+        },
+        {
+          "expr": "sum(ceph_pg_deep)",
+          "legendFormat": "Deep",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "L"
+        },
+        {
+          "expr": "sum(ceph_pg_scrubbing)",
+          "legendFormat": "Scrubbing",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "M"
+        },
+        {
+          "expr": "sum(ceph_pg_recovering)",
+          "legendFormat": "Recovering",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "N"
+        },
+        {
+          "expr": "sum(ceph_pg_repair)",
+          "legendFormat": "Repair",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "O"
+        },
+        {
+          "expr": "sum(ceph_pg_down)",
+          "legendFormat": "Down",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "P"
+        },
+        {
+          "expr": "sum(ceph_pg_peered)",
+          "legendFormat": "Peered",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "Q"
+        },
+        {
+          "expr": "sum(ceph_pg_backfill)",
+          "legendFormat": "Backfill",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "R"
+        },
+        {
+          "expr": "sum(ceph_pg_remapped)",
+          "legendFormat": "Remapped",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "S"
+        },
+        {
+          "expr": "sum(ceph_pg_backfill_toofull)",
+          "legendFormat": "Backfill Toofull",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "T"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "fillOpacity": 60,
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
       "id": 13,
       "type": "timeseries",
       "title": "OSD commit / apply latency",
@@ -713,7 +888,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 22
+        "y": 32
       },
       "datasource": {
         "type": "prometheus",
@@ -764,7 +939,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 22
+        "y": 32
       },
       "datasource": {
         "type": "prometheus",
@@ -806,7 +981,7 @@
         "h": 4,
         "w": 24,
         "x": 0,
-        "y": 30
+        "y": 40
       },
       "datasource": {
         "type": "prometheus",
