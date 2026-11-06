@@ -1,14 +1,14 @@
 {
   "id": null,
-  "uid": "status-board",
-  "title": "Status Board",
+  "uid": "status-platform",
+  "title": "Status Board - Platform",
   "tags": [
-    "overview",
+    "platform",
     "custom"
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 1,
   "refresh": "30s",
   "time": {
     "from": "now-24h",
@@ -32,6 +32,7 @@
       "targets": [
         {
           "expr": "ceph_health_status",
+          "legendFormat": null,
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -202,7 +203,7 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "Backup (restic)",
+      "title": "ArgoCD sync",
       "gridPos": {
         "h": 4,
         "w": 8,
@@ -215,7 +216,8 @@
       },
       "targets": [
         {
-          "expr": "time() - kube_cronjob_status_last_successful_time{namespace=\"syncthing\", cronjob=\"restic-backup\"}",
+          "expr": "sum(argocd_app_info{sync_status!=\"Synced\"} or argocd_app_info{health_status!=\"Healthy\"})",
+          "legendFormat": null,
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -226,7 +228,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "s",
+          "unit": "short",
           "color": {
             "mode": "thresholds",
             "fixedColor": "text"
@@ -239,12 +241,8 @@
                 "value": null
               },
               {
-                "color": "yellow",
-                "value": 3600
-              },
-              {
                 "color": "red",
-                "value": 21600
+                "value": 1
               }
             ]
           }
@@ -418,7 +416,7 @@
     {
       "id": 7,
       "type": "timeseries",
-      "title": "CPU \u2014 usage/req/limit",
+      "title": "Cluster CPU \u2014 used vs. allocatable",
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -432,7 +430,7 @@
       "targets": [
         {
           "expr": "sum(rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]))",
-          "legendFormat": "usage",
+          "legendFormat": "used",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -440,22 +438,13 @@
           "refId": "A"
         },
         {
-          "expr": "sum(kube_pod_container_resource_requests{resource=\"cpu\"})",
-          "legendFormat": "req",
+          "expr": "sum(kube_node_status_allocatable{resource=\"cpu\"})",
+          "legendFormat": "allocatable",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "B"
-        },
-        {
-          "expr": "sum(kube_pod_container_resource_limits{resource=\"cpu\"})",
-          "legendFormat": "limit",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "C"
         }
       ],
       "fieldConfig": {
@@ -479,7 +468,7 @@
     {
       "id": 8,
       "type": "timeseries",
-      "title": "Memory \u2014 usage/req/limit",
+      "title": "Cluster RAM \u2014 used vs. allocatable",
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -493,7 +482,7 @@
       "targets": [
         {
           "expr": "sum(container_memory_working_set_bytes{container!=\"\",container!=\"POD\"})",
-          "legendFormat": "usage",
+          "legendFormat": "used",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -501,22 +490,13 @@
           "refId": "A"
         },
         {
-          "expr": "sum(kube_pod_container_resource_requests{resource=\"memory\"})",
-          "legendFormat": "req",
+          "expr": "sum(kube_node_status_allocatable{resource=\"memory\"})",
+          "legendFormat": "allocatable",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
           "refId": "B"
-        },
-        {
-          "expr": "sum(kube_pod_container_resource_limits{resource=\"memory\"})",
-          "legendFormat": "limit",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "C"
         }
       ],
       "fieldConfig": {
@@ -539,8 +519,8 @@
     },
     {
       "id": 9,
-      "type": "timeseries",
-      "title": "Ceph PGs clean %",
+      "type": "stat",
+      "title": "Max available CPU (single node)",
       "gridPos": {
         "h": 4,
         "w": 6,
@@ -553,49 +533,8 @@
       },
       "targets": [
         {
-          "expr": "100 * sum(ceph_pg_clean) / sum(ceph_pg_total)",
-          "legendFormat": "clean %",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      }
-    },
-    {
-      "id": 10,
-      "type": "stat",
-      "title": "Ingress",
-      "gridPos": {
-        "h": 4,
-        "w": 3,
-        "x": 6,
-        "y": 18
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum(rate(node_network_receive_bytes_total{device!~\"lo|lxc.*|cilium_.*|sit0|teql0|tunl0|ip6tnl0|dummy0\"}[5m]))",
+          "expr": "topk(1, kube_node_status_allocatable{resource=\"cpu\"} - on(node) sum by (node) (kube_pod_container_resource_requests{resource=\"cpu\"}))",
+          "legendFormat": "{{node}}",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -606,7 +545,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "Bps",
+          "unit": "short",
           "color": {
             "mode": "fixed",
             "fixedColor": "text"
@@ -620,19 +559,19 @@
             "lastNotNull"
           ]
         },
-        "textMode": "auto",
+        "textMode": "value_and_name",
         "graphMode": "area",
         "colorMode": "none"
       }
     },
     {
-      "id": 11,
+      "id": 10,
       "type": "stat",
-      "title": "Egress",
+      "title": "Max available RAM (single node)",
       "gridPos": {
         "h": 4,
-        "w": 3,
-        "x": 9,
+        "w": 6,
+        "x": 6,
         "y": 18
       },
       "datasource": {
@@ -641,7 +580,8 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(node_network_transmit_bytes_total{device!~\"lo|lxc.*|cilium_.*|sit0|teql0|tunl0|ip6tnl0|dummy0\"}[5m]))",
+          "expr": "topk(1, kube_node_status_allocatable{resource=\"memory\"} - on(node) sum by (node) (kube_pod_container_resource_requests{resource=\"memory\"}))",
+          "legendFormat": "{{node}}",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -652,7 +592,63 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "Bps",
+          "unit": "bytes",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name",
+        "graphMode": "area",
+        "colorMode": "none"
+      }
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "PGs clean",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 18
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "100 * sum(ceph_pg_clean) / sum(ceph_pg_total)",
+          "legendFormat": null,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        },
+        {
+          "expr": "100 * sum(ceph_pg_clean) / sum(ceph_pg_total)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": false,
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
           "color": {
             "mode": "fixed",
             "fixedColor": "text"
@@ -674,136 +670,10 @@
     {
       "id": 12,
       "type": "stat",
-      "title": "*.k8s.lysakermoen.com",
+      "title": "Platform pod restarts",
       "gridPos": {
         "h": 4,
-        "w": 3,
-        "x": 12,
-        "y": 18
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "min(traefik_tls_certs_not_after{cn=\"*.k8s.lysakermoen.com\"} - time()) / 86400",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "d",
-          "color": {
-            "mode": "thresholds",
-            "fixedColor": "text"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 14
-              },
-              {
-                "color": "green",
-                "value": 30
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 13,
-      "type": "stat",
-      "title": "*.lysakermoen.com",
-      "gridPos": {
-        "h": 4,
-        "w": 3,
-        "x": 15,
-        "y": 18
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "min(traefik_tls_certs_not_after{cn=\"*.lysakermoen.com\"} - time()) / 86400",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "d",
-          "color": {
-            "mode": "thresholds",
-            "fixedColor": "text"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 14
-              },
-              {
-                "color": "green",
-                "value": 30
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 14,
-      "type": "stat",
-      "title": "Mirror sync",
-      "gridPos": {
-        "h": 4,
-        "w": 3,
+        "w": 6,
         "x": 18,
         "y": 18
       },
@@ -813,7 +683,8 @@
       },
       "targets": [
         {
-          "expr": "time() - loki_process_custom_mirror_lastsync_epoch_seconds",
+          "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=~\"rook-ceph|kube-system\"}[$__range]))",
+          "legendFormat": null,
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -824,27 +695,10 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "s",
+          "unit": "short",
           "color": {
-            "mode": "thresholds",
+            "mode": "fixed",
             "fixedColor": "text"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 86400
-              },
-              {
-                "color": "red",
-                "value": 259200
-              }
-            ]
           }
         },
         "overrides": []
@@ -857,70 +711,15 @@
         },
         "textMode": "auto",
         "graphMode": "area",
-        "colorMode": "background"
+        "colorMode": "none"
       }
     },
     {
-      "id": 15,
-      "type": "stat",
-      "title": "Mirror update",
+      "id": 13,
+      "type": "timeseries",
+      "title": "OSD commit / apply latency",
       "gridPos": {
-        "h": 4,
-        "w": 3,
-        "x": 21,
-        "y": 18
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "time() - loki_process_custom_mirror_lastupdate_epoch_seconds",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "color": {
-            "mode": "thresholds",
-            "fixedColor": "text"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 16,
-      "type": "table",
-      "title": "Issues",
-      "gridPos": {
-        "h": 4,
+        "h": 8,
         "w": 12,
         "x": 0,
         "y": 22
@@ -931,124 +730,92 @@
       },
       "targets": [
         {
-          "expr": "label_replace(label_replace(ceph_health_detail{name!~\"AUTH_INSECURE_CLIENT_KEY_TYPE|AUTH_INSECURE_KEYS_ALLOWED|AUTH_INSECURE_KEYS_CREATABLE\"} == 1, \"issue\", \"$1\", \"name\", \"(.*)\"), \"source\", \"Ceph\", \"\", \"\")",
+          "expr": "avg(ceph_osd_commit_latency_ms)",
+          "legendFormat": "commit (avg)",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
-          "format": "table",
           "refId": "A"
         },
         {
-          "expr": "label_replace(label_replace(ALERTS{alertstate=\"firing\", alertname!=\"Watchdog\"}, \"issue\", \"$1\", \"alertname\", \"(.*)\"), \"source\", \"K8s\", \"\", \"\")",
+          "expr": "avg(ceph_osd_apply_latency_ms)",
+          "legendFormat": "apply (avg)",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
-          "format": "table",
           "refId": "B"
         }
       ],
       "fieldConfig": {
-        "defaults": {},
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Severity"
-            },
-            "properties": [
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "type": "value",
-                    "options": {
-                      "HEALTH_WARN": {
-                        "text": "Warning",
-                        "color": "yellow"
-                      },
-                      "HEALTH_ERR": {
-                        "text": "Critical",
-                        "color": "red"
-                      },
-                      "warning": {
-                        "text": "Warning",
-                        "color": "yellow"
-                      },
-                      "critical": {
-                        "text": "Critical",
-                        "color": "red"
-                      },
-                      "none": {
-                        "text": "",
-                        "color": "text"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-background",
-                  "applyToRow": true
-                }
-              },
-              {
-                "id": "custom.hideFrom.viz",
-                "value": true
-              }
-            ]
+        "defaults": {
+          "unit": "ms",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
           }
-        ]
+        },
+        "overrides": []
       },
       "options": {
-        "showHeader": true,
-        "cellHeight": "sm"
-      },
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {}
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "includeByName": {
-              "source": true,
-              "issue": true,
-              "namespace": true,
-              "severity": true
-            },
-            "indexByName": {
-              "source": 0,
-              "issue": 1,
-              "namespace": 2,
-              "severity": 3
-            },
-            "renameByName": {
-              "source": "Source",
-              "issue": "Issue",
-              "namespace": "Namespace",
-              "severity": "Severity"
-            }
-          }
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
         }
-      ]
+      }
     },
     {
-      "id": 17,
+      "id": 14,
+      "type": "timeseries",
+      "title": "Pod restart / crash rate \u2014 platform",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(kube_pod_container_status_restarts_total{namespace=~\"rook-ceph|kube-system\"}[5m]))",
+          "legendFormat": "restarts/s",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "id": 15,
       "type": "table",
       "title": "ArgoCD apps not Synced/Healthy",
       "gridPos": {
         "h": 4,
-        "w": 12,
-        "x": 12,
-        "y": 22
+        "w": 24,
+        "x": 0,
+        "y": 30
       },
       "datasource": {
         "type": "prometheus",
@@ -1178,151 +945,6 @@
           }
         }
       ]
-    },
-    {
-      "id": 18,
-      "type": "timeseries",
-      "title": "Public app request rate + bandwidth",
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 26
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_requests_total{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
-          "legendFormat": "{{app}} (req/s)",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "A"
-        },
-        {
-          "expr": "sum by (app) (label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(label_replace(rate(traefik_service_responses_bytes_total{container=\"traefik-public\"}[5m]), \"app\", \"Forgejo\", \"exported_service\", \".*svc-forgejo-forgejo-0.*\"), \"app\", \"Harbor (core)\", \"exported_service\", \".*svc-harbor-harbor-core-0.*\"), \"app\", \"Harbor (portal)\", \"exported_service\", \".*svc-harbor-harbor-portal-0.*\"), \"app\", \"Immich\", \"exported_service\", \".*svc-immich-immich-server-0.*\"), \"app\", \"Linkwarden\", \"exported_service\", \".*svc-linkwarden-linkwarden-0.*\"), \"app\", \"Jellyfin\", \"exported_service\", \".*svc-media-jellyfin-0.*\"), \"app\", \"Arch Mirror\", \"exported_service\", \".*svc-mirror-mirror-0.*\"), \"app\", \"nginx (custom)\", \"exported_service\", \".*svc-nginx-custom-image-nginx-from-harbor-0.*\"), \"app\", \"nginx\", \"exported_service\", \".*svc-nginx-nginx-0.*\"), \"app\", \"Ceph S3 (RGW)\", \"exported_service\", \".*svc-rook-ceph-rook-ceph-rgw-ceph-objectstore-0.*\"), \"app\", \"tobbeos (iso)\", \"exported_service\", \".*svc-tobbeos-iso-nginx-0.*\"), \"app\", \"tobbeos\", \"exported_service\", \".*svc-tobbeos-tobbeos-0.*\"), \"app\", \"Game Manager\", \"exported_service\", \".*svc-tools-game-mgr-tools-game-mgr-0.*\"), \"app\", \"Vaultwarden\", \"exported_service\", \".*svc-vaultwarden-vaultwarden-0.*\"))",
-          "legendFormat": "{{app}} (B/s)",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "B"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "reqps",
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byRegexp",
-              "options": ".*\\(B/s\\)$"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "Bps"
-              },
-              {
-                "id": "custom.axisPlacement",
-                "value": "right"
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      }
-    },
-    {
-      "id": 19,
-      "type": "timeseries",
-      "title": "Minecraft players online \u2014 history (by server)",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 34
-      },
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "targets": [
-        {
-          "expr": "sum by (server) (label_replace(label_replace(label_replace(label_replace(sum by (server_host) (minecraft_status_players_online_count), \"server\", \"Daur's stream\", \"server_host\", `mc-paper\\.minecraft-server\\.svc\\.cluster\\.local`), \"server\", \"Temporary (Slimeyteacup)\", \"server_host\", `mc-paper-temporary\\.minecraft-server-temporary\\.svc\\.cluster\\.local`), \"server\", \"Slimey's server\", \"server_host\", `mc-paper\\.minecraft-slimey\\.svc\\.cluster\\.local`), \"server\", \"Vanilla\", \"server_host\", `mc-vanilla\\.minecraft-vanilla\\.svc\\.cluster\\.local`))",
-          "legendFormat": "{{server}}",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "fillOpacity": 60,
-            "lineWidth": 2,
-            "stacking": {
-              "mode": "normal",
-              "group": "A"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        }
-      }
-    },
-    {
-      "id": 20,
-      "type": "logs",
-      "title": "Combined server logs (minecraft process only, by display name)",
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 34
-      },
-      "datasource": {
-        "type": "loki",
-        "uid": "${DS_LOKI}"
-      },
-      "targets": [
-        {
-          "expr": "{namespace=~\"minecraft-.*\", container=\"minecraft\"} | line_format \"[{{.display_name}}] {{__line__}}\"",
-          "datasource": {
-            "type": "loki",
-            "uid": "${DS_LOKI}"
-          },
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "showTime": false,
-        "wrapLogMessage": true,
-        "sortOrder": "Descending",
-        "enableLogDetails": true
-      }
     }
   ],
   "templating": {
@@ -1356,5 +978,31 @@
   "annotations": {
     "list": []
   },
+  "links": [
+    {
+      "title": "Overview",
+      "type": "link",
+      "url": "/d/status-overview",
+      "icon": "external link"
+    },
+    {
+      "title": "Platform",
+      "type": "link",
+      "url": "/d/status-platform",
+      "icon": "external link"
+    },
+    {
+      "title": "Hardware",
+      "type": "link",
+      "url": "/d/status-hardware",
+      "icon": "external link"
+    },
+    {
+      "title": "Apps/Services",
+      "type": "link",
+      "url": "/d/status-apps",
+      "icon": "external link"
+    }
+  ],
   "__inputs": []
 }
