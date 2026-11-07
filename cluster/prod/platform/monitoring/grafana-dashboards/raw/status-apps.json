@@ -477,6 +477,10 @@
                 "value": "percent"
               },
               {
+                "id": "decimals",
+                "value": 4
+              },
+              {
                 "id": "custom.cellOptions",
                 "value": {
                   "type": "color-background"
