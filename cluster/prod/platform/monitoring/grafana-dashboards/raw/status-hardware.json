@@ -1149,7 +1149,7 @@
       },
       "targets": [
         {
-          "expr": "label_replace(label_replace(label_replace(ceph_osd_metadata, \"model\", \"FAKE (placeholder)\", \"\", \"\"), \"serial\", \"FAKE-0000\", \"\", \"\"), \"smart\", \"FAKE OK\", \"\", \"\")",
+          "expr": "label_replace(label_replace(ceph_osd_metadata * on(hostname, device_class) group_left(model_name, serial_number) (label_replace(label_replace(smartctl_device{device=\"sda\"} * on(pod, namespace) group_left(node) kube_pod_info{namespace=\"monitoring\"}, \"hostname\", \"$1\", \"node\", \"(.*)\"), \"device_class\", \"hdd\", \"\", \"\") or label_replace(label_replace(smartctl_device{device=\"nvme0\"} * on(pod, namespace) group_left(node) kube_pod_info{namespace=\"monitoring\"}, \"hostname\", \"$1\", \"node\", \"(.*)\"), \"device_class\", \"ssd\", \"\", \"\")), \"model\", \"$1\", \"model_name\", \"(.*)\"), \"serial\", \"$1\", \"serial_number\", \"(.*)\")",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -1197,6 +1197,16 @@
           "instant": true,
           "format": "table",
           "refId": "E"
+        },
+        {
+          "expr": "ceph_osd_metadata * on(hostname, device_class) group_left() (label_replace(label_replace(smartctl_device_smart_status{device=\"sda\"} * on(pod, namespace) group_left(node) kube_pod_info{namespace=\"monitoring\"}, \"hostname\", \"$1\", \"node\", \"(.*)\"), \"device_class\", \"hdd\", \"\", \"\") or label_replace(label_replace(smartctl_device_smart_status{device=\"nvme0\"} * on(pod, namespace) group_left(node) kube_pod_info{namespace=\"monitoring\"}, \"hostname\", \"$1\", \"node\", \"(.*)\"), \"device_class\", \"ssd\", \"\", \"\"))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "F"
         }
       ],
       "fieldConfig": {
@@ -1220,6 +1230,32 @@
                       },
                       "0": {
                         "text": "down",
+                        "color": "red"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SMART"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "1": {
+                        "text": "OK",
+                        "color": "green"
+                      },
+                      "0": {
+                        "text": "FAIL",
                         "color": "red"
                       }
                     }
@@ -1336,11 +1372,11 @@
               "device_class": true,
               "model": true,
               "serial": true,
-              "smart": true,
               "Value #B": true,
               "Value #C": true,
               "Value #D": true,
-              "Value #E": true
+              "Value #E": true,
+              "Value #F": true
             },
             "indexByName": {
               "hostname": 0,
@@ -1348,11 +1384,11 @@
               "device_class": 2,
               "model": 3,
               "serial": 4,
-              "smart": 5,
-              "Value #B": 6,
-              "Value #C": 7,
-              "Value #D": 8,
-              "Value #E": 9
+              "Value #B": 5,
+              "Value #C": 6,
+              "Value #D": 7,
+              "Value #E": 8,
+              "Value #F": 9
             },
             "renameByName": {
               "hostname": "Node",
@@ -1360,11 +1396,11 @@
               "device_class": "Class",
               "model": "Model",
               "serial": "Serial",
-              "smart": "SMART",
               "Value #B": "Size",
               "Value #C": "Status",
               "Value #D": "Restarts",
-              "Value #E": "Uptime (24h)"
+              "Value #E": "Uptime (24h)",
+              "Value #F": "SMART"
             }
           }
         }
