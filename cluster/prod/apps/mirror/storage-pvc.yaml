@@ -28,4 +28,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 180Gi
+      # 180Gi -> 225Gi (+25%, KubePersistentVolumeFillingUp fired
+      # 2026-11-07). Deliberately a small bump, not a big one - this is
+      # replaceable mirror cache, not data worth over-provisioning for.
+      storage: 225Gi
