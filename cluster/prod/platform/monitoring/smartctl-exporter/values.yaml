@@ -1,0 +1,36 @@
+# No device filter - this fleet mixes NVMe (ssd), SATA (hdd) and one
+# USB-attached SATA disk (talos-zr9-r2s's osd.3, behind an ASMedia
+# 174c:55aa bridge - confirmed live that smartctl's SAT passthrough works
+# fine through it, full attribute table and overall-health both read
+# cleanly). Leaving config empty lets the exporter auto-detect whatever
+# block devices actually exist on each node instead of hand-listing them
+# per node.
+config: {}
+
+serviceMonitor:
+  enabled: true
+
+# Same deal as prometheus-blackbox-exporter's rules: Prometheus's
+# ruleSelector only picks up PrometheusRules labelled release=monitoring
+# (kube-prometheus-stack's Helm-generated default) - without this label
+# the chart's own bundled rules below get created but never loaded.
+prometheusRules:
+  enabled: true
+  extraLabels:
+    release: monitoring
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 32Mi
+  limits:
+    memory: 64Mi
+
+# The chart's only RBAC resource binds the ServiceAccount to a
+# ClusterRole named "unrestricted-psp" - leftover PodSecurityPolicy
+# machinery from before PSP was removed in Kubernetes 1.25. That
+# ClusterRole doesn't exist here (confirmed), so the binding would just
+# be a dangling no-op; disabling it avoids committing a reference to a
+# resource that was never going to exist.
+rbac:
+  create: false
