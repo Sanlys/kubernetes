@@ -487,6 +487,16 @@
           "instant": true,
           "format": "table",
           "refId": "O"
+        },
+        {
+          "expr": "label_replace(changes(node_boot_time_seconds[7d]) * on(instance) group_left(nodename) node_uname_info, \"node\", \"$1\", \"nodename\", \"(.*)\")",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "P"
         }
       ],
       "fieldConfig": {
@@ -551,6 +561,40 @@
                     }
                   }
                 ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Reboots (7d)"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 3
+                    }
+                  ]
+                }
               }
             ]
           },
@@ -766,7 +810,8 @@
               "Value #L": true,
               "Value #M": true,
               "Value #N": true,
-              "Value #O": true
+              "Value #O": true,
+              "Value #P": true
             },
             "indexByName": {
               "node": 0,
@@ -784,7 +829,8 @@
               "Value #L": 12,
               "Value #M": 13,
               "Value #N": 14,
-              "Value #O": 15
+              "Value #O": 15,
+              "Value #P": 16
             },
             "renameByName": {
               "node": "Node",
@@ -802,7 +848,8 @@
               "Value #L": "RAM Capacity",
               "Value #M": "RAM Req",
               "Value #N": "RAM Limit",
-              "Value #O": "RAM PSI"
+              "Value #O": "RAM PSI",
+              "Value #P": "Reboots (7d)"
             }
           }
         }
@@ -1130,6 +1177,26 @@
           "instant": true,
           "format": "table",
           "refId": "C"
+        },
+        {
+          "expr": "label_replace(kube_pod_container_status_restarts_total{namespace=\"rook-ceph\", container=\"osd\"}, \"ceph_daemon\", \"osd.$1\", \"pod\", \"rook-ceph-osd-([0-9]+)-.*\")",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "D"
+        },
+        {
+          "expr": "avg_over_time(ceph_osd_up[24h]) * 100",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "E"
         }
       ],
       "fieldConfig": {
@@ -1172,6 +1239,78 @@
                 "value": "bytes"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Restarts"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 5
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Uptime (24h)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 0.01
+                    },
+                    {
+                      "color": "green",
+                      "value": 99
+                    }
+                  ]
+                }
+              }
+            ]
           }
         ]
       },
@@ -1199,7 +1338,9 @@
               "serial": true,
               "smart": true,
               "Value #B": true,
-              "Value #C": true
+              "Value #C": true,
+              "Value #D": true,
+              "Value #E": true
             },
             "indexByName": {
               "hostname": 0,
@@ -1209,7 +1350,9 @@
               "serial": 4,
               "smart": 5,
               "Value #B": 6,
-              "Value #C": 7
+              "Value #C": 7,
+              "Value #D": 8,
+              "Value #E": 9
             },
             "renameByName": {
               "hostname": "Node",
@@ -1219,7 +1362,9 @@
               "serial": "Serial",
               "smart": "SMART",
               "Value #B": "Size",
-              "Value #C": "Status"
+              "Value #C": "Status",
+              "Value #D": "Restarts",
+              "Value #E": "Uptime (24h)"
             }
           }
         }
