@@ -94,9 +94,12 @@ prometheus:
               # 20Gi was running at ~87% with only 10d retention and no size
               # cap - as more gets monitored the same window just keeps
               # eating more bytes, so a small bump just hits the same wall
-              # again soon. Ceph has room to spare; size for real headroom
-              # on the ~53Gi expected at the new 31d retention above.
-              storage: 100Gi
+              # again soon. 100Gi itself hit ~49% faster than the ~53Gi/31d
+              # estimate implied (more scrape targets added since sizing
+              # this), so doubling again rather than nudging it - same
+              # "no size cap, keeps eating more" problem otherwise. Ceph
+              # has room to spare (46TiB avail).
+              storage: 200Gi
 
 grafana:
   # Without this the chart generates its own random admin-password Secret
