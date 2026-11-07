@@ -18,6 +18,25 @@ prometheusRules:
   enabled: true
   extraLabels:
     release: monitoring
+  rules:
+    # Chart default is a flat >60C for every device, which is wrong in
+    # both directions here: this fleet's boot SSDs/NVMe run into the 60s
+    # routinely with nothing wrong (confirmed live - the Toshiba one on
+    # talos-3gd-ovr sits at 64C with a SMART temperature THRESH of 0,
+    # i.e. the drive itself has never once flagged this), while a
+    # spinning HDD hitting 60C (osd.3's normal range is ~46C) is a real
+    # "do something" signal - HDD failure rates climb measurably above
+    # ~50C. smartctl_device_rotation_rate only exists at all for actual
+    # rotational disks (confirmed live - present for the 4 HDDs, absent
+    # - not zero - for every SSD/NVMe), so it doubles as the type split.
+    smartCTLDDeviceTemperature:
+      expr: >-
+        (smartctl_device_temperature{temperature_type="current"} > 55 and on(instance, device) smartctl_device_rotation_rate)
+        or
+        (smartctl_device_temperature{temperature_type="current"} > 72 unless on(instance, device) smartctl_device_rotation_rate)
+      annotations:
+        summary: Device is running hotter than its type's safe threshold
+        description: Device {{ $labels.device }} on instance {{ $labels.instance }} is at {{ $value }}°C (threshold 55C for HDDs, 72C for SSD/NVMe).
 
 resources:
   requests:
