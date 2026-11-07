@@ -80,7 +80,8 @@
                 }
               }
             }
-          ]
+          ],
+          "min": 0
         },
         "overrides": []
       },
@@ -159,7 +160,8 @@
                 }
               }
             }
-          ]
+          ],
+          "min": 0
         },
         "overrides": []
       },
@@ -231,7 +233,8 @@
                 "value": 5
               }
             ]
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -293,7 +296,11 @@
           "unit": "short",
           "custom": {
             "fillOpacity": 10,
-            "lineWidth": 2
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
           },
           "min": 0
         },
@@ -345,7 +352,11 @@
           "unit": "bytes",
           "custom": {
             "fillOpacity": 10,
-            "lineWidth": 2
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
           },
           "min": 0
         },
@@ -397,7 +408,11 @@
           "unit": "bytes",
           "custom": {
             "fillOpacity": 10,
-            "lineWidth": 2
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
           },
           "min": 0
         },
@@ -584,7 +599,8 @@
                 "value": 21600
               }
             ]
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },

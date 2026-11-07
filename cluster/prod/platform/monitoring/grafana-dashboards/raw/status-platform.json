@@ -80,7 +80,8 @@
                 }
               }
             }
-          ]
+          ],
+          "min": 0
         },
         "overrides": []
       },
@@ -227,7 +228,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
+          "instant": false,
           "refId": "A"
         }
       ],
@@ -250,7 +251,8 @@
                 "value": 1
               }
             ]
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -304,8 +306,13 @@
           "unit": "bytes",
           "custom": {
             "fillOpacity": 10,
-            "lineWidth": 2
-          }
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -355,8 +362,13 @@
           "unit": "bytes",
           "custom": {
             "fillOpacity": 10,
-            "lineWidth": 2
-          }
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -406,8 +418,13 @@
           "unit": "bytes",
           "custom": {
             "fillOpacity": 10,
-            "lineWidth": 2
-          }
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -457,7 +474,11 @@
           "unit": "short",
           "custom": {
             "fillOpacity": 10,
-            "lineWidth": 2
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
           },
           "min": 0
         },
@@ -509,7 +530,11 @@
           "unit": "bytes",
           "custom": {
             "fillOpacity": 10,
-            "lineWidth": 2
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
           },
           "min": 0
         },
@@ -544,7 +569,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
+          "instant": false,
           "refId": "A"
         }
       ],
@@ -554,7 +579,8 @@
           "color": {
             "mode": "fixed",
             "fixedColor": "text"
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -591,7 +617,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
+          "instant": false,
           "refId": "A"
         }
       ],
@@ -601,7 +627,8 @@
           "color": {
             "mode": "fixed",
             "fixedColor": "text"
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -632,13 +659,13 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=~\"rook-ceph|kube-system\"}[$__range]))",
+          "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=~\"rook-ceph|kube-system\"}[1h]))",
           "legendFormat": null,
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
+          "instant": false,
           "refId": "A"
         }
       ],
@@ -648,7 +675,8 @@
           "color": {
             "mode": "fixed",
             "fixedColor": "text"
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -865,8 +893,13 @@
           "custom": {
             "fillOpacity": 10,
             "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
             "spanNulls": true
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -920,8 +953,13 @@
           "unit": "ms",
           "custom": {
             "fillOpacity": 10,
-            "lineWidth": 2
-          }
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -962,8 +1000,13 @@
           "unit": "short",
           "custom": {
             "fillOpacity": 10,
-            "lineWidth": 2
-          }
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -979,7 +1022,7 @@
       "type": "table",
       "title": "ArgoCD apps not Synced/Healthy",
       "gridPos": {
-        "h": 4,
+        "h": 8,
         "w": 24,
         "x": 0,
         "y": 40

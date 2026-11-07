@@ -37,7 +37,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
+          "instant": false,
           "refId": "A"
         }
       ],
@@ -47,7 +47,8 @@
           "color": {
             "mode": "fixed",
             "fixedColor": "text"
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -84,7 +85,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
+          "instant": false,
           "refId": "A"
         }
       ],
@@ -107,7 +108,8 @@
                 "value": 1
               }
             ]
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -144,7 +146,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
+          "instant": false,
           "refId": "A"
         }
       ],
@@ -154,7 +156,8 @@
           "color": {
             "mode": "fixed",
             "fixedColor": "text"
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -191,7 +194,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
+          "instant": false,
           "refId": "A"
         }
       ],
@@ -214,7 +217,8 @@
                 "value": 1
               }
             ]
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -251,7 +255,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
+          "instant": false,
           "refId": "A"
         }
       ],
@@ -261,7 +265,8 @@
           "color": {
             "mode": "fixed",
             "fixedColor": "text"
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -298,7 +303,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "instant": true,
+          "instant": false,
           "refId": "A"
         }
       ],
@@ -308,7 +313,8 @@
           "color": {
             "mode": "fixed",
             "fixedColor": "text"
-          }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -328,7 +334,7 @@
       "type": "table",
       "title": "Nodes",
       "gridPos": {
-        "h": 14,
+        "h": 10,
         "w": 24,
         "x": 0,
         "y": 4
@@ -389,7 +395,7 @@
           "refId": "E"
         },
         {
-          "expr": "sum by (node) (rate(container_cpu_usage_seconds_total{container!=\"\",container!=\"POD\"}[5m]) * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))",
+          "expr": "time() - kube_node_created",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -399,7 +405,7 @@
           "refId": "F"
         },
         {
-          "expr": "sum by (node) (kube_node_status_allocatable{resource=\"cpu\"})",
+          "expr": "label_replace(100 * (rate(node_pressure_cpu_waiting_seconds_total[5m]) * on(instance) group_left(nodename) node_uname_info), \"node\", \"$1\", \"nodename\", \"(.*)\")",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -409,7 +415,7 @@
           "refId": "G"
         },
         {
-          "expr": "sum by (node) (kube_pod_container_resource_requests{resource=\"cpu\"})",
+          "expr": "label_replace(100 * (rate(node_pressure_memory_waiting_seconds_total[5m]) * on(instance) group_left(nodename) node_uname_info), \"node\", \"$1\", \"nodename\", \"(.*)\")",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -419,76 +425,6 @@
           "refId": "H"
         },
         {
-          "expr": "sum by (node) (kube_pod_container_resource_limits{resource=\"cpu\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "I"
-        },
-        {
-          "expr": "label_replace(100 * (rate(node_pressure_cpu_waiting_seconds_total[5m]) * on(instance) group_left(nodename) node_uname_info), \"node\", \"$1\", \"nodename\", \"(.*)\")",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "J"
-        },
-        {
-          "expr": "sum by (node) (container_memory_working_set_bytes{container!=\"\",container!=\"POD\"} * on(namespace,pod) group_left(node) topk by (namespace, pod) (1, kube_pod_info))",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "K"
-        },
-        {
-          "expr": "sum by (node) (kube_node_status_allocatable{resource=\"memory\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "L"
-        },
-        {
-          "expr": "sum by (node) (kube_pod_container_resource_requests{resource=\"memory\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "M"
-        },
-        {
-          "expr": "sum by (node) (kube_pod_container_resource_limits{resource=\"memory\"})",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "N"
-        },
-        {
-          "expr": "label_replace(100 * (rate(node_pressure_memory_waiting_seconds_total[5m]) * on(instance) group_left(nodename) node_uname_info), \"node\", \"$1\", \"nodename\", \"(.*)\")",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "instant": true,
-          "format": "table",
-          "refId": "O"
-        },
-        {
           "expr": "label_replace(changes(node_boot_time_seconds[7d]) * on(instance) group_left(nodename) node_uname_info, \"node\", \"$1\", \"nodename\", \"(.*)\")",
           "datasource": {
             "type": "prometheus",
@@ -496,7 +432,7 @@
           },
           "instant": true,
           "format": "table",
-          "refId": "P"
+          "refId": "I"
         }
       ],
       "fieldConfig": {
@@ -543,6 +479,32 @@
           {
             "matcher": {
               "id": "byName",
+              "options": "Age"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Ready"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
               "options": "Role"
             },
             "properties": [
@@ -553,14 +515,52 @@
                     "type": "value",
                     "options": {
                       "1": {
-                        "text": "control-plane"
+                        "text": "control-plane",
+                        "color": "purple"
                       },
                       "0": {
-                        "text": "worker"
+                        "text": "worker",
+                        "color": "blue"
                       }
                     }
                   }
                 ]
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Taints"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "text",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 1
+                    }
+                  ]
+                }
               }
             ]
           },
@@ -595,102 +595,6 @@
                     }
                   ]
                 }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "CPU Used"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "short"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "CPU Capacity"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "short"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "CPU Req"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "short"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "CPU Limit"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "short"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "RAM Used"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "RAM Capacity"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "RAM Req"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "RAM Limit"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "bytes"
               }
             ]
           },
@@ -804,14 +708,7 @@
               "Value #F": true,
               "Value #G": true,
               "Value #H": true,
-              "Value #I": true,
-              "Value #J": true,
-              "Value #K": true,
-              "Value #L": true,
-              "Value #M": true,
-              "Value #N": true,
-              "Value #O": true,
-              "Value #P": true
+              "Value #I": true
             },
             "indexByName": {
               "node": 0,
@@ -823,14 +720,7 @@
               "Value #F": 6,
               "Value #G": 7,
               "Value #H": 8,
-              "Value #I": 9,
-              "Value #J": 10,
-              "Value #K": 11,
-              "Value #L": 12,
-              "Value #M": 13,
-              "Value #N": 14,
-              "Value #O": 15,
-              "Value #P": 16
+              "Value #I": 9
             },
             "renameByName": {
               "node": "Node",
@@ -839,17 +729,10 @@
               "os_image": "OS",
               "Value #D": "Taints",
               "Value #E": "Uptime",
-              "Value #F": "CPU Used",
-              "Value #G": "CPU Capacity",
-              "Value #H": "CPU Req",
-              "Value #I": "CPU Limit",
-              "Value #J": "CPU PSI",
-              "Value #K": "RAM Used",
-              "Value #L": "RAM Capacity",
-              "Value #M": "RAM Req",
-              "Value #N": "RAM Limit",
-              "Value #O": "RAM PSI",
-              "Value #P": "Reboots (7d)"
+              "Value #F": "Age",
+              "Value #G": "CPU PSI",
+              "Value #H": "RAM PSI",
+              "Value #I": "Reboots (7d)"
             }
           }
         }
@@ -864,7 +747,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 14
       },
       "datasource": {
         "type": "prometheus",
@@ -957,7 +840,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 18
+        "y": 14
       },
       "datasource": {
         "type": "prometheus",
@@ -1049,7 +932,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 28
+        "y": 24
       },
       "datasource": {
         "type": "prometheus",
@@ -1071,8 +954,13 @@
           "unit": "percent",
           "custom": {
             "fillOpacity": 10,
-            "lineWidth": 2
-          }
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -1095,7 +983,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 28
+        "y": 24
       },
       "datasource": {
         "type": "prometheus",
@@ -1117,8 +1005,13 @@
           "unit": "percent",
           "custom": {
             "fillOpacity": 10,
-            "lineWidth": 2
-          }
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          },
+          "min": 0
         },
         "overrides": []
       },
@@ -1136,12 +1029,12 @@
     {
       "id": 12,
       "type": "table",
-      "title": "Disks (Ceph-backing)",
+      "title": "Disks",
       "gridPos": {
-        "h": 8,
+        "h": 18,
         "w": 24,
         "x": 0,
-        "y": 36
+        "y": 32
       },
       "datasource": {
         "type": "prometheus",
@@ -1149,7 +1042,7 @@
       },
       "targets": [
         {
-          "expr": "label_replace(label_replace(ceph_osd_metadata * on(hostname, device_class) group_left(model_name, serial_number) (label_replace(label_replace(smartctl_device{device=\"sda\"} * on(pod, namespace) group_left(node) kube_pod_info{namespace=\"monitoring\"}, \"hostname\", \"$1\", \"node\", \"(.*)\"), \"device_class\", \"hdd\", \"\", \"\") or label_replace(label_replace(smartctl_device{device=\"nvme0\"} * on(pod, namespace) group_left(node) kube_pod_info{namespace=\"monitoring\"}, \"hostname\", \"$1\", \"node\", \"(.*)\"), \"device_class\", \"ssd\", \"\", \"\")), \"model\", \"$1\", \"model_name\", \"(.*)\"), \"serial\", \"$1\", \"serial_number\", \"(.*)\")",
+          "expr": "label_replace(label_replace(label_join((label_replace(label_replace(smartctl_device * on(pod, namespace) group_left(node) kube_pod_info{namespace=\"monitoring\"}, \"hostname\", \"$1\", \"node\", \"(.*)\") and on(instance, device) smartctl_device_rotation_rate, \"kind\", \"hdd\", \"\", \"\") or label_replace(label_replace(smartctl_device * on(pod, namespace) group_left(node) kube_pod_info{namespace=\"monitoring\"}, \"hostname\", \"$1\", \"node\", \"(.*)\") unless on(instance, device) smartctl_device_rotation_rate, \"kind\", \"ssd/nvme\", \"\", \"\")), \"disk_id\", \"/\", \"hostname\", \"device\"), \"model\", \"$1\", \"model_name\", \"(.*)\"), \"serial\", \"$1\", \"serial_number\", \"(.*)\")",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -1159,7 +1052,7 @@
           "refId": "A"
         },
         {
-          "expr": "ceph_osd_stat_bytes",
+          "expr": "sum by (disk_id) (label_join(label_replace(smartctl_device_smart_status * on(pod, namespace) group_left(node) kube_pod_info{namespace=\"monitoring\"}, \"hostname\", \"$1\", \"node\", \"(.*)\"), \"disk_id\", \"/\", \"hostname\", \"device\"))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -1169,7 +1062,7 @@
           "refId": "B"
         },
         {
-          "expr": "ceph_osd_up",
+          "expr": "sum by (ceph_daemon, disk_id) (label_join((label_replace(ceph_osd_metadata{device_class=\"hdd\"}, \"device\", \"sda\", \"\", \"\") or label_replace(ceph_osd_metadata{device_class=\"ssd\"}, \"device\", \"nvme0\", \"\", \"\")), \"disk_id\", \"/\", \"hostname\", \"device\"))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -1179,7 +1072,7 @@
           "refId": "C"
         },
         {
-          "expr": "label_replace(kube_pod_container_status_restarts_total{namespace=\"rook-ceph\", container=\"osd\"}, \"ceph_daemon\", \"osd.$1\", \"pod\", \"rook-ceph-osd-([0-9]+)-.*\")",
+          "expr": "sum by (ceph_daemon, disk_id) (label_join((label_replace(ceph_osd_metadata{device_class=\"hdd\"}, \"device\", \"sda\", \"\", \"\") or label_replace(ceph_osd_metadata{device_class=\"ssd\"}, \"device\", \"nvme0\", \"\", \"\")), \"disk_id\", \"/\", \"hostname\", \"device\")) * on(ceph_daemon) group_left() ceph_osd_stat_bytes",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -1189,7 +1082,7 @@
           "refId": "D"
         },
         {
-          "expr": "avg_over_time(ceph_osd_up[24h]) * 100",
+          "expr": "sum by (ceph_daemon, disk_id) (label_join((label_replace(ceph_osd_metadata{device_class=\"hdd\"}, \"device\", \"sda\", \"\", \"\") or label_replace(ceph_osd_metadata{device_class=\"ssd\"}, \"device\", \"nvme0\", \"\", \"\")), \"disk_id\", \"/\", \"hostname\", \"device\")) * on(ceph_daemon) group_left() ceph_osd_up",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -1199,7 +1092,7 @@
           "refId": "E"
         },
         {
-          "expr": "ceph_osd_metadata * on(hostname, device_class) group_left() (label_replace(label_replace(smartctl_device_smart_status{device=\"sda\"} * on(pod, namespace) group_left(node) kube_pod_info{namespace=\"monitoring\"}, \"hostname\", \"$1\", \"node\", \"(.*)\"), \"device_class\", \"hdd\", \"\", \"\") or label_replace(label_replace(smartctl_device_smart_status{device=\"nvme0\"} * on(pod, namespace) group_left(node) kube_pod_info{namespace=\"monitoring\"}, \"hostname\", \"$1\", \"node\", \"(.*)\"), \"device_class\", \"ssd\", \"\", \"\"))",
+          "expr": "sum by (ceph_daemon, disk_id) (label_join((label_replace(ceph_osd_metadata{device_class=\"hdd\"}, \"device\", \"sda\", \"\", \"\") or label_replace(ceph_osd_metadata{device_class=\"ssd\"}, \"device\", \"nvme0\", \"\", \"\")), \"disk_id\", \"/\", \"hostname\", \"device\")) * on(ceph_daemon) group_left() (label_replace(kube_pod_container_status_restarts_total{namespace=\"rook-ceph\", container=\"osd\"}, \"ceph_daemon\", \"osd.$1\", \"pod\", \"rook-ceph-osd-([0-9]+)-.*\"))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -1207,6 +1100,16 @@
           "instant": true,
           "format": "table",
           "refId": "F"
+        },
+        {
+          "expr": "sum by (ceph_daemon, disk_id) (label_join((label_replace(ceph_osd_metadata{device_class=\"hdd\"}, \"device\", \"sda\", \"\", \"\") or label_replace(ceph_osd_metadata{device_class=\"ssd\"}, \"device\", \"nvme0\", \"\", \"\")), \"disk_id\", \"/\", \"hostname\", \"device\")) * on(ceph_daemon) group_left() (avg_over_time(ceph_osd_up[24h]) * 100)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "G"
         }
       ],
       "fieldConfig": {
@@ -1358,7 +1261,7 @@
         {
           "id": "joinByField",
           "options": {
-            "byField": "ceph_daemon",
+            "byField": "disk_id",
             "mode": "outer"
           }
         },
@@ -1368,39 +1271,42 @@
             "excludeByName": {},
             "includeByName": {
               "hostname": true,
-              "ceph_daemon": true,
-              "device_class": true,
+              "device": true,
+              "kind": true,
               "model": true,
               "serial": true,
+              "ceph_daemon": true,
               "Value #B": true,
-              "Value #C": true,
               "Value #D": true,
               "Value #E": true,
-              "Value #F": true
+              "Value #F": true,
+              "Value #G": true
             },
             "indexByName": {
               "hostname": 0,
-              "ceph_daemon": 1,
-              "device_class": 2,
-              "model": 3,
-              "serial": 4,
-              "Value #B": 5,
-              "Value #C": 6,
+              "device": 1,
+              "ceph_daemon": 2,
+              "kind": 3,
+              "model": 4,
+              "serial": 5,
+              "Value #B": 6,
               "Value #D": 7,
               "Value #E": 8,
-              "Value #F": 9
+              "Value #F": 9,
+              "Value #G": 10
             },
             "renameByName": {
               "hostname": "Node",
-              "ceph_daemon": "OSD",
-              "device_class": "Class",
+              "device": "Device",
+              "kind": "Type",
               "model": "Model",
               "serial": "Serial",
-              "Value #B": "Size",
-              "Value #C": "Status",
-              "Value #D": "Restarts",
-              "Value #E": "Uptime (24h)",
-              "Value #F": "SMART"
+              "ceph_daemon": "OSD",
+              "Value #B": "SMART",
+              "Value #D": "Size",
+              "Value #E": "Status",
+              "Value #F": "Restarts",
+              "Value #G": "Uptime (24h)"
             }
           }
         }
