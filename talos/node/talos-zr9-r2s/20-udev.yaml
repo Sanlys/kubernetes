@@ -1,0 +1,19 @@
+# This node's external USB-SATA dock (ASMedia 174c:55aa) periodically drops
+# the physical USB link under sustained write load (3 disconnects in <24h,
+# 2026-11-07 - see osd.3's RECENT_CRASH entries and this node's dmesg for
+# "USB disconnect, device number N"). The quirk in schematic-zr9-r2s.yaml
+# only disables UAS; it doesn't stop this.
+#
+# The actual outage isn't the disconnect itself - the kernel re-attaches the
+# disk as /dev/sda again within ~1s - it's that the freshly re-created
+# device node comes back owned root:root, so the OSD pod (running as
+# ceph:ceph, uid/gid 167) can't open it and sits in CrashLoopBackOff until
+# someone manually deletes the pod to force its init container to re-chown
+# the device. This rule chowns /dev/sda to ceph:ceph as soon as udev creates
+# it, so Kubernetes' own automatic container restart succeeds without manual
+# intervention. It does not fix the underlying USB dropout, only the
+# permissions fallout from it.
+apiVersion: v1alpha1
+kind: UdevRulesConfig
+rules:
+    - SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", ATTRS{idVendor}=="174c", ATTRS{idProduct}=="55aa", OWNER="167", GROUP="167", MODE="0660"
