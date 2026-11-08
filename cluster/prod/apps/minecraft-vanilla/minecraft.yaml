@@ -45,7 +45,7 @@ spec:
             - name: EULA
               value: "TRUE"
             - name: TYPE
-              value: "PAPER"
+              value: "VANILLA"
             - name: VERSION
               value: "26.3"
             - name: MOTD
