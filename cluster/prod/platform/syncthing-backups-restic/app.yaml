@@ -12,10 +12,11 @@ spec:
     targetRevision: main
     path: cluster/prod/platform/syncthing-backups-restic
     directory:
-      # harbor-pull-secret.enc.yaml is sops-encrypted and applied by hand,
-      # like every other secret here (see services/restic-backup's
-      # releasing instructions) - same pattern as smb-gateway's app.yaml.
-      exclude: "{app.yaml,secret.enc.yaml,harbor-pull-secret.enc.yaml}"
+      # harbor-pull-secret.enc.yaml and backblaze-secret.enc.yaml are
+      # sops-encrypted and applied by hand, like every other secret here
+      # (see services/restic-backup's releasing instructions) - same
+      # pattern as smb-gateway's app.yaml.
+      exclude: "{app.yaml,secret.enc.yaml,harbor-pull-secret.enc.yaml,backblaze-secret.enc.yaml}"
   destination:
     server: https://kubernetes.default.svc
     namespace: syncthing

@@ -1,0 +1,86 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: restic-backblaze-copy
+  namespace: syncthing
+spec:
+  schedule: "0 2 * * *"
+  # Starts suspended: the destination repo doesn't exist yet and needs a
+  # one-time `restic init --copy-chunker-params` first (done by hand, not
+  # by this job) so dedup actually works between the two repos. Flip to
+  # false once that's done and a manual first copy has been verified.
+  suspend: true
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: default
+          imagePullSecrets:
+            - name: harbor-pull
+          containers:
+          - name: restic
+            # Same image as backup-cron.yaml (restic + kubectl + rclone
+            # baked in - see services/restic-backup).
+            image: harbor.k8s.lysakermoen.com/library/restic-backup:v0.2.0
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -u
+
+                # Allow-list, not a deny-list: only hosts named here are
+                # copied to Backblaze. Anything NOT in this list stays
+                # local-only by default - so a future local-only host
+                # (e.g. the game-mgr S3 bucket's data, or media-library, if
+                # either is ever added to the local restic repo) needs
+                # nothing done to exclude it; it's excluded unless someone
+                # deliberately adds it to this list. Today this happens to
+                # be every host in the local repo.
+                HOSTS="syncthing forgejo immich linkwarden photoprism tools-idp tools-hello tools-game-mgr harbor database-main database-app"
+
+                HOST_ARGS=""
+                for H in $HOSTS; do
+                  HOST_ARGS="$HOST_ARGS --host $H"
+                done
+
+                # --copy-chunker-params at init time (done once, by hand)
+                # already aligned chunk boundaries between the two repos,
+                # so content shared between hosts/snapshots still dedupes
+                # here despite the different encryption keys.
+                restic copy $HOST_ARGS --cache-dir /cache
+            envFrom:
+            - secretRef:
+                name: backblaze-credentials
+            env:
+            # Source repo (local Ceph RGW) for `restic copy`'s --from-repo,
+            # renamed from restic-credentials' own RESTIC_REPOSITORY/
+            # RESTIC_PASSWORD (which name the LOCAL repo as primary for the
+            # backup/prune jobs) - here the primary ($RESTIC_REPOSITORY,
+            # from backblaze-credentials above) is the Backblaze side
+            # instead, so the local side is the "from" side.
+            - name: RESTIC_FROM_REPOSITORY
+              valueFrom:
+                secretKeyRef: {name: restic-credentials, key: RESTIC_REPOSITORY}
+            - name: RESTIC_FROM_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: restic-credentials, key: RESTIC_PASSWORD}
+            # AWS_* here authenticates the local repo's plain s3: backend
+            # (the --from-repo side) - the Backblaze side never touches
+            # these, since it goes through rclone instead (see Dockerfile).
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef: {name: restic-credentials, key: AWS_ACCESS_KEY_ID}
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef: {name: restic-credentials, key: AWS_SECRET_ACCESS_KEY}
+            - name: AWS_DEfAULT_REGION
+              valueFrom:
+                secretKeyRef: {name: restic-credentials, key: AWS_DEfAULT_REGION}
+            volumeMounts:
+            - name: cache
+              mountPath: /cache
+          volumes:
+          - name: cache
+            persistentVolumeClaim:
+              claimName: restic-cache
+          restartPolicy: OnFailure
