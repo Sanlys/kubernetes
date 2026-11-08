@@ -27,7 +27,7 @@ spec:
               command: ["/bin/sh", "-c"]
               args:
                 - |
-                  set -eu
+                  set -u
                   TS=$(date +%Y%m%d-%H%M%S)
                   # Keep the last 8 snapshots per PVC (48h at this 6h
                   # cadence) - this is a fast local "oops" rollback, not the
@@ -35,34 +35,53 @@ spec:
                   # bounded window keeps Ceph usage predictable.
                   KEEP=8
                   PVC_LIST="mirror/archmirror-pvc monitoring/prometheus-monitoring-kube-prometheus-prometheus-db-prometheus-monitoring-kube-prometheus-prometheus-0 monitoring/storage-loki-0 syncthing/syncthing-config vaultwarden/vaultwarden-pvc forgejo/forgejo-data forgejo/pgdata-postgres-0 immich/immich-upload immich/pgdata-postgres-0 photoprism/photoprism-storage photoprism/data-mariadb-0 linkwarden/linkwarden-data linkwarden/pgdata-postgres-0 tools-idp/tools-idp-postgres tools-hello/tools-hello-postgres tools-game-mgr/tools-game-mgr-postgres"
+                  FAIL=0
                   for ITEM in $PVC_LIST; do
                     NS="${ITEM%%/*}"
                     PVC="${ITEM##*/}"
                     SNAP="${PVC}-${TS}"
                     echo "Creating snapshot $SNAP in $NS for PVC $PVC"
-                    cat <<EOF | kubectl apply -f -
+                    # No "pvc: ${PVC}" label here (first version of this had
+                    # one) - the prometheus PVC's name alone is 103 bytes,
+                    # over the 63-byte label-VALUE limit, so that `kubectl
+                    # apply` always failed, and `restartPolicy: OnFailure`
+                    # kept re-running this whole script from the top on
+                    # every retry, creating a fresh archmirror-pvc snapshot
+                    # each time (see commit message - this ran for real,
+                    # live, before being caught). Pruning below matches by
+                    # name PREFIX instead, which has no such length limit.
+                    # Without set -e too now: one PVC's failure (this one
+                    # included) no longer aborts every other PVC in the
+                    # list, or re-runs already-completed ones on retry.
+                    if ! cat <<EOF | kubectl apply -f -
                   apiVersion: snapshot.storage.k8s.io/v1
                   kind: VolumeSnapshot
                   metadata:
                     name: ${SNAP}
                     namespace: ${NS}
-                    labels:
-                      pvc: ${PVC}
                   spec:
                     volumeSnapshotClassName: csi-rbdplugin-snapclass
                     source:
                       persistentVolumeClaimName: ${PVC}
                   EOF
+                    then
+                      echo "FAILED: snapshot of $NS/$PVC" >&2
+                      FAIL=1
+                      continue
+                    fi
 
-                    # Prune: keep only the newest $KEEP snapshots for this PVC
-                    OLD=$(kubectl -n "$NS" get volumesnapshot -l "pvc=${PVC}" \
-                      --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[*].metadata.name}' \
-                      | tr ' ' '\n' | head -n -"$KEEP")
+                    # Prune: keep only the newest $KEEP snapshots whose name
+                    # starts with "${PVC}-" (each PVC in the list above is
+                    # the only one of its exact name in its own namespace,
+                    # so this prefix is unambiguous per-namespace).
+                    OLD=$(kubectl -n "$NS" get volumesnapshot -o jsonpath='{.items[*].metadata.name}' \
+                      | tr ' ' '\n' | grep "^${PVC}-" | sort | head -n -"$KEEP")
                     for OLDSNAP in $OLD; do
                       echo "Pruning old snapshot $OLDSNAP in $NS"
                       kubectl -n "$NS" delete volumesnapshot "$OLDSNAP" --ignore-not-found
                     done
                   done
+                  exit $FAIL
               resources:
                 requests:
                   cpu: 50m
