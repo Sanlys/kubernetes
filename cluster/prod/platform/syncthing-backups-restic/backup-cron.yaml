@@ -38,7 +38,7 @@ spec:
             # installing kubectl via apk on every 15-minute run was wasted
             # work and an extra point of failure for something that never
             # changes between runs.
-            image: harbor.k8s.lysakermoen.com/library/restic-backup:v0.1.0
+            image: harbor.k8s.lysakermoen.com/library/restic-backup:v0.3.0
             command: ["/bin/sh", "-c"]
             args:
               - |
@@ -101,6 +101,66 @@ spec:
                   fi
                   dump "$NAME" "$NS" "$POD" "$CMD"
                 }
+
+                # vaultwarden's own built-in backup command (>=1.32.1,
+                # VACUUM INTO) is explicitly safe to run against the live
+                # db - writes a timestamped standalone .sqlite3 file into
+                # /data itself, which we stream out and then delete from
+                # the live pod (otherwise these pile up forever). The
+                # non-db files (rsa_key.pem, and any future attachments -
+                # Vaultwarden stores those as separate files, not in the
+                # db) are static/rarely-written, so a live tar of them
+                # alongside is safe the same way the pg_dump/mysqldump
+                # targets below are.
+                dump_vaultwarden() {
+                  NS="vaultwarden"
+                  echo "=== vaultwarden ($NS) ==="
+                  POD=$(kubectl -n "$NS" get pods -l app=vaultwarden -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+                  if [ -z "$POD" ]; then
+                    echo "FAILED: vaultwarden (no pod matching app=vaultwarden)" >&2
+                    FAIL=1
+                    return
+                  fi
+
+                  BACKUP_OUT=$(kubectl -n "$NS" exec "$POD" -- /vaultwarden backup 2>&1)
+                  BACKUP_FILE=$(echo "$BACKUP_OUT" | sed -n "s/.*Backup to '\(.*\)' was successful.*/\1/p")
+                  if [ -z "$BACKUP_FILE" ]; then
+                    echo "FAILED: vaultwarden backup command ($BACKUP_OUT)" >&2
+                    FAIL=1
+                    return
+                  fi
+
+                  TMP="/tmp/vaultwarden.sqlite3"
+                  if ! kubectl -n "$NS" exec "$POD" -- cat "/${BACKUP_FILE}" > "$TMP"; then
+                    echo "FAILED: vaultwarden backup stream" >&2
+                    FAIL=1
+                    kubectl -n "$NS" exec "$POD" -- rm -f "/${BACKUP_FILE}" >/dev/null 2>&1
+                    rm -f "$TMP"
+                    return
+                  fi
+                  kubectl -n "$NS" exec "$POD" -- rm -f "/${BACKUP_FILE}" >/dev/null 2>&1
+
+                  if ! restic backup "$TMP" --cache-dir /cache --host vaultwarden --tag db; then
+                    echo "FAILED: vaultwarden restic backup (db)" >&2
+                    FAIL=1
+                  fi
+                  rm -f "$TMP"
+
+                  TMP2="/tmp/vaultwarden-files.tar"
+                  if ! kubectl -n "$NS" exec "$POD" -- tar -cf - --exclude=./icon_cache --exclude=./tmp --exclude=./lost+found --exclude='./db.sqlite3*' -C /data . > "$TMP2"; then
+                    echo "FAILED: vaultwarden files tar" >&2
+                    FAIL=1
+                    rm -f "$TMP2"
+                    return
+                  fi
+                  if ! restic backup "$TMP2" --cache-dir /cache --host vaultwarden --tag file; then
+                    echo "FAILED: vaultwarden restic backup (files)" >&2
+                    FAIL=1
+                  fi
+                  rm -f "$TMP2"
+                }
+
+                dump_vaultwarden
 
                 dump forgejo forgejo postgres-0 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"'
                 dump immich immich postgres-0 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"'

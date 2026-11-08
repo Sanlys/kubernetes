@@ -251,6 +251,39 @@ roleRef:
   name: restic-db-dump-exec
   apiGroup: rbac.authorization.k8s.io
 ---
+# vaultwarden is a Deployment (random pod name hash), resolved by label like
+# tools-idp/tools-hello/tools-game-mgr above. Backs up via vaultwarden's own
+# built-in `vaultwarden backup` command (>=1.32.1, VACUUM INTO under the
+# hood) instead of a clone+sqlite3 dance - it's explicitly designed to be
+# safe against the live, in-use database, so no snapshot isolation is
+# needed. See backup-cron.yaml.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-db-dump-exec
+  namespace: vaultwarden
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-db-dump-exec
+  namespace: vaultwarden
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-db-dump-exec
+  apiGroup: rbac.authorization.k8s.io
+---
 # cnpg-central's primary pod changes identity on failover (CNPG promotes
 # a different replica), same reasoning as tools-idp/tools-hello/
 # tools-game-mgr above - resolved by label, so this can't be

@@ -1,0 +1,346 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: restic-file-backup
+  namespace: syncthing
+spec:
+  # Daily, well before the Backblaze copy job (02:00) so a fresh copy of
+  # these lands in the local repo in time to go out that same night.
+  schedule: "0 1 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: restic-db-dump
+          imagePullSecrets:
+            - name: harbor-pull
+          containers:
+          - name: restic
+            image: harbor.k8s.lysakermoen.com/library/restic-backup:v0.3.0
+            command: ["/bin/sh", "-c"]
+            args:
+              - |
+                set -u
+                FAIL=0
+
+                # Shared by every target below: snapshot the live PVC,
+                # clone a PVC from that snapshot (an independent RBD image
+                # - no RWO multi-attach conflict with the live volume, no
+                # need to touch the running app), then read from a
+                # throwaway pod mounting the clone. Cleans up the
+                # snapshot/clone/pod unconditionally on every exit path.
+                #
+                # Vaultwarden is NOT here - it has its own built-in
+                # `vaultwarden backup` command, safe to run against the
+                # live db directly, handled in backup-cron.yaml instead.
+                # Actual has no such mechanism (checked: no official or
+                # solid community live-safe backup path), so it goes
+                # through the clone - see backup_sqlite_hybrid_target.
+
+                create_snapshot_and_clone() {
+                  # Sets SNAP/CLONE/POD/RESTORE_SIZE/SC as a side effect.
+                  # Returns non-zero (with FAIL=1 and cleanup already run)
+                  # on any failure.
+                  TS=$(date -u +%Y%m%d%H%M%S)
+                  SNAP="${PVC}-resticsrc-${TS}"
+                  CLONE="${PVC}-resticsrc-${TS}"
+                  POD="${PVC}-resticsrc-${TS}"
+
+                  if ! cat <<EOF | kubectl apply -f -
+                apiVersion: snapshot.storage.k8s.io/v1
+                kind: VolumeSnapshot
+                metadata:
+                  name: ${SNAP}
+                  namespace: ${NS}
+                spec:
+                  volumeSnapshotClassName: csi-rbdplugin-snapclass
+                  source:
+                    persistentVolumeClaimName: ${PVC}
+                EOF
+                  then
+                    echo "FAILED: $NAME snapshot create" >&2; FAIL=1; return 1
+                  fi
+
+                  if ! kubectl -n "$NS" wait volumesnapshot "$SNAP" --for=jsonpath='{.status.readyToUse}'=true --timeout=300s; then
+                    echo "FAILED: $NAME snapshot never became ready" >&2; FAIL=1
+                    kubectl -n "$NS" delete volumesnapshot "$SNAP" --ignore-not-found --wait=false >/dev/null 2>&1
+                    return 1
+                  fi
+
+                  RESTORE_SIZE=$(kubectl -n "$NS" get volumesnapshot "$SNAP" -o jsonpath='{.status.restoreSize}')
+                  SC=$(kubectl -n "$NS" get pvc "$PVC" -o jsonpath='{.spec.storageClassName}')
+                  return 0
+                }
+
+                cleanup_snapshot_clone() {
+                  kubectl -n "$NS" delete pod "$POD" --ignore-not-found --wait=false >/dev/null 2>&1
+                  kubectl -n "$NS" delete pvc "$CLONE" --ignore-not-found --wait=false >/dev/null 2>&1
+                  kubectl -n "$NS" delete volumesnapshot "$SNAP" --ignore-not-found --wait=false >/dev/null 2>&1
+                }
+
+                # Plain tar of a whole PVC via a throwaway alpine pod
+                # (public image, read-only mount - no write access needed
+                # just to read files). For Forgejo's git data, Linkwarden's
+                # archived pages, and Minecraft worlds.
+                #
+                # RCON_LABEL (optional 4th arg, e.g. "app=mc-vanilla"): if
+                # set, pauses Minecraft saves (save-off + save-all flush)
+                # before the snapshot and resumes them (save-on) as soon as
+                # the snapshot is confirmed ready - not after the whole
+                # clone+tar+upload, which would hold the pause open far
+                # longer than needed. Resolved by label rather than
+                # `exec deploy/$NAME` - the latter needs a `get` on the
+                # Deployment object itself to resolve the pod, which isn't
+                # (and shouldn't need to be) granted; this matches the
+                # dump_by_label pattern in backup-cron.yaml instead, which
+                # only needs pods get/list + pods/exec (already granted by
+                # file-backup-rbac.yaml).
+                backup_file_target() {
+                  NAME="$1"; NS="$2"; PVC="$3"; RCON_LABEL="${4:-}"
+                  TMP="/tmp/${NAME}.tar"
+
+                  echo "=== $NAME ($NS/$PVC) ==="
+
+                  MC_POD=""
+                  if [ -n "$RCON_LABEL" ]; then
+                    MC_POD=$(kubectl -n "$NS" get pods -l "$RCON_LABEL" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+                    if [ -z "$MC_POD" ]; then
+                      echo "FAILED: $NAME (no pod matching $RCON_LABEL in $NS)" >&2; FAIL=1; return
+                    fi
+                    if ! kubectl -n "$NS" exec "$MC_POD" -c minecraft -- sh -c 'rcon-cli --password "$RCON_PASSWORD" "save-off"'; then
+                      echo "FAILED: $NAME rcon save-off" >&2; FAIL=1; return
+                    fi
+                    if ! kubectl -n "$NS" exec "$MC_POD" -c minecraft -- sh -c 'rcon-cli --password "$RCON_PASSWORD" "save-all flush"'; then
+                      echo "FAILED: $NAME rcon save-all flush" >&2; FAIL=1
+                      kubectl -n "$NS" exec "$MC_POD" -c minecraft -- sh -c 'rcon-cli --password "$RCON_PASSWORD" "save-on"' >/dev/null 2>&1
+                      return
+                    fi
+                  fi
+
+                  if ! create_snapshot_and_clone; then
+                    if [ -n "$RCON_LABEL" ]; then
+                      kubectl -n "$NS" exec "$MC_POD" -c minecraft -- sh -c 'rcon-cli --password "$RCON_PASSWORD" "save-on"' >/dev/null 2>&1
+                    fi
+                    return
+                  fi
+
+                  # Snapshot now holds a safe, flushed point-in-time copy -
+                  # resume normal play immediately rather than holding
+                  # saves paused for the rest of this pipeline.
+                  if [ -n "$RCON_LABEL" ]; then
+                    kubectl -n "$NS" exec "$MC_POD" -c minecraft -- sh -c 'rcon-cli --password "$RCON_PASSWORD" "save-on"' >/dev/null 2>&1 \
+                      || echo "WARNING: $NAME rcon save-on failed - saves may still be paused, check manually" >&2
+                  fi
+
+                  if ! cat <<EOF | kubectl apply -f -
+                apiVersion: v1
+                kind: PersistentVolumeClaim
+                metadata:
+                  name: ${CLONE}
+                  namespace: ${NS}
+                spec:
+                  accessModes: ["ReadWriteOnce"]
+                  storageClassName: ${SC}
+                  resources:
+                    requests:
+                      storage: ${RESTORE_SIZE}
+                  dataSource:
+                    name: ${SNAP}
+                    kind: VolumeSnapshot
+                    apiGroup: snapshot.storage.k8s.io
+                EOF
+                  then
+                    echo "FAILED: $NAME clone pvc create" >&2; FAIL=1; cleanup_snapshot_clone; return
+                  fi
+
+                  if ! kubectl -n "$NS" wait pvc "$CLONE" --for=jsonpath='{.status.phase}'=Bound --timeout=300s; then
+                    echo "FAILED: $NAME clone pvc never bound" >&2; FAIL=1; cleanup_snapshot_clone; return
+                  fi
+
+                  if ! cat <<EOF | kubectl apply -f -
+                apiVersion: v1
+                kind: Pod
+                metadata:
+                  name: ${POD}
+                  namespace: ${NS}
+                spec:
+                  restartPolicy: Never
+                  containers:
+                  - name: reader
+                    image: alpine:3.24
+                    command: ["sleep", "3600"]
+                    volumeMounts:
+                    - name: data
+                      mountPath: /mnt
+                      readOnly: true
+                  volumes:
+                  - name: data
+                    persistentVolumeClaim:
+                      claimName: ${CLONE}
+                      readOnly: true
+                EOF
+                  then
+                    echo "FAILED: $NAME reader pod create" >&2; FAIL=1; cleanup_snapshot_clone; return
+                  fi
+
+                  if ! kubectl -n "$NS" wait pod "$POD" --for=condition=Ready --timeout=120s; then
+                    echo "FAILED: $NAME reader pod never ready" >&2; FAIL=1; cleanup_snapshot_clone; return
+                  fi
+
+                  if ! kubectl -n "$NS" exec "$POD" -- tar -cf - -C /mnt . > "$TMP"; then
+                    echo "FAILED: $NAME tar stream (exec)" >&2; FAIL=1; rm -f "$TMP"; cleanup_snapshot_clone; return
+                  fi
+
+                  if ! restic backup "$TMP" --cache-dir /cache --host "$NAME" --tag file; then
+                    echo "FAILED: $NAME restic backup" >&2; FAIL=1
+                  fi
+
+                  rm -f "$TMP"
+                  cleanup_snapshot_clone
+                }
+
+                # Actual: no sqlite3 CLI in its own container, and no
+                # officially-sanctioned live backup mechanism (checked the
+                # docs - unlike Vaultwarden). The clone is read-write (not
+                # read-only) so sqlite3 can do its normal WAL
+                # checkpoint/recovery on open - harmless since the clone is
+                # disposable. Dumps every *.sqlite(3) file found (there can
+                # be more than one - Actual keeps a separate file per
+                # budget/"sync group") via `.dump`, which is sqlite's own
+                # officially-sanctioned format once a db is not live/in-use
+                # (true here - nothing but this pod ever touches the
+                # clone), and also dedupes far better in restic than a raw
+                # file copy. Everything else in the volume (e.g. the
+                # user-files/*.blob attachments actually found alongside
+                # the budget db - a sqlite-only dump would silently miss
+                # these) goes in a second, separate tar.
+                backup_sqlite_hybrid_target() {
+                  NAME="$1"; NS="$2"; PVC="$3"; EXTRA_EXCLUDES="${4:-}"
+                  FILETMP="/tmp/${NAME}-files.tar"
+                  SQLTMP=""
+
+                  echo "=== $NAME ($NS/$PVC) ==="
+
+                  if ! create_snapshot_and_clone; then
+                    return
+                  fi
+
+                  if ! cat <<EOF | kubectl apply -f -
+                apiVersion: v1
+                kind: PersistentVolumeClaim
+                metadata:
+                  name: ${CLONE}
+                  namespace: ${NS}
+                spec:
+                  accessModes: ["ReadWriteOnce"]
+                  storageClassName: ${SC}
+                  resources:
+                    requests:
+                      storage: ${RESTORE_SIZE}
+                  dataSource:
+                    name: ${SNAP}
+                    kind: VolumeSnapshot
+                    apiGroup: snapshot.storage.k8s.io
+                EOF
+                  then
+                    echo "FAILED: $NAME clone pvc create" >&2; FAIL=1; cleanup_snapshot_clone; return
+                  fi
+
+                  if ! kubectl -n "$NS" wait pvc "$CLONE" --for=jsonpath='{.status.phase}'=Bound --timeout=300s; then
+                    echo "FAILED: $NAME clone pvc never bound" >&2; FAIL=1; cleanup_snapshot_clone; return
+                  fi
+
+                  if ! cat <<EOF | kubectl apply -f -
+                apiVersion: v1
+                kind: Pod
+                metadata:
+                  name: ${POD}
+                  namespace: ${NS}
+                spec:
+                  restartPolicy: Never
+                  imagePullSecrets:
+                  - name: harbor-pull
+                  containers:
+                  - name: reader
+                    image: harbor.k8s.lysakermoen.com/library/restic-backup:v0.3.0
+                    command: ["sleep", "3600"]
+                    volumeMounts:
+                    - name: data
+                      mountPath: /mnt
+                  volumes:
+                  - name: data
+                    persistentVolumeClaim:
+                      claimName: ${CLONE}
+                EOF
+                  then
+                    echo "FAILED: $NAME reader pod create" >&2; FAIL=1; cleanup_snapshot_clone; return
+                  fi
+
+                  if ! kubectl -n "$NS" wait pod "$POD" --for=condition=Ready --timeout=120s; then
+                    echo "FAILED: $NAME reader pod never ready" >&2; FAIL=1; cleanup_snapshot_clone; return
+                  fi
+
+                  SQLFILES=$(kubectl -n "$NS" exec "$POD" -- sh -c "find /mnt \\( -iname '*.sqlite3' -o -iname '*.sqlite' \\)" 2>/dev/null)
+                  if [ -z "$SQLFILES" ]; then
+                    echo "FAILED: $NAME no sqlite files found in clone" >&2; FAIL=1; cleanup_snapshot_clone; return
+                  fi
+
+                  DUMP_FAIL=0
+                  EXCLUDE_ARGS=""
+                  for F in $SQLFILES; do
+                    BASE=$(basename "$F")
+                    TMP="/tmp/${NAME}-${BASE%.*}.sql"
+                    if ! kubectl -n "$NS" exec "$POD" -- sh -c "sqlite3 '$F' .dump" > "$TMP"; then
+                      echo "FAILED: $NAME sqlite dump of $F" >&2; DUMP_FAIL=1; rm -f "$TMP"; continue
+                    fi
+                    SQLTMP="$SQLTMP $TMP"
+                    REL=".${F#/mnt}"
+                    EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude=${REL}"
+                  done
+
+                  for D in $EXTRA_EXCLUDES; do
+                    EXCLUDE_ARGS="$EXCLUDE_ARGS --exclude=./${D}"
+                  done
+
+                  if [ "$DUMP_FAIL" = 1 ] || [ -z "$SQLTMP" ]; then
+                    echo "FAILED: $NAME one or more sqlite dumps failed" >&2; FAIL=1
+                    rm -f $SQLTMP; cleanup_snapshot_clone; return
+                  fi
+
+                  if ! kubectl -n "$NS" exec "$POD" -- sh -c "tar -cf - $EXCLUDE_ARGS -C /mnt ." > "$FILETMP"; then
+                    echo "FAILED: $NAME tar stream (exec)" >&2; FAIL=1
+                    rm -f $SQLTMP "$FILETMP"; cleanup_snapshot_clone; return
+                  fi
+
+                  if ! restic backup $SQLTMP --cache-dir /cache --host "$NAME" --tag db; then
+                    echo "FAILED: $NAME restic backup (db)" >&2; FAIL=1
+                  fi
+                  if ! restic backup "$FILETMP" --cache-dir /cache --host "$NAME" --tag file; then
+                    echo "FAILED: $NAME restic backup (files)" >&2; FAIL=1
+                  fi
+
+                  rm -f $SQLTMP "$FILETMP"
+                  cleanup_snapshot_clone
+                }
+
+                backup_sqlite_hybrid_target actual actual actual-data "lost+found"
+
+                backup_file_target forgejo-files    forgejo      forgejo-data
+                backup_file_target linkwarden-files  linkwarden   linkwarden-data
+                backup_file_target minecraft-server  minecraft-server   mc-paper-data   app=mc-paper
+                backup_file_target minecraft-slimey  minecraft-slimey   mc-paper-data   app=mc-paper
+                backup_file_target minecraft-vanilla minecraft-vanilla  mc-vanilla-data app=mc-vanilla
+
+                exit $FAIL
+            envFrom:
+            - secretRef:
+                name: restic-credentials
+            volumeMounts:
+            - name: cache
+              mountPath: /cache
+          volumes:
+          - name: cache
+            persistentVolumeClaim:
+              claimName: restic-cache
+          restartPolicy: OnFailure

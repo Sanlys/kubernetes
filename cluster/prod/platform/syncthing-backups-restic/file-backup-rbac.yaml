@@ -1,0 +1,224 @@
+# RBAC for the file-level restic backup job (file-backup-cron.yaml), which
+# backs up PVCs with no safe live-dump path: Actual has no sqlite3 CLI and
+# no officially-sanctioned live backup mechanism (unlike Vaultwarden, which
+# has a built-in `vaultwarden backup` command and is handled directly in
+# backup-cron.yaml/db-dump-rbac.yaml instead - no snapshot needed there);
+# Forgejo's git data and Linkwarden's archived pages are plain files with no
+# dump concept; Minecraft worlds are plain files too. All go via Ceph
+# snapshot -> clone PVC -> read from a throwaway pod, rather than a live
+# dump.
+#
+# Reuses the same restic-db-dump ServiceAccount already bound in the
+# syncthing namespace (see db-dump-rbac.yaml) - its name predates this
+# broader use, but it's the same job/pod, so one SA is simpler than two.
+#
+# This grants more than the DB-dump Roles do: create/delete on
+# volumesnapshots and persistentvolumeclaims, not just exec into an
+# already-running pod. The job creates and deletes all three (a snapshot, a
+# clone PVC, a throwaway reader pod) per target, per run, and cleans each up
+# before moving to the next target - see file-backup-cron.yaml.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-file-backup
+  namespace: actual
+rules:
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshots"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-file-backup
+  namespace: actual
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-file-backup
+  apiGroup: rbac.authorization.k8s.io
+---
+# forgejo and linkwarden already have a narrower restic-db-dump-exec Role
+# (pods/exec, resourceNames-scoped to postgres-0) from db-dump-rbac.yaml -
+# this is a separate, broader Role for the file-level job, not a change to
+# that one.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-file-backup
+  namespace: forgejo
+rules:
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshots"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-file-backup
+  namespace: forgejo
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-file-backup
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-file-backup
+  namespace: linkwarden
+rules:
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshots"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-file-backup
+  namespace: linkwarden
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-file-backup
+  apiGroup: rbac.authorization.k8s.io
+---
+# minecraft-server-temporary deliberately excluded - its name suggests a
+# disposable/test instance, not something worth the RBAC footprint to back
+# up. Flagged to the user; add a Role/RoleBinding pair here (same shape) if
+# that's wrong.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-file-backup
+  namespace: minecraft-server
+rules:
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshots"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-file-backup
+  namespace: minecraft-server
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-file-backup
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-file-backup
+  namespace: minecraft-slimey
+rules:
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshots"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-file-backup
+  namespace: minecraft-slimey
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-file-backup
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-file-backup
+  namespace: minecraft-vanilla
+rules:
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshots"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["create", "get", "list", "delete", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-file-backup
+  namespace: minecraft-vanilla
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-file-backup
+  apiGroup: rbac.authorization.k8s.io

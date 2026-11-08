@@ -22,7 +22,7 @@ spec:
           - name: restic
             # Same image as backup-cron.yaml (restic + kubectl + rclone
             # baked in - see services/restic-backup).
-            image: harbor.k8s.lysakermoen.com/library/restic-backup:v0.2.0
+            image: harbor.k8s.lysakermoen.com/library/restic-backup:v0.3.0
             command: ["/bin/sh", "-c"]
             args:
               - |
