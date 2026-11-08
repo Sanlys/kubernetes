@@ -221,3 +221,63 @@ roleRef:
   kind: Role
   name: restic-db-dump-exec
   apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-db-dump-exec
+  namespace: harbor
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get"]
+    resourceNames: ["harbor-database-0"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+    resourceNames: ["harbor-database-0"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-db-dump-exec
+  namespace: harbor
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-db-dump-exec
+  apiGroup: rbac.authorization.k8s.io
+---
+# cnpg-central's primary pod changes identity on failover (CNPG promotes
+# a different replica), same reasoning as tools-idp/tools-hello/
+# tools-game-mgr above - resolved by label, so this can't be
+# resourceNames-scoped either.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-db-dump-exec
+  namespace: database
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-db-dump-exec
+  namespace: database
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-db-dump-exec
+  apiGroup: rbac.authorization.k8s.io

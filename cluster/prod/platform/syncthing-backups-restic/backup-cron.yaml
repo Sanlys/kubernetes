@@ -109,6 +109,18 @@ spec:
                 dump_by_label tools-idp tools-idp app.kubernetes.io/name=idp-postgres 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"'
                 dump_by_label tools-hello tools-hello app.kubernetes.io/name=hello-postgres 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"'
                 dump_by_label tools-game-mgr tools-game-mgr app.kubernetes.io/name=game-mgr-postgres 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"'
+                # Harbor's own postgres (robot accounts, project config -
+                # not the registry's actual image blobs, which aren't
+                # backed up here). Bitnami chart, stable StatefulSet name.
+                dump harbor harbor harbor-database-0 'pg_dump -U postgres registry'
+                # cnpg-central: both databases are empty right now (nothing
+                # uses this cluster yet), but wired up anyway so it's
+                # already covered the moment something does. CNPG promotes
+                # a different pod to primary on failover, so (like the
+                # tools-* apps) this resolves by label, not a fixed name -
+                # see db-dump-rbac.yaml.
+                dump_by_label database-main database "cnpg.io/cluster=cnpg-central-cluster,cnpg.io/instanceRole=primary" 'pg_dump -U postgres database'
+                dump_by_label database-app database "cnpg.io/cluster=cnpg-central-cluster,cnpg.io/instanceRole=primary" 'pg_dump -U postgres app'
 
                 exit $FAIL
             envFrom:
