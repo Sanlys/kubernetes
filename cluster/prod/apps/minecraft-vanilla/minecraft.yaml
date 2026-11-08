@@ -44,16 +44,20 @@ spec:
           env:
             - name: EULA
               value: "TRUE"
-            # Reverted: switching to VANILLA crashes on boot even with
-            # --safeMode ("Failed to load datapacks, can't proceed with
-            # server load" -> "Overworld settings missing"). Root cause
-            # isn't just a stray Paper datapack reference - confirmed via
-            # the sftp sidecar that data/minecraft/world_gen_settings.dat
-            # genuinely doesn't exist in this world save at all, and
-            # --safeMode (vanilla-only datapacks) hit the exact same crash.
-            # Needs real investigation before trying again - see chat.
+            # Paper doesn't maintain 4 per-world state files vanilla's
+            # loader requires at this version: data/minecraft/
+            # world_gen_settings.dat, game_rules.dat, weather.dat,
+            # scheduled_events.dat. Confirmed by diffing against a fresh
+            # vanilla world of the same version/DataVersion - that's why
+            # the first attempt crashed even with --safeMode (never a
+            # datapack problem). Fix: staged all 4 files manually (default
+            # gamerules/weather/events, world_gen_settings.dat rebuilt with
+            # the real seed pulled live via RCON) before this switch, and
+            # validated twice against disposable clones of the real data
+            # first (seed matched, all terrain/player data intact, clean
+            # boot) before ever touching the live world.
             - name: TYPE
-              value: "PAPER"
+              value: "VANILLA"
             - name: VERSION
               value: "26.3"
             - name: MOTD
