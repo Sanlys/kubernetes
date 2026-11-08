@@ -5,11 +5,15 @@ metadata:
   namespace: syncthing
 spec:
   schedule: "0 2 * * *"
-  # Starts suspended: the destination repo doesn't exist yet and needs a
-  # one-time `restic init --copy-chunker-params` first (done by hand, not
-  # by this job) so dedup actually works between the two repos. Flip to
-  # false once that's done and a manual first copy has been verified.
-  suspend: true
+  # Destination repo initialized by hand (restic init --copy-chunker-params)
+  # and the manual first copy verified: `restic check` on the Backblaze
+  # side passed with 0 errors. The copy landed short of 1:1 with local
+  # (one-off job read the snapshot list once at the start of a 4h10m
+  # upload, while the regular 15-min backup cron kept adding more the
+  # whole time) - expected, not data loss; this daily run converges it
+  # incrementally since `restic copy` only copies what's missing at the
+  # destination.
+  suspend: false
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
@@ -34,9 +38,14 @@ spec:
                 # (e.g. the game-mgr S3 bucket's data, or media-library, if
                 # either is ever added to the local restic repo) needs
                 # nothing done to exclude it; it's excluded unless someone
-                # deliberately adds it to this list. Today this happens to
-                # be every host in the local repo.
-                HOSTS="syncthing forgejo immich linkwarden photoprism tools-idp tools-hello tools-game-mgr harbor database-main database-app"
+                # deliberately adds it to this list.
+                #
+                # vaultwarden, actual, forgejo-files, linkwarden-files,
+                # minecraft-server, minecraft-slimey, minecraft-vanilla
+                # added for the new file-level/Vaultwarden backup targets
+                # (backup-cron.yaml/file-backup-cron.yaml) - not present
+                # when this list was first written.
+                HOSTS="syncthing forgejo immich linkwarden photoprism tools-idp tools-hello tools-game-mgr harbor database-main database-app vaultwarden actual forgejo-files linkwarden-files minecraft-server minecraft-slimey minecraft-vanilla"
 
                 HOST_ARGS=""
                 for H in $HOSTS; do
