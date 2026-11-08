@@ -1,0 +1,31 @@
+name: restic-backup
+
+on:
+  pull_request:
+    paths:
+      - services/restic-backup/**
+      - .github/workflows/restic-backup.yaml
+  workflow_dispatch:
+
+# Build and smoke-test only - the image is pushed to Harbor by hand (see
+# services/restic-backup/README.md), nothing is published from here.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: services/restic-backup
+          load: true
+          tags: restic-backup:dev
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test
+        run: |
+          docker run --rm restic-backup:dev -c 'restic version && kubectl version --client'

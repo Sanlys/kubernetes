@@ -1,0 +1,223 @@
+# Lets backup-cron.yaml's restic job exec into each app's own postgres/mariadb
+# pod to run a logical dump (pg_dump/mysqldump) over the trusted local
+# socket - no app DB credentials are ever read by this job; see
+# backup-cron.yaml's own comment for why that's possible for Postgres
+# (default pg_hba.conf trusts local-socket connections) and how MariaDB
+# differs (it has to reference its own already-mounted env var by name,
+# never materialized here).
+#
+# Scoped per-namespace via resourceNames to only the one named pod - the
+# exec'd command only ever runs a dump, but least-privilege still matters:
+# this ServiceAccount cannot exec into (or even see) anything else in these
+# namespaces.
+#
+# tools-idp/tools-hello/tools-game-mgr (github.com/Sanlys/tools,
+# deploy/charts/tool-library's shared postgres template) use a Deployment
+# for postgres, not a StatefulSet - the pod name's hash suffix changes
+# every rollout, so there's no stable name for resourceNames. The labels
+# are stable though (app.kubernetes.io/name=<app>-postgres), so
+# backup-cron.yaml resolves the current pod by label at runtime - which
+# means this Role can't be scoped tighter than the whole namespace's pods.
+# Still namespace-bounded, just not single-pod-bounded like the four above.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: restic-db-dump
+  namespace: syncthing
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-db-dump-exec
+  namespace: forgejo
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get"]
+    resourceNames: ["postgres-0"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+    resourceNames: ["postgres-0"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-db-dump-exec
+  namespace: forgejo
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-db-dump-exec
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-db-dump-exec
+  namespace: immich
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get"]
+    resourceNames: ["postgres-0"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+    resourceNames: ["postgres-0"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-db-dump-exec
+  namespace: immich
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-db-dump-exec
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-db-dump-exec
+  namespace: linkwarden
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get"]
+    resourceNames: ["postgres-0"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+    resourceNames: ["postgres-0"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-db-dump-exec
+  namespace: linkwarden
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-db-dump-exec
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-db-dump-exec
+  namespace: photoprism
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get"]
+    resourceNames: ["mariadb-0"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+    resourceNames: ["mariadb-0"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-db-dump-exec
+  namespace: photoprism
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-db-dump-exec
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-db-dump-exec
+  namespace: tools-idp
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-db-dump-exec
+  namespace: tools-idp
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-db-dump-exec
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-db-dump-exec
+  namespace: tools-hello
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-db-dump-exec
+  namespace: tools-hello
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-db-dump-exec
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restic-db-dump-exec
+  namespace: tools-game-mgr
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restic-db-dump-exec
+  namespace: tools-game-mgr
+subjects:
+  - kind: ServiceAccount
+    name: restic-db-dump
+    namespace: syncthing
+roleRef:
+  kind: Role
+  name: restic-db-dump-exec
+  apiGroup: rbac.authorization.k8s.io

@@ -29,21 +29,88 @@ spec:
       # Forbid, since nothing would kill it.
       template:
         spec:
+          serviceAccountName: restic-db-dump
+          imagePullSecrets:
+            - name: harbor-pull
           containers:
           - name: restic
-            image: restic/restic:0.19.1@sha256:136600b6ff6843d61d355f7f71f460a166429f35de6fd11b568fece3c9a4d510
+            # restic + kubectl baked in (see services/restic-backup) -
+            # installing kubectl via apk on every 15-minute run was wasted
+            # work and an extra point of failure for something that never
+            # changes between runs.
+            image: harbor.k8s.lysakermoen.com/library/restic-backup:v0.1.0
+            command: ["/bin/sh", "-c"]
             args:
-            - backup
-            - /data
-            - --cache-dir
-            - /cache
-            - --host
-            - syncthing
-            # Temporary: every run has hit the 30-min deadline since the
-            # media-fs pg_num change, with no clear infra-side cause found
-            # by inspecting Ceph directly. --verbose=2 prints per-file
-            # progress so the next run's logs show exactly where time goes.
-            - --verbose=2
+              - |
+                set -u
+                FAIL=0
+
+                echo "=== syncthing (files) ==="
+                # Temporary: every run has hit the 30-min deadline since the
+                # media-fs pg_num change, with no clear infra-side cause found
+                # by inspecting Ceph directly. --verbose=2 prints per-file
+                # progress so the next run's logs show exactly where time goes.
+                restic backup /data --cache-dir /cache --host syncthing --verbose=2 || FAIL=1
+
+                # DB dumps land in the SAME repo, tagged "db", one restic
+                # host per app - same place/timeline as the file backups
+                # above (`restic snapshots` lists everything together).
+                # Plain-text pg_dump/mysqldump output (no -Fc, no gzip) so
+                # restic's content-defined chunking can actually dedupe
+                # between runs; written to a temp file rather than piped via
+                # --stdin so a failed `kubectl exec` can't be masked by
+                # restic trivially "succeeding" on empty/closed stdin (ash
+                # has no `pipefail` to catch that on the pipe form).
+                #
+                # Each dump runs over the target's own trusted local
+                # Unix-socket connection (Postgres's default pg_hba.conf,
+                # MariaDB via its own already-mounted env var referenced by
+                # name) - this job never reads or sees any app's DB
+                # password itself.
+                dump() {
+                  NAME="$1"; NS="$2"; POD="$3"; CMD="$4"
+                  TMP="/tmp/${NAME}.sql"
+                  echo "=== $NAME ($NS/$POD) ==="
+                  if ! kubectl -n "$NS" exec "$POD" -- sh -c "$CMD" > "$TMP"; then
+                    echo "FAILED: $NAME dump (exec)" >&2
+                    FAIL=1
+                    rm -f "$TMP"
+                    return
+                  fi
+                  if ! restic backup "$TMP" --cache-dir /cache --host "$NAME" --tag db; then
+                    echo "FAILED: $NAME dump (restic backup)" >&2
+                    FAIL=1
+                  fi
+                  rm -f "$TMP"
+                }
+
+                # Same idea, but the pod name is resolved by label instead
+                # of a fixed name: the "tools" repo's shared chart
+                # (github.com/Sanlys/tools, deploy/charts/tool-library)
+                # deploys postgres as a Deployment, not a StatefulSet, so
+                # the pod name's hash suffix changes every rollout. RBAC
+                # for these 3 namespaces is correspondingly broader (no
+                # resourceNames restriction) - see db-dump-rbac.yaml.
+                dump_by_label() {
+                  NAME="$1"; NS="$2"; LABEL="$3"; CMD="$4"
+                  POD=$(kubectl -n "$NS" get pods -l "$LABEL" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+                  if [ -z "$POD" ]; then
+                    echo "FAILED: $NAME dump (no pod matching $LABEL in $NS)" >&2
+                    FAIL=1
+                    return
+                  fi
+                  dump "$NAME" "$NS" "$POD" "$CMD"
+                }
+
+                dump forgejo forgejo postgres-0 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"'
+                dump immich immich postgres-0 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"'
+                dump linkwarden linkwarden postgres-0 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"'
+                dump photoprism photoprism mariadb-0 'mysqldump -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" "$MARIADB_DATABASE"'
+                dump_by_label tools-idp tools-idp app.kubernetes.io/name=idp-postgres 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"'
+                dump_by_label tools-hello tools-hello app.kubernetes.io/name=hello-postgres 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"'
+                dump_by_label tools-game-mgr tools-game-mgr app.kubernetes.io/name=game-mgr-postgres 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"'
+
+                exit $FAIL
             envFrom:
             - secretRef:
                 name: restic-credentials
