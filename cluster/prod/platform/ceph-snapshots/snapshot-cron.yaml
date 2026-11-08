@@ -5,17 +5,24 @@ metadata:
   namespace: snapshots
 spec:
   schedule: "0 */6 * * *"
-  # Was suspended with an empty history (no VolumeSnapshots ever existed) and
-  # a stale PVC list (syncthing/syncthing-pvc hasn't been the live PVC since
-  # the RWX migration - see syncthing-backups-restic/backup-cron.yaml).
-  # Un-suspended, list refreshed to current PVC names, and expanded to cover
-  # every app with real RWO data that otherwise has zero backup of any kind
-  # (Vaultwarden was the most urgent - a 335-day-old password vault with
-  # nothing protecting it). Still RBD-only (csi-rbdplugin-snapclass): the
-  # RWX CephFS PVCs (syncthing-pvc-rwx etc.) need a separate CephFS
-  # VolumeSnapshotClass this cluster doesn't have yet, so they're excluded
-  # here - restic covers syncthing-pvc-rwx directly instead.
-  suspend: false
+  # Was suspended once before after filling up the cluster: the pre-existing
+  # script never deleted anything (confirmed by reading it - no prune logic
+  # existed at all), so 261 days of unattended 6-hourly snapshots just
+  # accumulated forever. suspend stays true here deliberately, even after
+  # the fixes below - this does not go back to "on" without deliberate
+  # confirmation first, given that history. Re-enabling also needs
+  # cluster/prod/platform/rook-ceph/rook-ceph-rbd/csi-rbac-supplement.yaml
+  # applied first (a separate, currently-live gap: the RBD CSI controller
+  # lacks "patch" permission on volumesnapshotcontents, so no VolumeSnapshot
+  # can complete at all right now regardless of this job).
+  #
+  # This is NOT a backup - it's a fast local "oops, undo the last few
+  # hours" safety net, same Ceph cluster as what it's protecting against.
+  # Any real backup goes through restic (syncthing-backups-restic) instead.
+  # Flat 48h (8 snapshots at this 6h cadence) for every PVC, no
+  # per-app/per-PVC tuning - deliberately simple, deliberately the same
+  # bound for everything so there's nothing here to misjudge per app.
+  suspend: true
   jobTemplate:
     spec:
       template:
@@ -28,11 +35,9 @@ spec:
               args:
                 - |
                   set -u
-                  TS=$(date +%Y%m%d-%H%M%S)
+                  TS=$(date -u +%Y%m%d-%H%M%S)
                   # Keep the last 8 snapshots per PVC (48h at this 6h
-                  # cadence) - this is a fast local "oops" rollback, not the
-                  # long-term record (that's restic's job), so a short
-                  # bounded window keeps Ceph usage predictable.
+                  # cadence) - flat, same for every PVC, no exceptions.
                   KEEP=8
                   PVC_LIST="mirror/archmirror-pvc monitoring/prometheus-monitoring-kube-prometheus-prometheus-db-prometheus-monitoring-kube-prometheus-prometheus-0 monitoring/storage-loki-0 syncthing/syncthing-config vaultwarden/vaultwarden-pvc forgejo/forgejo-data forgejo/pgdata-postgres-0 immich/immich-upload immich/pgdata-postgres-0 photoprism/photoprism-storage photoprism/data-mariadb-0 linkwarden/linkwarden-data linkwarden/pgdata-postgres-0 tools-idp/tools-idp-postgres tools-hello/tools-hello-postgres tools-game-mgr/tools-game-mgr-postgres"
                   FAIL=0
@@ -40,19 +45,12 @@ spec:
                     NS="${ITEM%%/*}"
                     PVC="${ITEM##*/}"
                     SNAP="${PVC}-${TS}"
-                    echo "Creating snapshot $SNAP in $NS for PVC $PVC"
-                    # No "pvc: ${PVC}" label here (first version of this had
+                    echo "=== $NS/$PVC ==="
+                    # No "pvc: ${PVC}" label (an earlier version of this had
                     # one) - the prometheus PVC's name alone is 103 bytes,
-                    # over the 63-byte label-VALUE limit, so that `kubectl
-                    # apply` always failed, and `restartPolicy: OnFailure`
-                    # kept re-running this whole script from the top on
-                    # every retry, creating a fresh archmirror-pvc snapshot
-                    # each time (see commit message - this ran for real,
-                    # live, before being caught). Pruning below matches by
-                    # name PREFIX instead, which has no such length limit.
-                    # Without set -e too now: one PVC's failure (this one
-                    # included) no longer aborts every other PVC in the
-                    # list, or re-runs already-completed ones on retry.
+                    # over the 63-byte label-VALUE limit, so that apply
+                    # always failed; pruning below matches by name PREFIX
+                    # instead, which has no such length limit.
                     if ! cat <<EOF | kubectl apply -f -
                   apiVersion: snapshot.storage.k8s.io/v1
                   kind: VolumeSnapshot
@@ -73,11 +71,18 @@ spec:
                     # Prune: keep only the newest $KEEP snapshots whose name
                     # starts with "${PVC}-" (each PVC in the list above is
                     # the only one of its exact name in its own namespace,
-                    # so this prefix is unambiguous per-namespace).
+                    # so this prefix is unambiguous per-namespace). set -u
+                    # only (not -e) and `continue` on failure above - one
+                    # PVC's failure no longer aborts every other PVC in the
+                    # list, or re-runs already-completed ones on retry
+                    # (which is exactly how the label bug above produced 10
+                    # duplicate archmirror-pvc snapshots before it was
+                    # caught - restartPolicy: OnFailure re-ran this whole
+                    # script from the top on every failure).
                     OLD=$(kubectl -n "$NS" get volumesnapshot -o jsonpath='{.items[*].metadata.name}' \
                       | tr ' ' '\n' | grep "^${PVC}-" | sort | head -n -"$KEEP")
                     for OLDSNAP in $OLD; do
-                      echo "Pruning old snapshot $OLDSNAP in $NS"
+                      echo "Pruning $OLDSNAP in $NS"
                       kubectl -n "$NS" delete volumesnapshot "$OLDSNAP" --ignore-not-found
                     done
                   done
