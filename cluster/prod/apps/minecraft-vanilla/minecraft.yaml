@@ -44,19 +44,18 @@ spec:
           env:
             - name: EULA
               value: "TRUE"
+            # Reverted: switching to VANILLA crashes on boot even with
+            # --safeMode ("Failed to load datapacks, can't proceed with
+            # server load" -> "Overworld settings missing"). Root cause
+            # isn't just a stray Paper datapack reference - confirmed via
+            # the sftp sidecar that data/minecraft/world_gen_settings.dat
+            # genuinely doesn't exist in this world save at all, and
+            # --safeMode (vanilla-only datapacks) hit the exact same crash.
+            # Needs real investigation before trying again - see chat.
             - name: TYPE
-              value: "VANILLA"
+              value: "PAPER"
             - name: VERSION
               value: "26.3"
-            # Paper injects its own "paper" datapack into the world's
-            # level.dat enabled-datapacks list. Vanilla can't resolve that
-            # pack and refuses to load world gen settings at all (crash:
-            # "Failed to load datapacks... reset to vanilla with
-            # --safeMode"). --safeMode strips non-vanilla datapacks from
-            # level.dat on this boot - remove this once confirmed working,
-            # it only needs to run once.
-            - name: EXTRA_ARGS
-              value: "--safeMode"
             - name: MOTD
               value: "Vanilla server"
 
