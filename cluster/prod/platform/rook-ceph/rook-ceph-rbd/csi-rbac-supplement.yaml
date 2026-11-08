@@ -1,0 +1,37 @@
+# Rook's own ceph-csi-ctrlplugin-sidecars ClusterRole grants "update" on
+# volumesnapshotcontents (and "update"+"patch" on its /status subresource),
+# but never plain "patch" on the base resource. The external-snapshotter
+# sidecar uses a PATCH call to add its "VolumeSnapshotBeingCreated"
+# annotation, so every VolumeSnapshot creation fails cluster-wide with:
+#   cannot patch resource "volumesnapshotcontents" in API group
+#   "snapshot.storage.k8s.io" at the cluster scope
+# Confirmed live: this has been broken since before the (also previously
+# suspended) ceph-snapshots cron ever ran for real - nothing on this
+# cluster has ever successfully completed a VolumeSnapshot.
+#
+# Same gap, same fix shape as the untracked "ceph-csi-pv-patch-supplement"
+# ClusterRole already applied by hand on this cluster (granting "patch" on
+# persistentvolumes, which has the identical update-vs-patch gap) - this
+# version is committed here instead of applied out of band, so it survives
+# a Rook upgrade/reinstall without needing to be remembered and re-applied.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ceph-csi-vsc-patch-supplement
+rules:
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshotcontents"]
+    verbs: ["patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ceph-csi-vsc-patch-supplement
+subjects:
+  - kind: ServiceAccount
+    name: rbd-ctrlplugin-sa
+    namespace: rook-ceph
+roleRef:
+  kind: ClusterRole
+  name: ceph-csi-vsc-patch-supplement
+  apiGroup: rbac.authorization.k8s.io
