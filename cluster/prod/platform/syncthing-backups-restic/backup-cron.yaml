@@ -38,7 +38,7 @@ spec:
             # installing kubectl via apk on every 15-minute run was wasted
             # work and an extra point of failure for something that never
             # changes between runs.
-            image: harbor.k8s.lysakermoen.com/library/restic-backup:v0.1.0
+            image: harbor.k8s.lysakermoen.com/library/restic-backup:v0.2.0
             command: ["/bin/sh", "-c"]
             args:
               - |
