@@ -78,13 +78,19 @@ spec:
               value: "true"
             - name: RCON_PASSWORD
               value: "supersecret"
+            # false, not removed: ops want to hand-manage server.properties
+            # (whitelist on/off, whitelisted players) via in-game/RCON
+            # commands without it getting clobbered back on the next pod
+            # restart. ENABLE_WHITELIST is removed entirely rather than set
+            # to either value, for the same reason - per the image's own
+            # docs, an unset var is left alone on restart, while a set one
+            # (true or false) is still written into server.properties
+            # independent of this flag.
             - name: OVERRIDE_SERVER_PROPERTIES
-              value: "true"
+              value: "false"
 
             - name: MAX_PLAYERS
               value: "100"
-            - name: ENABLE_WHITELIST
-              value: "false"
             - name: SPAWN_PROTECTION
               value: "0"
           lifecycle:
