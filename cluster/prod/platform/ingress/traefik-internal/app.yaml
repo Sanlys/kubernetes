@@ -70,9 +70,17 @@ spec:
               # hit when it didn't.
               middlewares:
                 - traefik-strip-brotli@kubernetescrd
+        # service.spec.type, not a top-level service.type - the chart's
+        # values.schema.json has always only allowed "type" nested under
+        # spec (additionalProperties: false on service itself, confirmed
+        # against the chart source directly). ArgoCD's manifest generation
+        # started failing on this ("additional properties 'type' not
+        # allowed") even though it had been running fine - most likely its
+        # repo-server/Helm binary started enforcing the schema it wasn't
+        # before, since the chart itself never permitted this shape.
         service:
-          type: LoadBalancer
           spec:
+            type: LoadBalancer
             loadBalancerIP: 10.0.6.240
         metrics:
           prometheus:

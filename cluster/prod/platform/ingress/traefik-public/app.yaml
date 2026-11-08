@@ -98,9 +98,11 @@ spec:
             proxyProtocol:
               trustedIPs:
                 - 10.244.0.0/16
+        # service.spec.type, not a top-level service.type - see
+        # traefik-internal/app.yaml's matching comment for why.
         service:
-          type: LoadBalancer
           spec:
+            type: LoadBalancer
             loadBalancerIP: 10.0.6.241
             # Was Cluster (the default) - with classic kube-proxy
             # (Cilium's kube-proxy-replacement is off here) a packet can
