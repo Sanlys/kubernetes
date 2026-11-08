@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: mc-monitor
-          image: itzg/mc-monitor:1.18.3
+          image: itzg/mc-monitor:1.19.0
           args:
             - export-for-prometheus
             - --port=8080
