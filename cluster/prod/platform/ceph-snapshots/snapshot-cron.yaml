@@ -5,7 +5,17 @@ metadata:
   namespace: snapshots
 spec:
   schedule: "0 */6 * * *"
-  suspend: true
+  # Was suspended with an empty history (no VolumeSnapshots ever existed) and
+  # a stale PVC list (syncthing/syncthing-pvc hasn't been the live PVC since
+  # the RWX migration - see syncthing-backups-restic/backup-cron.yaml).
+  # Un-suspended, list refreshed to current PVC names, and expanded to cover
+  # every app with real RWO data that otherwise has zero backup of any kind
+  # (Vaultwarden was the most urgent - a 335-day-old password vault with
+  # nothing protecting it). Still RBD-only (csi-rbdplugin-snapclass): the
+  # RWX CephFS PVCs (syncthing-pvc-rwx etc.) need a separate CephFS
+  # VolumeSnapshotClass this cluster doesn't have yet, so they're excluded
+  # here - restic covers syncthing-pvc-rwx directly instead.
+  suspend: false
   jobTemplate:
     spec:
       template:
@@ -17,8 +27,14 @@ spec:
               command: ["/bin/sh", "-c"]
               args:
                 - |
+                  set -eu
                   TS=$(date +%Y%m%d-%H%M%S)
-                  PVC_LIST="mirror/archmirror-pvc monitoring/prometheus-monitoring-kube-prometheus-prometheus-db-prometheus-monitoring-kube-prometheus-prometheus-0 monitoring/storage-loki-0 syncthing/syncthing-config syncthing/syncthing-pvc vaultwarden/vaultwarden-pvc"
+                  # Keep the last 8 snapshots per PVC (48h at this 6h
+                  # cadence) - this is a fast local "oops" rollback, not the
+                  # long-term record (that's restic's job), so a short
+                  # bounded window keeps Ceph usage predictable.
+                  KEEP=8
+                  PVC_LIST="mirror/archmirror-pvc monitoring/prometheus-monitoring-kube-prometheus-prometheus-db-prometheus-monitoring-kube-prometheus-prometheus-0 monitoring/storage-loki-0 syncthing/syncthing-config vaultwarden/vaultwarden-pvc forgejo/forgejo-data forgejo/pgdata-postgres-0 immich/immich-upload immich/pgdata-postgres-0 photoprism/photoprism-storage photoprism/data-mariadb-0 linkwarden/linkwarden-data linkwarden/pgdata-postgres-0 tools-idp/tools-idp-postgres tools-hello/tools-hello-postgres tools-game-mgr/tools-game-mgr-postgres"
                   for ITEM in $PVC_LIST; do
                     NS="${ITEM%%/*}"
                     PVC="${ITEM##*/}"
@@ -37,6 +53,15 @@ spec:
                     source:
                       persistentVolumeClaimName: ${PVC}
                   EOF
+
+                    # Prune: keep only the newest $KEEP snapshots for this PVC
+                    OLD=$(kubectl -n "$NS" get volumesnapshot -l "pvc=${PVC}" \
+                      --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[*].metadata.name}' \
+                      | tr ' ' '\n' | head -n -"$KEEP")
+                    for OLDSNAP in $OLD; do
+                      echo "Pruning old snapshot $OLDSNAP in $NS"
+                      kubectl -n "$NS" delete volumesnapshot "$OLDSNAP" --ignore-not-found
+                    done
                   done
               resources:
                 requests:
