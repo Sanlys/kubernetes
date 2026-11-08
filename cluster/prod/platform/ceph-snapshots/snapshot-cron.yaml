@@ -8,13 +8,21 @@ spec:
   # Was suspended once before after filling up the cluster: the pre-existing
   # script never deleted anything (confirmed by reading it - no prune logic
   # existed at all), so 261 days of unattended 6-hourly snapshots just
-  # accumulated forever. suspend stays true here deliberately, even after
-  # the fixes below - this does not go back to "on" without deliberate
-  # confirmation first, given that history. Re-enabling also needs
-  # cluster/prod/platform/rook-ceph/rook-ceph-rbd/csi-rbac-supplement.yaml
-  # applied first (a separate, currently-live gap: the RBD CSI controller
-  # lacks "patch" permission on volumesnapshotcontents, so no VolumeSnapshot
-  # can complete at all right now regardless of this job).
+  # accumulated forever.
+  #
+  # Re-enabled only after: (1) confirming the separate CSI patch RBAC gap
+  # (rook-ceph-rbd/csi-rbac-supplement.yaml) was already live - without it,
+  # no VolumeSnapshot can complete at all; (2) finding and cleaning up a
+  # live leftover from the ORIGINAL incident - a stuck Job still running the
+  # old pre-fix script (label-based prune, which fails outright on the
+  # Prometheus PVC's 103-byte name and was retried from the top by
+  # OnFailure, reproducing the exact "duplicate snapshots" bug this fix
+  # addresses) plus its 4 orphaned, never-pruned snapshots; (3) manually
+  # running this exact job 10 times in a row and confirming retention
+  # actually holds: creation succeeds for all 16 PVCs, pruning correctly
+  # triggers on run 9 (KEEP=8) deleting exactly the oldest snapshot per PVC,
+  # and the cap holds steady on run 10. All test artifacts cleaned up
+  # before flipping this back on.
   #
   # This is NOT a backup - it's a fast local "oops, undo the last few
   # hours" safety net, same Ceph cluster as what it's protecting against.
@@ -22,7 +30,7 @@ spec:
   # Flat 48h (8 snapshots at this 6h cadence) for every PVC, no
   # per-app/per-PVC tuning - deliberately simple, deliberately the same
   # bound for everything so there's nothing here to misjudge per app.
-  suspend: true
+  suspend: false
   jobTemplate:
     spec:
       template:

@@ -4,9 +4,13 @@ metadata:
   name: restic-file-backup
   namespace: syncthing
 spec:
-  # Daily, well before the Backblaze copy job (02:00) so a fresh copy of
-  # these lands in the local repo in time to go out that same night.
-  schedule: "0 1 * * *"
+  # Every 4h: none of these targets (git pushes, archived pages, world
+  # saves) need tighter RPO than that, and each run costs real Ceph
+  # snapshot/clone/pod churn x6 targets plus a brief Minecraft RCON
+  # save-pause x3, so daily-but-faster isn't worth it. The 01:00 slot
+  # lines up with the existing Backblaze copy job (02:00), still giving
+  # it a fresh same-night copy via that run.
+  schedule: "0 1,5,9,13,17,21 * * *"
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
