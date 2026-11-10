@@ -31,6 +31,16 @@ spec:
             # beneficial) for Ceph daemons too, whose quiet-window usage already
             # looked lower than their real burst needs.
             cpu-histogram-decay-half-life: "72h"
+        updater:
+          extraArgs:
+            # Default is 2 - the updater refuses to evict ANY pod from a
+            # workload running fewer replicas than this ("Too few replicas"
+            # in its own logs). Every workload in this cluster is a single
+            # replica by design (homelab, not HA), so left at the default
+            # this makes Recreate mode a silent no-op across the board -
+            # observed live: every wave-1 object logged this and nothing
+            # was ever evicted.
+            min-replicas: "1"
   destination:
     server: https://kubernetes.default.svc
     namespace: vpa
