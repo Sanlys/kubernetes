@@ -14,16 +14,23 @@ spec:
     helm:
       releaseName: vpa
       values: |
-        # Minecraft servers get their own scoped recommender/updater instances
-        # (cluster/prod/platform/vpa-minecraft/*) with a slower CPU recommendation
-        # decay, so they're excluded here to avoid two control loops fighting over
-        # the same VerticalPodAutoscaler objects.
+        # A separate, namespace-scoped recommender/updater per Minecraft server
+        # was tried and reverted: the chart's ClusterRoles/ClusterRoleBindings
+        # use fixed, non-templated names (not Release.Name-prefixed), so every
+        # extra release of this same chart fights the others over the same
+        # cluster-scoped RBAC objects - a real, observed OutOfSync/ownership
+        # conflict, not a theoretical one. One recommender/updater handles every
+        # namespace instead. The slower CPU decay Minecraft wanted is applied
+        # here cluster-wide rather than scoped to it - memory keeps the default,
+        # fast OOM-triggered eviction path everywhere, unaffected by this flag.
         recommender:
           extraArgs:
-            ignored-vpa-object-namespaces: "minecraft-vanilla,minecraft-server,minecraft-slimey,minecraft-server-temporary"
-        updater:
-          extraArgs:
-            ignored-vpa-object-namespaces: "minecraft-vanilla,minecraft-server,minecraft-slimey,minecraft-server-temporary"
+            # Default is 24h; tripled so a transient CPU dip/spike takes much
+            # longer to move any workload's recommendation enough to trigger a
+            # Recreate - most load-bearing for Minecraft, but harmless (likely
+            # beneficial) for Ceph daemons too, whose quiet-window usage already
+            # looked lower than their real burst needs.
+            cpu-histogram-decay-half-life: "72h"
   destination:
     server: https://kubernetes.default.svc
     namespace: vpa
