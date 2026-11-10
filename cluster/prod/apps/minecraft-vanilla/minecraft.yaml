@@ -39,7 +39,7 @@ spec:
         high-single-core-perf: "true"
       containers:
         - name: minecraft
-          image: itzg/minecraft-server:2026.10.1-java25-jdk@sha256:8c8cb63ab5b81b8e9a7d173c02ea0d4e0503ffaed55d3b33661b1152fb71224a
+          image: itzg/minecraft-server:2026.11.0-java25-jdk@sha256:3c1e738dce018897dea0800a6a9f43f55138aa0e392632056a6a47148ffc2587
           imagePullPolicy: IfNotPresent
           env:
             - name: EULA
