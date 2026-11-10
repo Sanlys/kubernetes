@@ -1,0 +1,24 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: mariadb
+  namespace: photoprism
+  labels:
+    app.kubernetes.io/managed-by: vpa-policy-generator
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: mariadb
+  updatePolicy:
+    updateMode: Recreate
+  resourcePolicy:
+    containerPolicies:
+      - containerName: mariadb
+        minAllowed:
+          cpu: 50m
+          memory: 128Mi
+        maxAllowed:
+          cpu: "2"
+          memory: 4Gi
+        controlledValues: RequestsAndLimits

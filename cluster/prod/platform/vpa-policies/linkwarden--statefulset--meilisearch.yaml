@@ -1,0 +1,24 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: meilisearch
+  namespace: linkwarden
+  labels:
+    app.kubernetes.io/managed-by: vpa-policy-generator
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: meilisearch
+  updatePolicy:
+    updateMode: Recreate
+  resourcePolicy:
+    containerPolicies:
+      - containerName: meilisearch
+        minAllowed:
+          cpu: 50m
+          memory: 128Mi
+        maxAllowed:
+          cpu: "2"
+          memory: 4Gi
+        controlledValues: RequestsAndLimits

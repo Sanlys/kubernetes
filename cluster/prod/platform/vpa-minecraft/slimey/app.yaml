@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vpa-minecraft-slimey
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://charts.fairwinds.com/stable
+    chart: vpa
+    targetRevision: 5.2.0
+    helm:
+      releaseName: vpa-minecraft-slimey
+      # CRDs and the admission-controller/webhook are already installed once by
+      # the main `vpa` Application - this release only adds a second, scoped
+      # recommender+updater pair so Minecraft can run a slower CPU-recommendation
+      # decay without affecting every other workload's updater.
+      skipCrds: true
+      values: |
+        admissionController:
+          enabled: false
+        recommender:
+          extraArgs:
+            vpa-object-namespace: "minecraft-slimey"
+            # Default is 24h; tripled so a transient CPU dip/spike takes much
+            # longer to move the recommendation enough to trigger a Recreate.
+            cpu-histogram-decay-half-life: "72h"
+        updater:
+          extraArgs:
+            vpa-object-namespace: "minecraft-slimey"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vpa
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

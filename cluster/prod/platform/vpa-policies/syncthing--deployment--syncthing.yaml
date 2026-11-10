@@ -1,0 +1,34 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: syncthing
+  namespace: syncthing
+  labels:
+    app.kubernetes.io/managed-by: vpa-policy-generator
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: syncthing
+  updatePolicy:
+    updateMode: Recreate
+  resourcePolicy:
+    containerPolicies:
+      - containerName: syncthing
+        minAllowed:
+          cpu: 10m
+          memory: 32Mi
+        maxAllowed:
+          cpu: "2"
+          memory: 2Gi
+        controlledValues: RequestsAndLimits
+      - containerName: sftp
+        mode: Off
+      - containerName: rclone-sync
+        minAllowed:
+          cpu: 10m
+          memory: 32Mi
+        maxAllowed:
+          cpu: "2"
+          memory: 2Gi
+        controlledValues: RequestsAndLimits
