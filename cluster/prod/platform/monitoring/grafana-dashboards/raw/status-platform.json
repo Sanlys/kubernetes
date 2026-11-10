@@ -1160,7 +1160,7 @@
       "id": 16,
       "type": "table",
       "title": "VPA pending changes",
-      "description": "Live VPA recommendation vs. the request currently running, per container. Negative delta = VPA wants to shrink it; positive = grow it. Only lists containers VPA currently has a recommendation for (i.e. whatever wave has been onboarded so far) - the inner join against vpa_target_* drops everything else automatically.",
+      "description": "Live VPA recommendation vs. the request currently running, per container - only containers where the target actually differs from what's running right now. Negative delta = VPA wants to shrink it; positive = grow it.",
       "gridPos": {
         "h": 10,
         "w": 16,
@@ -1173,44 +1173,64 @@
       },
       "targets": [
         {
-          "expr": "label_join(sum by (namespace, container) (kube_pod_container_resource_requests{resource=\"cpu\"}) * 1000, \"nscontainer\", \"/\", \"namespace\", \"container\")",
+          "expr": "label_join(sum by (namespace,container) (sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"cpu\"}) * 1000 and on(namespace,container) (((sum by (namespace,container) (kube_customresource_vpa_target_cpu_cores) * 1000 - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"cpu\"}) * 1000) != 0) or ((sum by (namespace,container) (kube_customresource_vpa_target_memory_bytes) - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"memory\"})) != 0))), \"nscontainer\", \"/\", \"namespace\", \"container\")",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "refId": "A",
           "instant": true,
-          "format": "table"
+          "format": "table",
+          "refId": "A"
         },
         {
-          "expr": "label_join(sum by (namespace, container) (kube_pod_container_resource_requests{resource=\"memory\"}), \"nscontainer\", \"/\", \"namespace\", \"container\")",
+          "expr": "sum by (nscontainer) (label_join(sum by (namespace,container) (sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"memory\"}) and on(namespace,container) (((sum by (namespace,container) (kube_customresource_vpa_target_cpu_cores) * 1000 - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"cpu\"}) * 1000) != 0) or ((sum by (namespace,container) (kube_customresource_vpa_target_memory_bytes) - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"memory\"})) != 0))), \"nscontainer\", \"/\", \"namespace\", \"container\"))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "refId": "B",
           "instant": true,
-          "format": "table"
+          "format": "table",
+          "refId": "B"
         },
         {
-          "expr": "label_join(sum by (namespace, container, target_name) (kube_customresource_vpa_target_cpu_cores) * 1000, \"nscontainer\", \"/\", \"namespace\", \"container\")",
+          "expr": "sum by (nscontainer,target_name) (label_join(sum by (namespace,container,target_name) (sum by (namespace,container,target_name) (kube_customresource_vpa_target_cpu_cores) * 1000 and on(namespace,container) (((sum by (namespace,container) (kube_customresource_vpa_target_cpu_cores) * 1000 - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"cpu\"}) * 1000) != 0) or ((sum by (namespace,container) (kube_customresource_vpa_target_memory_bytes) - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"memory\"})) != 0))), \"nscontainer\", \"/\", \"namespace\", \"container\"))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "refId": "C",
           "instant": true,
-          "format": "table"
+          "format": "table",
+          "refId": "C"
         },
         {
-          "expr": "label_join(sum by (namespace, container, target_name) (kube_customresource_vpa_target_memory_bytes), \"nscontainer\", \"/\", \"namespace\", \"container\")",
+          "expr": "sum by (nscontainer) (label_join(sum by (namespace,container) (sum by (namespace,container) (kube_customresource_vpa_target_memory_bytes) and on(namespace,container) (((sum by (namespace,container) (kube_customresource_vpa_target_cpu_cores) * 1000 - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"cpu\"}) * 1000) != 0) or ((sum by (namespace,container) (kube_customresource_vpa_target_memory_bytes) - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"memory\"})) != 0))), \"nscontainer\", \"/\", \"namespace\", \"container\"))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "refId": "D",
           "instant": true,
-          "format": "table"
+          "format": "table",
+          "refId": "D"
+        },
+        {
+          "expr": "sum by (nscontainer) (label_join(sum by (namespace,container) ((sum by (namespace,container) (kube_customresource_vpa_target_cpu_cores) * 1000 - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"cpu\"}) * 1000) and on(namespace,container) (((sum by (namespace,container) (kube_customresource_vpa_target_cpu_cores) * 1000 - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"cpu\"}) * 1000) != 0) or ((sum by (namespace,container) (kube_customresource_vpa_target_memory_bytes) - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"memory\"})) != 0))), \"nscontainer\", \"/\", \"namespace\", \"container\"))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "E"
+        },
+        {
+          "expr": "sum by (nscontainer) (label_join(sum by (namespace,container) ((sum by (namespace,container) (kube_customresource_vpa_target_memory_bytes) - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"memory\"})) and on(namespace,container) (((sum by (namespace,container) (kube_customresource_vpa_target_cpu_cores) * 1000 - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"cpu\"}) * 1000) != 0) or ((sum by (namespace,container) (kube_customresource_vpa_target_memory_bytes) - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"memory\"})) != 0))), \"nscontainer\", \"/\", \"namespace\", \"container\"))",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "F"
         }
       ],
       "fieldConfig": {
@@ -1301,45 +1321,10 @@
           }
         },
         {
-          "id": "calculateField",
-          "options": {
-            "mode": "binary",
-            "binary": {
-              "left": "Value #C",
-              "operator": "-",
-              "right": "Value #A"
-            },
-            "alias": "CPU delta (m)",
-            "replaceFields": false
-          }
-        },
-        {
-          "id": "calculateField",
-          "options": {
-            "mode": "binary",
-            "binary": {
-              "left": "Value #D",
-              "operator": "-",
-              "right": "Value #B"
-            },
-            "alias": "Mem delta",
-            "replaceFields": false
-          }
-        },
-        {
           "id": "organize",
           "options": {
-            "excludeByName": {},
-            "includeByName": {
-              "namespace": true,
-              "target_name": true,
-              "container": true,
-              "Value #A": true,
-              "Value #C": true,
-              "CPU delta (m)": true,
-              "Value #B": true,
-              "Value #D": true,
-              "Mem delta": true
+            "excludeByName": {
+              "nscontainer": true
             },
             "indexByName": {
               "namespace": 0,
@@ -1347,10 +1332,10 @@
               "container": 2,
               "Value #A": 3,
               "Value #C": 4,
-              "CPU delta (m)": 5,
+              "Value #E": 5,
               "Value #B": 6,
               "Value #D": 7,
-              "Mem delta": 8
+              "Value #F": 8
             },
             "renameByName": {
               "namespace": "Namespace",
@@ -1358,8 +1343,10 @@
               "container": "Container",
               "Value #A": "CPU current (m)",
               "Value #C": "CPU target (m)",
+              "Value #E": "CPU delta (m)",
               "Value #B": "Mem current",
-              "Value #D": "Mem target"
+              "Value #D": "Mem target",
+              "Value #F": "Mem delta"
             }
           }
         },
