@@ -154,9 +154,22 @@ def to_yaml(obj, indent=0):
     return "\n".join(lines)
 
 
+# YAML 1.1 (what most parsers, including the ones in this cluster, actually
+# use) resolves these bare words to bool/null regardless of case - anything
+# matching has to be quoted or it silently changes type on round-trip. This is
+# exactly how a bare `mode: Off` for a VPA containerPolicy turned into the
+# boolean `false` and got rejected by the admission webhook in production.
+_YAML11_AMBIGUOUS = {
+    "true", "false", "yes", "no", "on", "off", "y", "n",
+    "null", "~", "none",
+}
+
+
 def format_scalar(v):
     if isinstance(v, str):
-        return f'"{v}"' if v.isdigit() else v
+        if v.isdigit() or v.lower() in _YAML11_AMBIGUOUS:
+            return f'"{v}"'
+        return v
     return str(v)
 
 

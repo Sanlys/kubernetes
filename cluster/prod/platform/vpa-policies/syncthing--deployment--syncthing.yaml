@@ -23,7 +23,7 @@ spec:
           memory: 2Gi
         controlledValues: RequestsAndLimits
       - containerName: sftp
-        mode: Off
+        mode: "Off"
       - containerName: rclone-sync
         minAllowed:
           cpu: 10m
