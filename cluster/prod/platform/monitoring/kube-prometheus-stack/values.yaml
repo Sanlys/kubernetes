@@ -224,3 +224,50 @@ extraManifests:
         - backendRefs:
             - name: monitoring-kube-prometheus-alertmanager
               port: 9093
+
+# Exposes VPA's live recommendations as Prometheus metrics, since VPA itself
+# doesn't export them - kube-state-metrics' Custom Resource State feature
+# reads the VerticalPodAutoscaler CRs directly and turns status.recommendation
+# fields into gauges. Only `target` is wired up (what the "VPA pending
+# changes" platform-dashboard panel actually needs); lowerBound/upperBound/
+# minAllowed/maxAllowed could be added the same way later if useful.
+kube-state-metrics:
+  rbac:
+    extraRules:
+      - apiGroups: ["autoscaling.k8s.io"]
+        resources: ["verticalpodautoscalers"]
+        verbs: ["list", "watch"]
+  customResourceState:
+    enabled: true
+    config:
+      kind: CustomResourceStateMetrics
+      spec:
+        resources:
+          - groupVersionKind:
+              group: autoscaling.k8s.io
+              version: v1
+              kind: VerticalPodAutoscaler
+            labelsFromPath:
+              verticalpodautoscaler: [metadata, name]
+              namespace: [metadata, namespace]
+              target_kind: [spec, targetRef, kind]
+              target_name: [spec, targetRef, name]
+            metrics:
+              - name: "vpa_target_cpu_cores"
+                help: "VPA-recommended target CPU request/limit, in cores."
+                each:
+                  type: Gauge
+                  gauge:
+                    path: [status, recommendation, containerRecommendations]
+                    labelsFromPath:
+                      container: [containerName]
+                    valueFrom: [target, cpu]
+              - name: "vpa_target_memory_bytes"
+                help: "VPA-recommended target memory request/limit, in bytes."
+                each:
+                  type: Gauge
+                  gauge:
+                    path: [status, recommendation, containerRecommendations]
+                    labelsFromPath:
+                      container: [containerName]
+                    valueFrom: [target, memory]
