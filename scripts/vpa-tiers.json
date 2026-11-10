@@ -1,0 +1,77 @@
+{
+  "_comment": "Tier policy for scripts/gen-vpa-manifests.py. See the VPA rollout plan for the reasoning behind each tier's numbers.",
+
+  "tiers": {
+    "default":             { "min": {"cpu": "10m",  "memory": "32Mi"},  "max": {"cpu": "2", "memory": "2Gi"} },
+    "stateful-db":         { "min": {"cpu": "50m",  "memory": "128Mi"}, "max": {"cpu": "2", "memory": "4Gi"} },
+    "platform-core":       { "min": {"cpu": "25m",  "memory": "128Mi"}, "max": {"cpu": "4", "memory": "4Gi"} },
+    "observability-cache": { "min": {"cpu": "50m",  "memory": "128Mi"}, "max": {"cpu": "4", "memory": "8Gi"} },
+    "ml-bursty":           { "min": {"cpu": "200m", "memory": "512Mi"}, "max": {"cpu": "4", "memory": "7Gi"} },
+    "ceph-default":        { "min": {"cpu": "500m", "memory": "512Mi"}, "max": {"cpu": "2", "memory": "4Gi"} },
+    "ceph-osd":            { "min": {"cpu": "500m", "memory": "2Gi"},   "max": {"cpu": "4", "memory": "8Gi"} },
+    "game-servers":        { "min": {"cpu": "500m", "memory": "4Gi"},   "max": {"cpu": "4", "memory": "12Gi"} }
+  },
+
+  "namespace_defaults": {
+    "argocd": "platform-core",
+    "cdi": "platform-core",
+    "cert-manager": "platform-core",
+    "cnpg-system": "platform-core",
+    "harbor": "platform-core",
+    "kubevirt": "platform-core",
+    "kyverno": "platform-core",
+    "local-path-storage": "platform-core",
+    "metallb-system": "platform-core",
+    "tekton-operator": "platform-core",
+    "tekton-pipelines": "platform-core",
+    "traefik": "platform-core",
+    "traefik-public": "platform-core",
+    "monitoring": "observability-cache",
+    "rook-ceph": "ceph-default",
+    "immich": "ml-bursty",
+    "minecraft-vanilla": "game-servers",
+    "minecraft-server": "game-servers",
+    "minecraft-slimey": "game-servers",
+    "minecraft-server-temporary": "game-servers"
+  },
+
+  "_comment_overrides": "Checked top-to-bottom, first full match wins. A rule matches when every key it specifies (namespace/name/name_prefix/name_suffix) matches. Falls back to namespace_defaults, then 'default', when nothing matches.",
+  "overrides": [
+    { "namespace": "rook-ceph", "name_prefix": "rook-ceph-osd-", "tier": "ceph-osd" },
+    { "namespace": "immich", "name": "immich-machine-learning", "tier": "ml-bursty" },
+    { "namespace": "immich", "name": "immich-server",
+      "min": {"cpu": "250m", "memory": "512Mi"}, "max": {"cpu": "4", "memory": "6Gi"} },
+    { "namespace": "nfs-gateway", "name": "nfs-gateway",
+      "min": {"cpu": "56m", "memory": "1024Mi"}, "max": {"cpu": "2", "memory": "6Gi"} },
+    { "namespace": "monitoring", "name": "loki-chunks-cache",
+      "min": {"cpu": "250m", "memory": "9830Mi"}, "max": {"cpu": "2", "memory": "11Gi"} },
+    { "namespace": "monitoring", "name": "loki-results-cache",
+      "min": {"cpu": "250m", "memory": "1229Mi"}, "max": {"cpu": "2", "memory": "2Gi"} },
+    { "namespace": "harbor", "name": "harbor-database", "tier": "stateful-db" },
+    { "namespace": "harbor", "name": "harbor-redis", "tier": "stateful-db" },
+    { "namespace": "harbor", "name": "harbor-trivy", "tier": "stateful-db" },
+    { "name": "postgres", "tier": "stateful-db" },
+    { "name": "redis", "tier": "stateful-db" },
+    { "name": "meilisearch", "tier": "stateful-db" },
+    { "name": "mariadb", "tier": "stateful-db" },
+    { "name_suffix": "-postgres", "tier": "stateful-db" }
+  ],
+
+  "sidecar_off": ["log-collector", "exporter", "sftp"],
+
+  "exclude": [
+    { "namespace": "kube-system" },
+    { "namespace": "rook-ceph", "name_prefix": "rook-ceph-tools" },
+    { "namespace": "database", "name_prefix": "cnpg-central-cluster-pooler", "_note": "the pooler Deployments ARE valid targets - this entry intentionally does nothing; kept to document that cnpg-central-cluster-1/2/4 (owned by the CNPG Cluster CRD, not a Deployment/StatefulSet) never appear in the generator's input to begin with" }
+  ],
+
+  "update_mode": "Recreate",
+  "sparse_data_window_days": 14,
+
+  "waves": {
+    "1": ["actual", "vaultwarden", "tobbeos", "linkwarden", "forgejo", "syncthing", "photoprism", "smb-gateway", "nginx", "nginx-custom-image", "mirror", "mc-monitor", "s3-vfs-proxy", "frpc", "tools-game-mgr", "tools-hello", "tools-idp", "tools-portal"],
+    "2": ["kyverno", "cert-manager", "traefik", "traefik-public", "metallb-system", "argocd", "tekton-operator", "tekton-pipelines", "harbor", "cdi", "kubevirt", "cnpg-system", "monitoring", "immich", "media", "nfs-gateway", "local-path-storage", "database"],
+    "3": ["rook-ceph"],
+    "4": ["minecraft-vanilla", "minecraft-server", "minecraft-slimey", "minecraft-server-temporary"]
+  }
+}

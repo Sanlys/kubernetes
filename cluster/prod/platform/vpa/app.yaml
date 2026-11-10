@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vpa
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: default
+  source:
+    repoURL: https://charts.fairwinds.com/stable
+    chart: vpa
+    targetRevision: 5.2.0
+    helm:
+      releaseName: vpa
+      values: |
+        # Minecraft servers get their own scoped recommender/updater instances
+        # (cluster/prod/platform/vpa-minecraft/*) with a slower CPU recommendation
+        # decay, so they're excluded here to avoid two control loops fighting over
+        # the same VerticalPodAutoscaler objects.
+        recommender:
+          extraArgs:
+            ignored-vpa-object-namespaces: "minecraft-vanilla,minecraft-server,minecraft-slimey,minecraft-server-temporary"
+        updater:
+          extraArgs:
+            ignored-vpa-object-namespaces: "minecraft-vanilla,minecraft-server,minecraft-slimey,minecraft-server-temporary"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vpa
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

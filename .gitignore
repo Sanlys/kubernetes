@@ -5,3 +5,4 @@ talos/clusterconfig/
 .DS_Store
 scripts/.cve-watch-state.json
 scripts/.health-sweep-state.json
+__pycache__/

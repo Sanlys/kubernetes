@@ -1,0 +1,24 @@
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: tools-portal
+  namespace: tools-portal
+  labels:
+    app.kubernetes.io/managed-by: vpa-policy-generator
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tools-portal
+  updatePolicy:
+    updateMode: Recreate
+  resourcePolicy:
+    containerPolicies:
+      - containerName: portal
+        minAllowed:
+          cpu: 10m
+          memory: 32Mi
+        maxAllowed:
+          cpu: "2"
+          memory: 2Gi
+        controlledValues: RequestsAndLimits
