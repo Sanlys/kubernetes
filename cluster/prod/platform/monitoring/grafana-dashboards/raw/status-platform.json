@@ -1193,7 +1193,7 @@
           "format": "table"
         },
         {
-          "expr": "label_join(sum by (namespace, container, target_name) (vpa_target_cpu_cores) * 1000, \"nscontainer\", \"/\", \"namespace\", \"container\")",
+          "expr": "label_join(sum by (namespace, container, target_name) (kube_customresource_vpa_target_cpu_cores) * 1000, \"nscontainer\", \"/\", \"namespace\", \"container\")",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -1203,7 +1203,7 @@
           "format": "table"
         },
         {
-          "expr": "label_join(sum by (namespace, container, target_name) (vpa_target_memory_bytes), \"nscontainer\", \"/\", \"namespace\", \"container\")",
+          "expr": "label_join(sum by (namespace, container, target_name) (kube_customresource_vpa_target_memory_bytes), \"nscontainer\", \"/\", \"namespace\", \"container\")",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -1394,7 +1394,7 @@
       },
       "targets": [
         {
-          "expr": "sum(1000 * (vpa_target_cpu_cores - on(namespace,container) kube_pod_container_resource_requests{resource=\"cpu\"}))",
+          "expr": "sum(1000 * (kube_customresource_vpa_target_cpu_cores - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"cpu\"})))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -1442,7 +1442,7 @@
       },
       "targets": [
         {
-          "expr": "sum(vpa_target_memory_bytes - on(namespace,container) kube_pod_container_resource_requests{resource=\"memory\"})",
+          "expr": "sum(kube_customresource_vpa_target_memory_bytes - on(namespace,container) sum by (namespace,container) (kube_pod_container_resource_requests{resource=\"memory\"}))",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
