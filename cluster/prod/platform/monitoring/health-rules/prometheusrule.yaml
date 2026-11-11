@@ -1,0 +1,81 @@
+# Per-category health rollup, one clean 0=OK/1=WARN/2=ERR series per check
+# (health:<category>:<check>) plus a max() rollup per category
+# (health:<category>). Modeled on ceph_health_status, the only existing
+# metric in this cluster already shaped this way - these recording rules
+# give every other category the same single-source-of-truth series, so the
+# leaf dashboards (hardware/platform/apps) and the overview dashboard's
+# rollup stats query the exact same number instead of each re-deriving
+# their own threshold logic that could drift apart.
+# kube-prometheus-stack only loads PrometheusRules carrying its release label.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: health-rules
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: health-rules
+      rules:
+        - record: health:hardware:nodes
+          expr: |
+            max(
+              label_replace(2 * clamp_max(sum(kube_node_status_condition{condition="Ready", status!="true"}) or vector(0), 1), "c", "a", "", "")
+              or
+              label_replace(1 * clamp_max((sum(kube_node_status_condition{condition=~"DiskPressure|MemoryPressure|PIDPressure", status="true"}) or vector(0))
+                             + (sum(kube_node_spec_unschedulable) or vector(0)), 1), "c", "b", "", "")
+            )
+        - record: health:hardware:disks
+          expr: |
+            max(
+              label_replace(2 * clamp_max((count(smartctl_device_smart_status == 0) or vector(0)) + (count(ceph_osd_up == 0) or vector(0)), 1), "c", "a", "", "")
+              or
+              label_replace(1 * clamp_max(sum(increase(kube_pod_container_status_restarts_total{namespace="rook-ceph", container="osd"}[1h])) or vector(0), 1), "c", "b", "", "")
+            )
+        - record: health:hardware
+          expr: |
+            max(
+              label_replace(health:hardware:nodes, "c", "a", "", "")
+              or
+              label_replace(health:hardware:disks, "c", "b", "", "")
+            )
+
+        - record: health:platform:argocd
+          expr: |
+            max(
+              label_replace(2 * clamp_max(count(argocd_app_info{health_status=~"Degraded|Missing"}) or vector(0), 1), "c", "a", "", "")
+              or
+              label_replace(1 * clamp_max(count(argocd_app_info{sync_status!="Synced"} or argocd_app_info{health_status=~"Progressing|Suspended|Unknown"}) or vector(0), 1), "c", "b", "", "")
+            )
+        - record: health:platform:pods
+          expr: clamp_max(sum(increase(kube_pod_container_status_restarts_total{namespace=~"rook-ceph|kube-system"}[1h])) or vector(0), 2)
+        - record: health:platform
+          expr: |
+            max(
+              label_replace(ceph_health_status, "c", "a", "", "")
+              or
+              label_replace(health:platform:argocd, "c", "b", "", "")
+              or
+              label_replace(health:platform:pods, "c", "c", "", "")
+            )
+
+        - record: health:apps:errors
+          expr: |
+            (
+              ((100 * sum(rate(traefik_service_requests_total{container="traefik-public", code=~"5.."}[5m]))
+                    / sum(rate(traefik_service_requests_total{container="traefik-public"}[5m]))) >= bool 1)
+              +
+              ((100 * sum(rate(traefik_service_requests_total{container="traefik-public", code=~"5.."}[5m]))
+                    / sum(rate(traefik_service_requests_total{container="traefik-public"}[5m]))) >= bool 5)
+            ) or vector(0)
+        - record: health:apps:crashes
+          expr: |
+            clamp_max(sum(increase(kube_pod_container_status_restarts_total{namespace!~"rook-ceph|kube-system|monitoring|argocd|metallb-system|traefik|cert-manager|kube-node-lease|kube-public|kubevirt|cnpg-system|cnpg-central"}[1h])) or vector(0), 2)
+        - record: health:apps
+          expr: |
+            max(
+              label_replace(health:apps:errors, "c", "a", "", "")
+              or
+              label_replace(health:apps:crashes, "c", "b", "", "")
+            )
