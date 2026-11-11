@@ -1,11 +1,19 @@
 # Per-category health rollup, one clean 0=OK/1=WARN/2=ERR series per check
 # (health:<category>:<check>) plus a max() rollup per category
-# (health:<category>). Modeled on ceph_health_status, the only existing
-# metric in this cluster already shaped this way - these recording rules
-# give every other category the same single-source-of-truth series, so the
-# leaf dashboards (hardware/platform/apps) and the overview dashboard's
-# rollup stats query the exact same number instead of each re-deriving
-# their own threshold logic that could drift apart.
+# (health:<category>). Modeled on ceph_health_status, the only metric in
+# this cluster already shaped this way - these recording rules give every
+# other category the same single-source-of-truth series, so the leaf
+# dashboards (hardware/platform/apps) and the overview dashboard's rollup
+# stats query the exact same number instead of each re-deriving their own
+# threshold logic that could drift apart.
+#
+# Every per-check rule also carries static `labels: {category, title,
+# description}` - Prometheus attaches these to every output series, so the
+# dashboards' breakdown tables can show a human title/description straight
+# from a Prometheus query, with no Grafana-side hardcoding. health:platform:
+# ceph is a pure alias of ceph_health_status purely to get those labels on
+# it too, keeping it uniform with every other check.
+#
 # kube-prometheus-stack only loads PrometheusRules carrying its release label.
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -18,49 +26,133 @@ spec:
   groups:
     - name: health-rules
       rules:
-        - record: health:hardware:nodes
+        # --- hardware ---------------------------------------------------
+        - record: health:hardware:nodes_down
+          labels:
+            category: hardware
+            title: "Node down"
+            description: "ERR if any node's Ready condition is false."
           expr: |
-            max(
-              label_replace(2 * clamp_max(sum(kube_node_status_condition{condition="Ready", status!="true"}) or vector(0), 1), "c", "a", "", "")
-              or
-              label_replace(1 * clamp_max((sum(kube_node_status_condition{condition=~"DiskPressure|MemoryPressure|PIDPressure", status="true"}) or vector(0))
-                             + (sum(kube_node_spec_unschedulable) or vector(0)), 1), "c", "b", "", "")
+            2 * clamp_max(sum(kube_node_status_condition{condition="Ready", status!="true"}) or vector(0), 1)
+
+        - record: health:hardware:node_issues
+          labels:
+            category: hardware
+            title: "Node issues"
+            description: "WARN if any node is under CPU/memory/disk/PID pressure, is cordoned, over 90% CPU or RAM usage, or a NIC is over 80% saturated."
+          expr: |
+            clamp_max(
+              clamp_max((sum(kube_node_status_condition{condition=~"DiskPressure|MemoryPressure|PIDPressure", status="true"}) or vector(0))
+                         + (sum(kube_node_spec_unschedulable) or vector(0)), 1)
+              + ((max(100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])))) or vector(0)) >= bool 90)
+              + ((max(100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) or vector(0)) >= bool 90)
+              + ((max(
+                    (rate(node_network_receive_bytes_total{device=~"enp.*"}[5m]) * 8 / node_network_speed_bytes{device=~"enp.*"})
+                    or
+                    (rate(node_network_transmit_bytes_total{device=~"enp.*"}[5m]) * 8 / node_network_speed_bytes{device=~"enp.*"})
+                  ) or vector(0)) >= bool 0.8),
+              1
             )
+
         - record: health:hardware:disks
+          labels:
+            category: hardware
+            title: "Disk down"
+            description: "ERR if any Ceph OSD is down or a disk fails its SMART check; WARN if an OSD container restarted in the last hour."
           expr: |
             max(
               label_replace(2 * clamp_max((count(smartctl_device_smart_status == 0) or vector(0)) + (count(ceph_osd_up == 0) or vector(0)), 1), "c", "a", "", "")
               or
               label_replace(1 * clamp_max(sum(increase(kube_pod_container_status_restarts_total{namespace="rook-ceph", container="osd"}[1h])) or vector(0), 1), "c", "b", "", "")
             )
+
         - record: health:hardware
           expr: |
             max(
-              label_replace(health:hardware:nodes, "c", "a", "", "")
+              label_replace(health:hardware:nodes_down, "c", "a", "", "")
               or
-              label_replace(health:hardware:disks, "c", "b", "", "")
+              label_replace(health:hardware:node_issues, "c", "b", "", "")
+              or
+              label_replace(health:hardware:disks, "c", "c", "", "")
             )
 
+        # --- platform -----------------------------------------------------
+        - record: health:platform:ceph
+          labels:
+            category: platform
+            title: "Ceph health"
+            description: "Ceph's own reported cluster health: WARN on HEALTH_WARN, ERR on HEALTH_ERR."
+          expr: ceph_health_status
+
         - record: health:platform:argocd
+          labels:
+            category: platform
+            title: "ArgoCD health"
+            description: "ERR if any app is Degraded/Missing; WARN if any app is OutOfSync, Progressing, Suspended, or Unknown."
           expr: |
             max(
               label_replace(2 * clamp_max(count(argocd_app_info{health_status=~"Degraded|Missing"}) or vector(0), 1), "c", "a", "", "")
               or
               label_replace(1 * clamp_max(count(argocd_app_info{sync_status!="Synced"} or argocd_app_info{health_status=~"Progressing|Suspended|Unknown"}) or vector(0), 1), "c", "b", "", "")
             )
+
         - record: health:platform:pods
+          labels:
+            category: platform
+            title: "Pod stability"
+            description: "Platform (rook-ceph/kube-system) container restarts in the last hour: WARN at 1, ERR at 2+."
           expr: clamp_max(sum(increase(kube_pod_container_status_restarts_total{namespace=~"rook-ceph|kube-system"}[1h])) or vector(0), 2)
+
+        - record: health:platform:network_in
+          labels:
+            category: platform
+            title: "Network (inbound)"
+            description: "External reachability of this cluster's ingress, probed against its public IP: WARN above 50ms, ERR above 200ms or unreachable."
+          expr: |
+            clamp_max(
+              sum(
+                (probe_duration_seconds{target="ingress-public-external"} >= bool 0.05)
+                + (probe_duration_seconds{target="ingress-public-external"} >= bool 0.2)
+                + 2 * (probe_success{target="ingress-public-external"} == bool 0)
+              ) or vector(0),
+              2
+            )
+
+        - record: health:platform:network_out
+          labels:
+            category: platform
+            title: "Network (outbound)"
+            description: "This cluster's own internet connectivity, via ICMP to google.com: WARN above 50ms, ERR above 200ms or unreachable."
+          expr: |
+            clamp_max(
+              sum(
+                (probe_icmp_duration_seconds{phase="rtt",target="google-icmp"} >= bool 0.05)
+                + (probe_icmp_duration_seconds{phase="rtt",target="google-icmp"} >= bool 0.2)
+                + 2 * (probe_success{target="google-icmp"} == bool 0)
+              ) or vector(0),
+              2
+            )
+
         - record: health:platform
           expr: |
             max(
-              label_replace(ceph_health_status, "c", "a", "", "")
+              label_replace(health:platform:ceph, "c", "a", "", "")
               or
               label_replace(health:platform:argocd, "c", "b", "", "")
               or
               label_replace(health:platform:pods, "c", "c", "", "")
+              or
+              label_replace(health:platform:network_in, "c", "d", "", "")
+              or
+              label_replace(health:platform:network_out, "c", "e", "", "")
             )
 
+        # --- apps -----------------------------------------------------------
         - record: health:apps:errors
+          labels:
+            category: apps
+            title: "Error rate"
+            description: "Public 5xx rate at the Traefik level: WARN above 1%, ERR above 5%."
           expr: |
             (
               ((100 * sum(rate(traefik_service_requests_total{container="traefik-public", code=~"5.."}[5m]))
@@ -69,13 +161,35 @@ spec:
               ((100 * sum(rate(traefik_service_requests_total{container="traefik-public", code=~"5.."}[5m]))
                     / sum(rate(traefik_service_requests_total{container="traefik-public"}[5m]))) >= bool 5)
             ) or vector(0)
+
         - record: health:apps:crashes
+          labels:
+            category: apps
+            title: "Crash rate"
+            description: "App pod restarts in the last hour (excluding platform namespaces): WARN at 1, ERR at 2+."
           expr: |
             clamp_max(sum(increase(kube_pod_container_status_restarts_total{namespace!~"rook-ceph|kube-system|monitoring|argocd|metallb-system|traefik|cert-manager|kube-node-lease|kube-public|kubevirt|cnpg-system|cnpg-central"}[1h])) or vector(0), 2)
+
+        - record: health:apps:latency
+          labels:
+            category: apps
+            title: "Response latency"
+            description: "p95 public request latency at the Traefik level: WARN above 1s, ERR above 5s."
+          expr: |
+            clamp_max(
+              (
+                (histogram_quantile(0.95, sum by (le) (rate(traefik_service_request_duration_seconds_bucket{container="traefik-public"}[5m]))) >= bool 1)
+                + (histogram_quantile(0.95, sum by (le) (rate(traefik_service_request_duration_seconds_bucket{container="traefik-public"}[5m]))) >= bool 5)
+              ) or vector(0),
+              2
+            )
+
         - record: health:apps
           expr: |
             max(
               label_replace(health:apps:errors, "c", "a", "", "")
               or
               label_replace(health:apps:crashes, "c", "b", "", "")
+              or
+              label_replace(health:apps:latency, "c", "c", "", "")
             )
