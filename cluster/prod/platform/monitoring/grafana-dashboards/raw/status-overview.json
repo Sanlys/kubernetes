@@ -18,7 +18,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Platform: Ceph health",
+      "title": "Platform health",
       "gridPos": {
         "h": 4,
         "w": 8,
@@ -31,7 +31,7 @@
       },
       "targets": [
         {
-          "expr": "ceph_health_status",
+          "expr": "health:platform",
           "legendFormat": null,
           "datasource": {
             "type": "prometheus",
@@ -102,12 +102,12 @@
           "targetBlank": false
         }
       ],
-      "description": "ceph_health_status: 0=OK, 1=WARN, 2=ERR. See the Platform board's Issues/PGs State panels for what's actually wrong."
+      "description": "Worst status among this category's checks on the platform dashboard (Ceph, ArgoCD, pod stability)."
     },
     {
       "id": 2,
       "type": "stat",
-      "title": "Hardware: node problems",
+      "title": "Hardware health",
       "gridPos": {
         "h": 4,
         "w": 8,
@@ -120,7 +120,7 @@
       },
       "targets": [
         {
-          "expr": "sum(kube_node_status_condition{condition=~\"DiskPressure|MemoryPressure|PIDPressure\", status=\"true\"}) or sum(kube_node_spec_unschedulable) or vector(0)",
+          "expr": "health:hardware",
           "legendFormat": null,
           "datasource": {
             "type": "prometheus",
@@ -145,8 +145,12 @@
                 "value": null
               },
               {
-                "color": "red",
+                "color": "yellow",
                 "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
               }
             ]
           },
@@ -155,8 +159,13 @@
               "type": "value",
               "options": {
                 "0": {
-                  "text": "OK",
-                  "color": "green"
+                  "text": "OK"
+                },
+                "1": {
+                  "text": "WARN"
+                },
+                "2": {
+                  "text": "ERR"
                 }
               }
             }
@@ -182,12 +191,12 @@
           "targetBlank": false
         }
       ],
-      "description": "Count of nodes under DiskPressure, MemoryPressure, PIDPressure, or cordoned. 0 is good; any other number is that many nodes with a real problem - see the Hardware board's Node status table."
+      "description": "Worst status among this category's checks on the hardware dashboard (node health, disk health)."
     },
     {
       "id": 3,
       "type": "stat",
-      "title": "Apps/Services: 5xx error rate",
+      "title": "Apps/Services health",
       "gridPos": {
         "h": 4,
         "w": 8,
@@ -200,7 +209,7 @@
       },
       "targets": [
         {
-          "expr": "100 * sum(rate(traefik_service_requests_total{container=\"traefik-public\", code=~\"5..\"}[5m])) / sum(rate(traefik_service_requests_total{container=\"traefik-public\"}[5m]))",
+          "expr": "health:apps",
           "legendFormat": null,
           "datasource": {
             "type": "prometheus",
@@ -212,7 +221,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
+          "unit": "short",
           "color": {
             "mode": "thresholds",
             "fixedColor": "text"
@@ -230,10 +239,26 @@
               },
               {
                 "color": "red",
-                "value": 5
+                "value": 2
               }
             ]
           },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK"
+                },
+                "1": {
+                  "text": "WARN"
+                },
+                "2": {
+                  "text": "ERR"
+                }
+              }
+            }
+          ],
           "min": 0
         },
         "overrides": []
@@ -255,7 +280,7 @@
           "targetBlank": false
         }
       ],
-      "description": "% of all requests across every public app returning a 5xx in the last 5m. See the Apps/Services board for which app."
+      "description": "Worst status among this category's checks on the apps dashboard (error rate, crash rate)."
     },
     {
       "id": 4,

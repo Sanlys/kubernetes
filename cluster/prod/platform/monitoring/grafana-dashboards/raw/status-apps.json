@@ -16,6 +16,168 @@
   },
   "panels": [
     {
+      "id": 17,
+      "type": "stat",
+      "title": "Error rate health",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "health:apps:errors",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "text"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK"
+                },
+                "1": {
+                  "text": "WARN"
+                },
+                "2": {
+                  "text": "ERR"
+                }
+              }
+            }
+          ],
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "background"
+      },
+      "description": "Rolls up the public 5xx error rate into one status. See health-rules PrometheusRule for the exact rule."
+    },
+    {
+      "id": 18,
+      "type": "stat",
+      "title": "Crash health",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "health:apps:crashes",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "text"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK"
+                },
+                "1": {
+                  "text": "WARN"
+                },
+                "2": {
+                  "text": "ERR"
+                }
+              }
+            }
+          ],
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "background"
+      },
+      "description": "Rolls up app pod crash/restart counts into one status. See health-rules PrometheusRule for the exact rule."
+    },
+    {
       "id": 1,
       "type": "stat",
       "title": "5xx error rate",
@@ -23,7 +185,7 @@
         "h": 4,
         "w": 8,
         "x": 0,
-        "y": 0
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -88,7 +250,7 @@
         "h": 4,
         "w": 8,
         "x": 8,
-        "y": 0
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -136,7 +298,7 @@
         "h": 4,
         "w": 8,
         "x": 16,
-        "y": 0
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -197,7 +359,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 4
+        "y": 8
       },
       "datasource": {
         "type": "prometheus",
@@ -244,7 +406,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 4
+        "y": 8
       },
       "datasource": {
         "type": "prometheus",
@@ -291,7 +453,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 16
       },
       "datasource": {
         "type": "prometheus",
@@ -346,7 +508,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 24
       },
       "datasource": {
         "type": "prometheus",
@@ -415,7 +577,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 28
+        "y": 32
       },
       "datasource": {
         "type": "prometheus",
@@ -595,7 +757,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 38
+        "y": 42
       },
       "datasource": {
         "type": "prometheus",
@@ -643,7 +805,7 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 38
+        "y": 42
       },
       "datasource": {
         "type": "prometheus",
@@ -691,7 +853,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 38
+        "y": 42
       },
       "datasource": {
         "type": "prometheus",
@@ -756,7 +918,7 @@
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 38
+        "y": 42
       },
       "datasource": {
         "type": "prometheus",
@@ -821,7 +983,7 @@
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 38
+        "y": 42
       },
       "datasource": {
         "type": "prometheus",
@@ -886,7 +1048,7 @@
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 38
+        "y": 42
       },
       "datasource": {
         "type": "prometheus",
@@ -943,7 +1105,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 42
+        "y": 46
       },
       "datasource": {
         "type": "prometheus",
@@ -990,7 +1152,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 42
+        "y": 46
       },
       "datasource": {
         "type": "loki",

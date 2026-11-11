@@ -16,6 +16,168 @@
   },
   "panels": [
     {
+      "id": 13,
+      "type": "stat",
+      "title": "Node health",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "health:hardware:nodes",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "text"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK"
+                },
+                "1": {
+                  "text": "WARN"
+                },
+                "2": {
+                  "text": "ERR"
+                }
+              }
+            }
+          ],
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "background"
+      },
+      "description": "Rolls up node Ready/DiskPressure/MemoryPressure/PIDPressure/cordoned state into one status. See health-rules PrometheusRule for the exact rule."
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Disk health",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "health:hardware:disks",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "text"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "OK"
+                },
+                "1": {
+                  "text": "WARN"
+                },
+                "2": {
+                  "text": "ERR"
+                }
+              }
+            }
+          ],
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "auto",
+        "graphMode": "area",
+        "colorMode": "background"
+      },
+      "description": "Rolls up SMART status, OSD up/down, and OSD container restarts into one status. See health-rules PrometheusRule for the exact rule."
+    },
+    {
       "id": 1,
       "type": "stat",
       "title": "Nodes Ready",
@@ -23,7 +185,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 0
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -71,7 +233,7 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 0
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -132,7 +294,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 0
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -180,7 +342,7 @@
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 0
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -241,7 +403,7 @@
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 0
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -289,7 +451,7 @@
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 0
+        "y": 4
       },
       "datasource": {
         "type": "prometheus",
@@ -337,7 +499,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 4
+        "y": 8
       },
       "datasource": {
         "type": "prometheus",
@@ -747,7 +909,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 18
       },
       "datasource": {
         "type": "prometheus",
@@ -840,7 +1002,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 14
+        "y": 18
       },
       "datasource": {
         "type": "prometheus",
@@ -932,7 +1094,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 24
+        "y": 28
       },
       "datasource": {
         "type": "prometheus",
@@ -983,7 +1145,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 24
+        "y": 28
       },
       "datasource": {
         "type": "prometheus",
@@ -1034,7 +1196,7 @@
         "h": 18,
         "w": 24,
         "x": 0,
-        "y": 32
+        "y": 36
       },
       "datasource": {
         "type": "prometheus",
