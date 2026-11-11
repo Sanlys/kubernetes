@@ -1102,7 +1102,7 @@
           "refId": "F"
         },
         {
-          "expr": "sum by (ceph_daemon, disk_id) (label_join((label_replace(ceph_osd_metadata{device_class=\"hdd\"}, \"device\", \"sda\", \"\", \"\") or label_replace(ceph_osd_metadata{device_class=\"ssd\"}, \"device\", \"nvme0\", \"\", \"\")), \"disk_id\", \"/\", \"hostname\", \"device\")) * on(ceph_daemon) group_left() (avg_over_time(ceph_osd_up[24h]) * 100)",
+          "expr": "sum by (ceph_daemon, disk_id) (label_join((label_replace(ceph_osd_metadata{device_class=\"hdd\"}, \"device\", \"sda\", \"\", \"\") or label_replace(ceph_osd_metadata{device_class=\"ssd\"}, \"device\", \"nvme0\", \"\", \"\")), \"disk_id\", \"/\", \"hostname\", \"device\")) * on(ceph_daemon) group_left() (avg_over_time((sum by (ceph_daemon) (ceph_osd_up))[$__range:]) * 100)",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -1216,7 +1216,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Uptime (24h)"
+              "options": "Uptime"
             },
             "properties": [
               {
@@ -1306,7 +1306,7 @@
               "Value #D": "Size",
               "Value #E": "Status",
               "Value #F": "Restarts",
-              "Value #G": "Uptime (24h)"
+              "Value #G": "Uptime"
             }
           }
         }

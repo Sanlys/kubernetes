@@ -112,7 +112,7 @@
       },
       "targets": [
         {
-          "expr": "(avg_over_time(ceph_osd_up[24h]) * 100) * ceph_osd_up",
+          "expr": "(avg_over_time((sum by (ceph_daemon) (ceph_osd_up))[$__range:]) * 100) * on(ceph_daemon) ceph_osd_up",
           "legendFormat": "{{ceph_daemon}}",
           "datasource": {
             "type": "prometheus",
