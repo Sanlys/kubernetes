@@ -1,0 +1,27 @@
+# secret.enc.yaml is SOPS-encrypted and applied manually (ArgoCD has no
+# SOPS integration here - see nfs-gateway/secret.enc.yaml for the same
+# pattern):
+#   SOPS_AGE_SSH_PRIVATE_KEY_FILE=~/.ssh/id_ed25519 \
+#     sops exec-file cluster/prod/platform/monitoring/hetrixtools-exporter/secret.enc.yaml 'kubectl apply -f {}'
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hetrixtools-exporter
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Sanlys/kubernetes.git
+    targetRevision: main
+    path: cluster/prod/platform/monitoring/hetrixtools-exporter
+    directory:
+      exclude: "{app.yaml,secret.enc.yaml}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,135 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hetrixtools-exporter
+  namespace: monitoring
+data:
+  exporter.py: |
+    """
+    Polls HetrixTools' v3 API for one uptime monitor's live per-location ping
+    data and re-exposes it as Prometheus metrics. Stdlib only - no
+    prometheus_client, no third-party HTTP client.
+    """
+    import http.server
+    import json
+    import os
+    import threading
+    import time
+    import urllib.request
+
+    API_KEY = os.environ["HETRIX_API_KEY"]
+    MONITOR_ID = os.environ.get("HETRIX_MONITOR_ID", "")
+    POLL_INTERVAL = int(os.environ.get("HETRIX_POLL_INTERVAL", "55"))
+    API_URL = "https://api.hetrixtools.com/v3/uptime-monitors"
+
+    _lock = threading.Lock()
+    _state = {
+        "monitor_name": None,
+        "locations": {},
+        "scrape_success": 0,
+        "last_scrape_ts": 0,
+    }
+
+
+    def poll_once():
+        req = urllib.request.Request(API_URL, headers={"Authorization": f"Bearer {API_KEY}"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.load(resp)
+
+        monitor = None
+        for m in data.get("monitors", []):
+            if m.get("id") == MONITOR_ID:
+                monitor = m
+                break
+        if monitor is None and data.get("monitors"):
+            monitor = data["monitors"][0]
+        if monitor is None:
+            raise RuntimeError("no monitor found in API response")
+
+        locations = {}
+        for loc, info in monitor.get("locations", {}).items():
+            locations[loc] = {
+                "response_time": info.get("response_time"),
+                "up": 1 if info.get("uptime_status") == "up" else 0,
+            }
+
+        with _lock:
+            _state["monitor_name"] = monitor.get("name", "unknown")
+            _state["locations"] = locations
+            _state["scrape_success"] = 1
+            _state["last_scrape_ts"] = time.time()
+
+
+    def poll_loop():
+        while True:
+            try:
+                poll_once()
+            except Exception as e:
+                with _lock:
+                    _state["scrape_success"] = 0
+                print(f"poll failed: {e}", flush=True)
+            time.sleep(POLL_INTERVAL)
+
+
+    def render_metrics():
+        with _lock:
+            monitor_name = _state["monitor_name"] or "unknown"
+            locations = dict(_state["locations"])
+            scrape_success = _state["scrape_success"]
+            last_ts = _state["last_scrape_ts"]
+
+        lines = [
+            "# HELP hetrixtools_ping_response_time_ms Latest ping response time reported by HetrixTools, per probe location.",
+            "# TYPE hetrixtools_ping_response_time_ms gauge",
+        ]
+        for loc, info in locations.items():
+            if info["response_time"] is not None:
+                lines.append(f'hetrixtools_ping_response_time_ms{{monitor="{monitor_name}",location="{loc}"}} {info["response_time"]}')
+
+        lines += [
+            "# HELP hetrixtools_monitor_up Whether HetrixTools reports this probe location as up (1) or down (0).",
+            "# TYPE hetrixtools_monitor_up gauge",
+        ]
+        for loc, info in locations.items():
+            lines.append(f'hetrixtools_monitor_up{{monitor="{monitor_name}",location="{loc}"}} {info["up"]}')
+
+        lines += [
+            "# HELP hetrixtools_exporter_scrape_success Whether the last poll of the HetrixTools API succeeded.",
+            "# TYPE hetrixtools_exporter_scrape_success gauge",
+            f"hetrixtools_exporter_scrape_success {scrape_success}",
+            "# HELP hetrixtools_exporter_last_scrape_timestamp_seconds Unix time of the last successful poll.",
+            "# TYPE hetrixtools_exporter_last_scrape_timestamp_seconds gauge",
+            f"hetrixtools_exporter_last_scrape_timestamp_seconds {last_ts}",
+        ]
+        return "\n".join(lines) + "\n"
+
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path != "/metrics":
+                self.send_response(404)
+                self.end_headers()
+                return
+            body = render_metrics().encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; version=0.0.4")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, format, *args):
+            pass
+
+
+    def main():
+        try:
+            poll_once()
+        except Exception as e:
+            print(f"initial poll failed: {e}", flush=True)
+        threading.Thread(target=poll_loop, daemon=True).start()
+        server = http.server.ThreadingHTTPServer(("0.0.0.0", 8080), Handler)
+        server.serve_forever()
+
+
+    if __name__ == "__main__":
+        main()

@@ -1,0 +1,59 @@
+# Stock python image + a ConfigMap-mounted script instead of a
+# custom-built image - this is ~100 lines of stdlib Python, not worth a
+# Dockerfile/CI/registry pipeline.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hetrixtools-exporter
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hetrixtools-exporter
+  template:
+    metadata:
+      labels:
+        app: hetrixtools-exporter
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: exporter
+          image: python:3.13-alpine
+          command: ["python3", "/app/exporter.py"]
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: HETRIX_MONITOR_ID
+              value: "cd5e52671dcee2046af00a7d64eac979"
+            - name: HETRIX_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: hetrixtools-api
+                  key: api-key
+          volumeMounts:
+            - name: script
+              mountPath: /app
+              readOnly: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+          readinessProbe:
+            httpGet: {path: /metrics, port: http}
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet: {path: /metrics, port: http}
+            initialDelaySeconds: 10
+      volumes:
+        - name: script
+          configMap:
+            name: hetrixtools-exporter
