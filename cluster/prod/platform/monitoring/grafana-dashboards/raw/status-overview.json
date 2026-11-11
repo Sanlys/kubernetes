@@ -753,6 +753,54 @@
           }
         }
       ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Ping to google.com (ICMP RTT)",
+      "description": "Round-trip time of the ICMP probe against google.com, via blackbox-exporter. A plain internet-reachability baseline independent of anything this cluster serves - useful for telling \"our ingress is down\" apart from \"the WAN link itself is down\".",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "probe_icmp_duration_seconds{phase=\"rtt\",target=\"google-icmp\"}",
+          "legendFormat": "rtt",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            }
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
     }
   ],
   "templating": {
