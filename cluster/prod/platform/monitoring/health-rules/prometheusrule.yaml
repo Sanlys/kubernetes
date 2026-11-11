@@ -107,13 +107,13 @@ spec:
           labels:
             category: platform
             title: "Network (inbound)"
-            description: "External reachability of this cluster's ingress, probed against its public IP: WARN above 50ms, ERR above 200ms or unreachable."
+            description: "External reachability of this cluster's public IP, via HetrixTools' real external probes (minimum across its 4 locations): WARN above 50ms, ERR above 200ms or unreachable."
           expr: |
             clamp_max(
-              sum(
-                (probe_duration_seconds{target="ingress-public-external"} >= bool 0.05)
-                + (probe_duration_seconds{target="ingress-public-external"} >= bool 0.2)
-                + 2 * (probe_success{target="ingress-public-external"} == bool 0)
+              (
+                (min(hetrixtools_ping_response_time_ms{monitor="Pub IP"}) >= bool 50)
+                + (min(hetrixtools_ping_response_time_ms{monitor="Pub IP"}) >= bool 200)
+                + 2 * (min(hetrixtools_monitor_up{monitor="Pub IP"}) == bool 0)
               ) or vector(0),
               2
             )
