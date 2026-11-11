@@ -1841,7 +1841,7 @@
         }
       },
       "title": "Network (inbound) latency",
-      "description": "Response time of the external-IP-pinned ingress probe. Feeds health:platform:network_in (WARN above 50ms, ERR above 200ms or unreachable).",
+      "description": "Ping response time from HetrixTools' 4 external probe locations. Feeds health:platform:network_in (min across locations - WARN above 50ms, ERR above 200ms or unreachable).",
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -1850,8 +1850,8 @@
       },
       "targets": [
         {
-          "expr": "probe_duration_seconds{target=\"ingress-public-external\"}",
-          "legendFormat": "rtt",
+          "expr": "hetrixtools_ping_response_time_ms{monitor=\"Pub IP\"}",
+          "legendFormat": "{{location}}",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -1861,7 +1861,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "s",
+          "unit": "ms",
           "custom": {
             "fillOpacity": 10,
             "lineWidth": 2,
@@ -1883,11 +1883,11 @@
               },
               {
                 "color": "yellow",
-                "value": 0.05
+                "value": 50
               },
               {
                 "color": "red",
-                "value": 0.2
+                "value": 200
               }
             ]
           }
