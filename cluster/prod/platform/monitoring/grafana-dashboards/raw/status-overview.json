@@ -283,6 +283,140 @@
       "description": "Worst status among this category's checks on the apps dashboard (error rate, crash rate)."
     },
     {
+      "id": 11,
+      "type": "table",
+      "title": "All checks",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "{__name__=~\"health:[a-z]+:[a-z_]+\"}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "instant": true,
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "basic"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 2
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "OK"
+                      },
+                      "1": {
+                        "text": "WARN"
+                      },
+                      "2": {
+                        "text": "ERR"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true
+            },
+            "includeByName": {
+              "title": true,
+              "Value": true,
+              "category": true
+            },
+            "indexByName": {
+              "title": 0,
+              "category": 1,
+              "Value": 2
+            },
+            "renameByName": {
+              "title": "Title",
+              "Value": "Status",
+              "category": "Category"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Status",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
       "id": 4,
       "type": "timeseries",
       "title": "Cluster CPU \u2014 used vs. allocatable",
@@ -290,7 +424,7 @@
         "h": 8,
         "w": 8,
         "x": 0,
-        "y": 4
+        "y": 14
       },
       "datasource": {
         "type": "prometheus",
@@ -346,7 +480,7 @@
         "h": 8,
         "w": 8,
         "x": 8,
-        "y": 4
+        "y": 14
       },
       "datasource": {
         "type": "prometheus",
@@ -402,7 +536,7 @@
         "h": 8,
         "w": 8,
         "x": 16,
-        "y": 4
+        "y": 14
       },
       "datasource": {
         "type": "prometheus",
@@ -458,7 +592,7 @@
         "h": 6,
         "w": 10,
         "x": 0,
-        "y": 12
+        "y": 22
       },
       "datasource": {
         "type": "prometheus",
@@ -583,7 +717,7 @@
         "h": 6,
         "w": 4,
         "x": 20,
-        "y": 12
+        "y": 22
       },
       "datasource": {
         "type": "prometheus",
@@ -648,7 +782,7 @@
         "h": 6,
         "w": 10,
         "x": 10,
-        "y": 12
+        "y": 22
       },
       "datasource": {
         "type": "prometheus",
@@ -788,7 +922,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 28
       },
       "datasource": {
         "type": "prometheus",

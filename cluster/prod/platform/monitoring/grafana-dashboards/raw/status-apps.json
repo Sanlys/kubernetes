@@ -18,10 +18,10 @@
     {
       "id": 17,
       "type": "stat",
-      "title": "Error rate health",
+      "title": "Apps/Services health",
       "gridPos": {
-        "h": 4,
-        "w": 12,
+        "h": 8,
+        "w": 8,
         "x": 0,
         "y": 0
       },
@@ -31,7 +31,7 @@
       },
       "targets": [
         {
-          "expr": "health:apps:errors",
+          "expr": "health:apps",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
@@ -93,17 +93,16 @@
         "textMode": "auto",
         "graphMode": "area",
         "colorMode": "background"
-      },
-      "description": "Rolls up the public 5xx error rate into one status. See health-rules PrometheusRule for the exact rule."
+      }
     },
     {
       "id": 18,
-      "type": "stat",
-      "title": "Crash health",
+      "type": "table",
+      "title": "Apps/Services checks",
       "gridPos": {
-        "h": 4,
-        "w": 12,
-        "x": 12,
+        "h": 8,
+        "w": 16,
+        "x": 8,
         "y": 0
       },
       "datasource": {
@@ -112,70 +111,123 @@
       },
       "targets": [
         {
-          "expr": "health:apps:crashes",
+          "expr": "{__name__=~\"health:apps:[a-z_]+\"}",
           "datasource": {
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
           "instant": true,
+          "format": "table",
           "refId": "A"
         }
       ],
       "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": {
-            "mode": "thresholds",
-            "fixedColor": "text"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Status"
+            },
+            "properties": [
               {
-                "color": "green",
-                "value": null
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background",
+                  "mode": "basic"
+                }
               },
               {
-                "color": "yellow",
-                "value": 1
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
               },
               {
-                "color": "red",
-                "value": 2
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 2
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "OK"
+                      },
+                      "1": {
+                        "text": "WARN"
+                      },
+                      "2": {
+                        "text": "ERR"
+                      }
+                    }
+                  }
+                ]
               }
             ]
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "0": {
-                  "text": "OK"
-                },
-                "1": {
-                  "text": "WARN"
-                },
-                "2": {
-                  "text": "ERR"
-                }
-              }
-            }
-          ],
-          "min": 0
-        },
-        "overrides": []
+          }
+        ]
       },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area",
-        "colorMode": "background"
+        "showHeader": true,
+        "cellHeight": "sm"
       },
-      "description": "Rolls up app pod crash/restart counts into one status. See health-rules PrometheusRule for the exact rule."
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true
+            },
+            "includeByName": {
+              "title": true,
+              "Value": true,
+              "description": true
+            },
+            "indexByName": {
+              "title": 0,
+              "description": 1,
+              "Value": 2
+            },
+            "renameByName": {
+              "title": "Title",
+              "Value": "Status",
+              "description": "Description"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Status",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ]
     },
     {
       "id": 1,
@@ -185,7 +237,7 @@
         "h": 4,
         "w": 8,
         "x": 0,
-        "y": 4
+        "y": 12
       },
       "datasource": {
         "type": "prometheus",
@@ -250,7 +302,7 @@
         "h": 4,
         "w": 8,
         "x": 8,
-        "y": 4
+        "y": 12
       },
       "datasource": {
         "type": "prometheus",
@@ -298,7 +350,7 @@
         "h": 4,
         "w": 8,
         "x": 16,
-        "y": 4
+        "y": 12
       },
       "datasource": {
         "type": "prometheus",
@@ -359,7 +411,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 8
+        "y": 16
       },
       "datasource": {
         "type": "prometheus",
@@ -406,7 +458,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 8
+        "y": 16
       },
       "datasource": {
         "type": "prometheus",
@@ -453,7 +505,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 16
+        "y": 24
       },
       "datasource": {
         "type": "prometheus",
@@ -508,7 +560,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 24
+        "y": 32
       },
       "datasource": {
         "type": "prometheus",
@@ -577,7 +629,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 32
+        "y": 40
       },
       "datasource": {
         "type": "prometheus",
@@ -757,7 +809,7 @@
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 42
+        "y": 50
       },
       "datasource": {
         "type": "prometheus",
@@ -805,7 +857,7 @@
         "h": 4,
         "w": 4,
         "x": 4,
-        "y": 42
+        "y": 50
       },
       "datasource": {
         "type": "prometheus",
@@ -853,7 +905,7 @@
         "h": 4,
         "w": 4,
         "x": 8,
-        "y": 42
+        "y": 50
       },
       "datasource": {
         "type": "prometheus",
@@ -918,7 +970,7 @@
         "h": 4,
         "w": 4,
         "x": 12,
-        "y": 42
+        "y": 50
       },
       "datasource": {
         "type": "prometheus",
@@ -983,7 +1035,7 @@
         "h": 4,
         "w": 4,
         "x": 16,
-        "y": 42
+        "y": 50
       },
       "datasource": {
         "type": "prometheus",
@@ -1048,7 +1100,7 @@
         "h": 4,
         "w": 4,
         "x": 20,
-        "y": 42
+        "y": 50
       },
       "datasource": {
         "type": "prometheus",
@@ -1105,7 +1157,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 46
+        "y": 54
       },
       "datasource": {
         "type": "prometheus",
@@ -1152,7 +1204,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 46
+        "y": 54
       },
       "datasource": {
         "type": "loki",
