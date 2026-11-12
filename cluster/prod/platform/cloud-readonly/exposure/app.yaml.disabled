@@ -1,0 +1,27 @@
+# NOT ACTIVE. Rename to app.yaml (root app picks up **/app.yaml) only after
+# the steps in ../README.md "Turning on the public endpoint" - this is the
+# step that puts the API server on the internet.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloud-readonly-exposure
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Sanlys/kubernetes.git
+    targetRevision: main
+    path: cluster/prod/platform/cloud-readonly/exposure
+    directory:
+      exclude: "app.yaml*"
+  destination:
+    server: https://kubernetes.default.svc
+    # Everything lives next to the `kubernetes` Service: traefik-public's
+    # CRD provider has allowCrossNamespace off, so the IngressRoute, its
+    # middlewares, ServersTransport and TLS Secret must share a namespace
+    # with the backend Service.
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

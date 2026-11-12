@@ -1,0 +1,97 @@
+# Public, read-only door to the API server for scheduled cloud sessions.
+#
+# Path: internet -> frps (Oracle VPS) -> frpc -> traefik-public websecure
+#       -> this router -> https://kubernetes.default.svc
+#
+# Why this shape: the cloud sessions' egress is HTTPS-only through a
+# TLS-re-terminating proxy with no fixed source IPs, so a source-IP
+# allowlist, client certs, a VPN (Tailscale/WireGuard UDP) or an frp stcp
+# visitor are all off the table. What survives that proxy is plain HTTPS
+# on 443 with a publicly trusted cert and a bearer token - so the edge
+# has to do the filtering.
+#
+# Layers, outermost first:
+#   1. Traefik terminates TLS - the API server's own TLS/HTTP stack is never
+#      directly on the internet.
+#   2. Only GET, only with a Bearer token. Anonymous probes, scanners and
+#      every write verb get a 404 from Traefik without touching the API
+#      server. (Also blocks websocket exec/attach upgrades over POST.)
+#   3. Path denylist: secrets, exec/attach/portforward, every */proxy
+#      except the two monitoring services, KubeVirt console subresources.
+#      This holds even if some *other*, more privileged token were ever
+#      used against this hostname.
+#   4. Impersonation / front-proxy auth headers stripped.
+#   5. Rate limit.
+#   6. API server RBAC (../clusterrole.yaml) - the real control.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: k8s-ro
+  namespace: default
+spec:
+  entryPoints: ["websecure"]
+  routes:
+    - kind: Rule
+      match: >-
+        Host(`k8s-ro.lysakermoen.com`)
+        && Method(`GET`)
+        && HeaderRegexp(`Authorization`, `^Bearer [A-Za-z0-9._-]+$`)
+        && !PathRegexp(`(?i)/secrets(/|$)`)
+        && !PathRegexp(`(?i)/(exec|attach|portforward)(/|$)`)
+        && !PathRegexp(`(?i)^/apis/subresources\.kubevirt\.io/`)
+        && (!PathRegexp(`(?i)/proxy(/|$)`) || PathRegexp(`^/api/v1/namespaces/monitoring/services/monitoring-kube-prometheus-(alertmanager:9093|prometheus:9090)/proxy/api/`))
+      middlewares:
+        - name: k8s-ro-strip-auth-headers
+        - name: k8s-ro-ratelimit
+      services:
+        - kind: Service
+          name: kubernetes
+          namespace: default
+          port: 443
+          scheme: https
+          serversTransport: k8s-ro-apiserver
+  tls:
+    secretName: k8s-ro-tls
+---
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: k8s-ro-apiserver
+  namespace: default
+spec:
+  # Traefik dials the endpoint IPs (node:6443) directly, so pin the name the
+  # apiserver cert is issued for and verify against the cluster CA that
+  # Kubernetes publishes into every namespace.
+  serverName: kubernetes.default.svc
+  rootCAs:
+    - configMap: kube-root-ca.crt
+  # Long `kubectl get -w` / `kubectl logs -f` streams.
+  forwardingTimeouts:
+    responseHeaderTimeout: 60s
+    idleConnTimeout: 90s
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: k8s-ro-strip-auth-headers
+  namespace: default
+spec:
+  headers:
+    customRequestHeaders:
+      Impersonate-User: ""
+      Impersonate-Group: ""
+      Impersonate-Uid: ""
+      X-Remote-User: ""
+      X-Remote-Group: ""
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: k8s-ro-ratelimit
+  namespace: default
+spec:
+  rateLimit:
+    # kubectl discovery bursts a few dozen GETs on a cold cache; an agent
+    # doing a deep scan shouldn't come close to sustained 20/s.
+    average: 20
+    burst: 100
