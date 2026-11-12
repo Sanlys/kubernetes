@@ -12,7 +12,9 @@ etc.) rather than trusting this script's own text as the final word.
 Checks:
   - Ceph health (transition-based: only reports when the summary changes)
   - ArgoCD app sync/health (per-app transition-based)
-  - Pods stuck outside Running/Succeeded (reports newly-bad and newly-recovered)
+  - Unhealthy pods: stuck outside Running/Succeeded, a container in
+    CrashLoopBackOff/ImagePullBackOff/etc., or Running but not Ready for 10m
+    (reports new, still-stuck every run, and recovered)
   - Firing Alertmanager alerts, excluding Watchdog (reports every currently-active
     alert every cycle, tagged new/active, plus resolved counts - a persistent
     alert is never silently dropped after its first mention)
@@ -200,12 +202,49 @@ def check_argocd(state, report):
     state["argocd_last"] = current
 
 
+# Container waiting reasons that mean the pod won't come up on its own.
+BAD_WAITING = {
+    "CrashLoopBackOff", "ImagePullBackOff", "ErrImagePull", "InvalidImageName",
+    "CreateContainerConfigError", "CreateContainerError", "RunContainerError",
+}
+# A Running pod whose containers have been not-ready for this long is stuck too.
+NOT_READY_GRACE_S = 600
+
+
+def _pod_problem(p, now):
+    """Return a short reason string if the pod is unhealthy, else None.
+
+    Looks at container states, not just pod phase: a CrashLoopBackOff pod is
+    phase Running, and an ImagePullBackOff pod is only Pending, so phase alone
+    hides both the problem and its cause.
+    """
+    st = p.get("status", {})
+    phase = st.get("phase", "?")
+    if phase == "Succeeded":
+        return None
+    statuses = st.get("initContainerStatuses", []) + st.get("containerStatuses", [])
+    for cs in statuses:
+        w = (cs.get("state") or {}).get("waiting") or {}
+        if w.get("reason") in BAD_WAITING:
+            msg = (w.get("message") or "").splitlines()[0][:160] if w.get("message") else ""
+            return f"{phase}, {cs['name']}: {w['reason']}" + (f" ({msg})" if msg else "")
+    if phase != "Running":
+        return phase
+    # Running but not ready for a while (failing readiness probe, etc.).
+    for c in st.get("conditions", []):
+        if c.get("type") == "Ready" and c.get("status") != "True":
+            since = c.get("lastTransitionTime")
+            try:
+                age = (now - datetime.fromisoformat(since.replace("Z", "+00:00"))).total_seconds()
+            except Exception:
+                age = NOT_READY_GRACE_S
+            if age >= NOT_READY_GRACE_S:
+                return f"Running, not Ready for {int(age // 60)}m"
+    return None
+
+
 def check_pods(state, report):
-    out, err, rc = run([
-        "kubectl", "get", "pods", "-A",
-        "--field-selector=status.phase!=Running,status.phase!=Succeeded",
-        "-o", "json",
-    ])
+    out, err, rc = run(["kubectl", "get", "pods", "-A", "-o", "json"], timeout=60)
     if rc != 0:
         report.append(f"! PODS check failed: {err or out}")
         return
@@ -214,18 +253,21 @@ def check_pods(state, report):
     except Exception as e:
         report.append(f"! PODS parse failed: {e}")
         return
-    current = set()
+    now = datetime.now(timezone.utc)
     details = {}
     for p in items:
-        key = f"{p['metadata']['namespace']}/{p['metadata']['name']}"
-        current.add(key)
-        phase = p.get("status", {}).get("phase", "?")
-        details[key] = phase
+        reason = _pod_problem(p, now)
+        if reason:
+            details[f"{p['metadata']['namespace']}/{p['metadata']['name']}"] = reason
+    current = set(details)
     last = set(state.get("pods_last", []))
-    new_bad = current - last
+    for k in sorted(current - last):
+        report.append(f"POD: {k} is {details[k]}")
+    # Repeat still-stuck pods every run (like alerts) so a check that sees the
+    # state mid-incident can't mistake "nothing new" for "nothing wrong".
+    for k in sorted(current & last):
+        report.append(f"POD: {k} still {details[k]}")
     recovered = last - current
-    for k in sorted(new_bad):
-        report.append(f"POD: {k} is {details.get(k, '?')}")
     if recovered:
         report.append(f"POD: {len(recovered)} previously-stuck pod(s) recovered")
     state["pods_last"] = sorted(current)
