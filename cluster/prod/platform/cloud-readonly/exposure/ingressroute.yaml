@@ -1,14 +1,17 @@
 # Public, read-only door to the API server for scheduled cloud sessions.
 #
-# Path: internet -> frps (Oracle VPS) -> frpc -> traefik-public websecure
-#       -> this router -> https://kubernetes.default.svc
+# Path: internet -> router port-forward -> MetalLB IP 10.0.6.245
+#       (loadbalancer.yaml, a dedicated Service on the traefik-public pods)
+#       -> websecure -> this router -> https://kubernetes.default.svc
+# Deliberately not via frps/frpc.
 #
-# Why this shape: the cloud sessions' egress is HTTPS-only through a
-# TLS-re-terminating proxy with no fixed source IPs, so a source-IP
-# allowlist, client certs, a VPN (Tailscale/WireGuard UDP) or an frp stcp
-# visitor are all off the table. What survives that proxy is plain HTTPS
-# on 443 with a publicly trusted cert and a bearer token - so the edge
-# has to do the filtering.
+# Why Traefik in front instead of a LoadBalancer straight onto the API
+# server: the cloud sessions' egress is HTTPS-only through a proxy that
+# re-terminates TLS and checks the upstream cert, and the API server only
+# has a cert from the cluster's own CA. So the endpoint has to present a
+# publicly trusted (Let's Encrypt) cert, which means something has to
+# terminate TLS - and once it does, it can also filter. No fixed source IPs
+# on that side either, so no IP allowlist.
 #
 # Layers, outermost first:
 #   1. Traefik terminates TLS - the API server's own TLS/HTTP stack is never
