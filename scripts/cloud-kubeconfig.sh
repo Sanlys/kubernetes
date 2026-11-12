@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # Writes a kubeconfig for the read-only cloud identity
 # (cluster/prod/platform/cloud-readonly). Meant for a cloud environment's
-# setup script; needs K8S_RO_TOKEN set as an environment secret.
+# setup script; needs the token in the environment as `token` (cloud
+# environment variable names can't contain underscores) or K8S_RO_TOKEN.
 #
 # No certificate-authority on purpose: the cloud sandbox's egress proxy
 # re-terminates TLS with its own CA (already in the system trust store) and
 # verifies the real Let's Encrypt cert upstream. kubectl honours HTTPS_PROXY.
 set -euo pipefail
 
-: "${K8S_RO_TOKEN:?set K8S_RO_TOKEN (cloud-readonly ServiceAccount token)}"
+K8S_RO_TOKEN="${K8S_RO_TOKEN:-${token:-}}"
+: "${K8S_RO_TOKEN:?set token (cloud-readonly ServiceAccount token)}"
 SERVER="${K8S_RO_SERVER:-https://k8s-ro.lysakermoen.com}"
 KUBECONFIG_OUT="${KUBECONFIG:-$HOME/.kube/config}"
 

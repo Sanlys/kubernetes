@@ -86,12 +86,12 @@ follow-up and isn't included here.
      `kubectl get secrets -A` fails, `kubectl -n rook-ceph exec deploy/rook-ceph-tools -- true` fails.
 6. Copy the token into the cloud environment (project settings, Cloud
    environment):
-   - env secret `K8S_RO_TOKEN` =
+   - env variable `token` (no underscores allowed there) =
      `kubectl -n cloud-readonly get secret cloud-readonly-token -o jsonpath='{.data.token}' | base64 -d`
    - network: Limited, with `k8s-ro.lysakermoen.com` and `dl.k8s.io` added
      to allowed domains
    - setup script: install kubectl, then `scripts/cloud-kubeconfig.sh`
 
 Rotate: `kubectl -n cloud-readonly delete secret cloud-readonly-token`, then
-update `K8S_RO_TOKEN`. Emergency off: rename `exposure/app.yaml` back to
+update the environment's `token`. Emergency off: rename `exposure/app.yaml` back to
 `.disabled` (Argo prunes the route), or delete the ServiceAccount.
