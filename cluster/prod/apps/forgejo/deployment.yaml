@@ -20,9 +20,13 @@ spec:
           # /data to USER_UID/USER_GID, then re-execs as that user - same
           # pattern as trilium/vaultwarden, and avoids needing an fsGroup or
           # initContainer to fix up ownership of the Ceph RBD volume.
-          # Not digest-pinned: the proxy in this environment blocks
-          # codeberg.org's registry, so the digest couldn't be resolved here.
-          image: codeberg.org/forgejo/forgejo:17.0.1
+          # Pulled from code.forgejo.org (Forgejo's own registry, same images)
+          # instead of codeberg.org: on 2026-11-12 codeberg.org's registry
+          # answered 403 Forbidden to the cluster's manifest requests, so a
+          # VPA-triggered reschedule left the pod in ImagePullBackOff.
+          # Not digest-pinned: the proxy in this environment blocks both
+          # registries, so the digest couldn't be resolved here.
+          image: code.forgejo.org/forgejo/forgejo:17.0.1
           env:
             - name: USER_UID
               value: "1000"
