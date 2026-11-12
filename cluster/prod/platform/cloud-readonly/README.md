@@ -9,7 +9,7 @@ Two parts, deliberately separate:
 | Part | Synced on merge? | What it does |
 | --- | --- | --- |
 | `./` (`app.yaml`) | yes | ServiceAccount, ClusterRole/Binding, monitoring proxy Role, token Secret. Nothing reachable from outside. |
-| `./exposure` (`app.yaml.disabled`) | **no** | Public HTTPS endpoint `k8s-ro.lysakermoen.com` in front of the API server, on its own MetalLB IP (10.0.6.245) for a router port-forward. Not via frpc. Turned on by hand, see below. |
+| `./exposure` (`app.yaml.disabled`) | **no** | Public HTTPS endpoint `k8s-ro.lysakermoen.com` in front of the API server, served by the existing public traefik-public on 443 (no new port-forward or LoadBalancer). Turned on by hand, see below. |
 
 ## What the identity can and can't do
 
@@ -54,9 +54,8 @@ allowlist, client-certificate auth, a WireGuard/Tailscale tunnel (UDP) and an
 frp `stcp` visitor. What does work is a normal HTTPS hostname with a public
 cert plus a bearer token. A LoadBalancer straight onto the API server would
 fail here, since its cert comes from the cluster CA and the egress proxy checks
-upstream certs. So Traefik terminates TLS with a Let's Encrypt cert on a
-dedicated LoadBalancer IP (`exposure/loadbalancer.yaml`) and does the
-filtering (comments in `exposure/ingressroute.yaml`):
+upstream certs. So the already-public traefik-public terminates TLS with a
+Let's Encrypt cert for one more hostname and does the filtering (comments in `exposure/ingressroute.yaml`):
 
 - TLS terminated by Traefik, so the API server's own listener isn't on the internet
 - GET only, Bearer header required (anonymous scanners get a 404 from Traefik)
@@ -74,12 +73,8 @@ follow-up and isn't included here.
 ## Turning on the public endpoint (manual, Sander)
 
 1. Merge, let `cloud-readonly` sync, run the `can-i` checks above.
-2. Router: forward a public TCP port (443 if you can, since the cloud egress
-   proxy may only allow 443) to `10.0.6.245:443`. Check the IP is free first:
-   `kubectl get svc -A | grep 10.0.6.245`.
-   DNS: an A record `k8s-ro.lysakermoen.com` -> your home public IP, DNS-only
-   (not Cloudflare-proxied). If the public port isn't 443, set
-   `K8S_RO_SERVER=https://k8s-ro.lysakermoen.com:<port>`.
+2. DNS: `k8s-ro.lysakermoen.com` pointing wherever the other public
+   `*.lysakermoen.com` hosts point (a wildcard record may already cover it).
 3. Confirm traefik-public can read the `kube-root-ca.crt` ConfigMap in
    `default` (the ServersTransport uses it to verify the API server):
    `kubectl auth can-i get configmaps -n default --as=system:serviceaccount:traefik-public:traefik-public-traefik-public`

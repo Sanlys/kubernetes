@@ -1,16 +1,17 @@
 # Public, read-only door to the API server for scheduled cloud sessions.
 #
-# Path: internet -> router port-forward -> MetalLB IP 10.0.6.245
-#       (loadbalancer.yaml, a dedicated Service on the traefik-public pods)
-#       -> websecure -> this router -> https://kubernetes.default.svc
-# Deliberately not via frps/frpc.
+# Path: internet -> traefik-public websecure (already publicly reachable on
+#       443, same as every other public hostname) -> this router
+#       -> https://kubernetes.default.svc
+# No new LoadBalancer, port-forward or frpc config - just a hostname.
 #
 # Why Traefik in front instead of a LoadBalancer straight onto the API
 # server: the cloud sessions' egress is HTTPS-only through a proxy that
 # re-terminates TLS and checks the upstream cert, and the API server only
 # has a cert from the cluster's own CA. So the endpoint has to present a
 # publicly trusted (Let's Encrypt) cert, which means something has to
-# terminate TLS - and once it does, it can also filter. No fixed source IPs
+# terminate TLS - and once it does, it can also filter. traefik-public is
+# already that, on the internet, so this is only one more router on it. No fixed source IPs
 # on that side either, so no IP allowlist.
 #
 # Layers, outermost first:
