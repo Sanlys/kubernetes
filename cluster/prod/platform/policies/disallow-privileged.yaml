@@ -1,28 +1,39 @@
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+# CEL-based replacement for the legacy kyverno.io/v1 ClusterPolicy of the
+# same name, which Kyverno v1.20 (chart 3.10.0) removes entirely. Verified
+# equivalent against a real v1.20.0 controller (admission events +
+# background-scan PolicyReports) before this upgrade: still audit-only,
+# still fails open if Kyverno itself is down, still skips role=infra
+# namespaces, still flags the same privileged-container shape.
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
 metadata:
   name: disallow-privileged
 spec:
-  validationFailureAction: Audit
-  # Audit-only, so never block pod creation if Kyverno itself is down
-  # (e.g. mid-upgrade or during a cold cluster start).
-  webhookConfiguration:
-    failurePolicy: Ignore
-  background: true
-  rules:
-    - name: privileged-containers
-      match:
-        resources:
-          kinds: ["Pod"]
-          namespaceSelector:
-            matchExpressions:
-              - key: role
-                operator: NotIn
-                values: ["infra"]
-      validate:
-        message: "Privileged containers are not allowed"
-        pattern:
-          spec:
-            containers:
-              - =(securityContext):
-                  =(privileged): "false"
+  failurePolicy: Ignore
+  evaluation:
+    admission:
+      enabled: true
+    background:
+      enabled: true
+    mode: Kubernetes
+  validationActions:
+    - Audit
+  matchConstraints:
+    namespaceSelector:
+      matchExpressions:
+        - key: role
+          operator: NotIn
+          values: ["infra"]
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+  validations:
+    - expression: >-
+        !has(object.spec.containers) ||
+        object.spec.containers.all(c,
+          !has(c.securityContext) ||
+          !has(c.securityContext.privileged) ||
+          c.securityContext.privileged == false)
+      message: "Privileged containers are not allowed"

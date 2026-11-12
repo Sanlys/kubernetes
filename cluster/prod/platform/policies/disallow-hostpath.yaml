@@ -1,27 +1,36 @@
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+# CEL-based replacement for the legacy kyverno.io/v1 ClusterPolicy of the
+# same name, which Kyverno v1.20 (chart 3.10.0) removes entirely. Verified
+# equivalent against a real v1.20.0 controller (admission events +
+# background-scan PolicyReports) before this upgrade: still audit-only,
+# still fails open if Kyverno itself is down, still skips role=infra
+# namespaces, still flags the same hostPath-volume shape.
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
 metadata:
   name: disallow-hostpath
 spec:
-  validationFailureAction: Audit
-  # Audit-only, so never block pod creation if Kyverno itself is down
-  # (e.g. mid-upgrade or during a cold cluster start).
-  webhookConfiguration:
-    failurePolicy: Ignore
-  background: true
-  rules:
-    - name: hostpath-not-allowed
-      match:
-        resources:
-          kinds: ["Pod"]
-          namespaceSelector:
-            matchExpressions:
-              - key: role
-                operator: NotIn
-                values: ["infra"]
-      validate:
-        message: "hostPath volumes are not allowed"
-        pattern:
-          spec:
-            =(volumes):
-              - X(hostPath): "null"
+  failurePolicy: Ignore
+  evaluation:
+    admission:
+      enabled: true
+    background:
+      enabled: true
+    mode: Kubernetes
+  validationActions:
+    - Audit
+  matchConstraints:
+    namespaceSelector:
+      matchExpressions:
+        - key: role
+          operator: NotIn
+          values: ["infra"]
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+  validations:
+    - expression: >-
+        !has(object.spec.volumes) ||
+        object.spec.volumes.all(v, !has(v.hostPath))
+      message: "hostPath volumes are not allowed"
