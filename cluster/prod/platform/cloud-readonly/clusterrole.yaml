@@ -1,0 +1,144 @@
+# Read-only, cluster-wide, for an agent that "digs around" with kubectl.
+#
+# RBAC is additive-only (there is no "everything except Secrets"), and
+# apiGroups ["*"] includes the core group - so Secrets can only be kept out
+# by enumerating. Core ("") resources are listed one by one; every other
+# group gets resources ["*"] but only get/list/watch.
+#
+# Deliberately NOT granted (all core-group subresources, so enumerating core
+# keeps them out):
+#   secrets                    - obviously
+#   pods/exec, pods/attach     - a shell is a write path, and exec into the
+#                                rook toolbox = Ceph admin keyring
+#   pods/portforward           - reaches any pod port, bypasses NetworkPolicy
+#   pods/proxy, services/proxy - same (one scoped exception for the
+#                                monitoring UIs, see monitoring-proxy-role.yaml)
+#   nodes/proxy                - kubelet API; GET on it can exec into pods
+#   serviceaccounts/token      - minting tokens
+# Also not listed: subresources.kubevirt.io (VM console/VNC/portforward).
+#
+# Known residual exposure, accepted for now:
+#   - pods/log: app logs can contain tokens/URLs with creds. Needed for any
+#     real debugging, so kept.
+#   - configmaps: occasionally hold config that's semi-sensitive. Needed to
+#     debug most apps, so kept.
+#   - CRs in other groups (Argo CD Applications with inline Helm values,
+#     Tekton PipelineRun params, KubeVirt VM specs) - none of them hold
+#     plaintext credentials in this repo today (all real secrets are sops
+#     Secrets), but a future one could.
+#
+# New API group in the cluster? Add it to the list below, or `kubectl get`
+# on its resources returns Forbidden (fails closed, which is the point).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloud-readonly
+rules:
+  - apiGroups: [""]
+    resources:
+      - componentstatuses
+      - configmaps
+      - endpoints
+      - events
+      - limitranges
+      - namespaces
+      - namespaces/status
+      - nodes
+      - nodes/status
+      - persistentvolumeclaims
+      - persistentvolumeclaims/status
+      - persistentvolumes
+      - persistentvolumes/status
+      - pods
+      - pods/log
+      - pods/status
+      - podtemplates
+      - replicationcontrollers
+      - replicationcontrollers/scale
+      - replicationcontrollers/status
+      - resourcequotas
+      - resourcequotas/status
+      - serviceaccounts
+      - services
+      - services/status
+    verbs: ["get", "list", "watch"]
+
+  - apiGroups:
+      # built-in
+      - admissionregistration.k8s.io
+      - apiextensions.k8s.io
+      - apiregistration.k8s.io
+      - apps
+      - autoscaling
+      - batch
+      - certificates.k8s.io
+      - coordination.k8s.io
+      - discovery.k8s.io
+      - events.k8s.io
+      - flowcontrol.apiserver.k8s.io
+      - metrics.k8s.io
+      - networking.k8s.io
+      - node.k8s.io
+      - policy
+      - rbac.authorization.k8s.io
+      - resource.k8s.io
+      - scheduling.k8s.io
+      - storage.k8s.io
+      - snapshot.storage.k8s.io
+      - autoscaling.k8s.io # VPA
+      # platform
+      - argoproj.io
+      - ceph.rook.io
+      - objectbucket.io
+      - cilium.io
+      - gateway.networking.k8s.io
+      - traefik.io
+      - cert-manager.io
+      - acme.cert-manager.io
+      - monitoring.coreos.com
+      - kyverno.io
+      - policies.kyverno.io
+      - reports.kyverno.io
+      - wgpolicyk8s.io
+      - metallb.io
+      - kubevirt.io
+      - cdi.kubevirt.io
+      - snapshot.kubevirt.io
+      - instancetype.kubevirt.io
+      - pool.kubevirt.io
+      - postgresql.cnpg.io
+      - tekton.dev
+      - operator.tekton.dev
+      - triggers.tekton.dev
+      - goharbor.io
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+
+  - nonResourceURLs:
+      - /healthz
+      - /healthz/*
+      - /livez
+      - /livez/*
+      - /readyz
+      - /readyz/*
+      - /version
+      - /api
+      - /api/*
+      - /apis
+      - /apis/*
+      - /openapi
+      - /openapi/*
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloud-readonly
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloud-readonly
+subjects:
+  - kind: ServiceAccount
+    name: cloud-readonly
+    namespace: cloud-readonly

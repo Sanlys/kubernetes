@@ -1,0 +1,41 @@
+# Lets the cloud session read the Alertmanager and Prometheus HTTP APIs via
+# the API server's service proxy, e.g.
+#   kubectl get --raw /api/v1/namespaces/monitoring/services/monitoring-kube-prometheus-alertmanager:9093/proxy/api/v2/alerts
+#   kubectl get --raw '/api/v1/namespaces/monitoring/services/monitoring-kube-prometheus-prometheus:9090/proxy/api/v1/query?query=up'
+# This replaces health-sweep.py's old `kubectl exec ... wget` into the
+# alertmanager pod, which needed pods/exec.
+#
+# verb "get" on services/proxy only covers HTTP GET (silence creation and
+# Prometheus admin endpoints are POST/PUT/DELETE -> forbidden). The proxy
+# path segment ("name:port") is what RBAC matches resourceNames against,
+# hence the port variants.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cloud-readonly-monitoring-proxy
+  namespace: monitoring
+rules:
+  - apiGroups: [""]
+    resources: ["services/proxy"]
+    verbs: ["get"]
+    resourceNames:
+      - monitoring-kube-prometheus-alertmanager
+      - monitoring-kube-prometheus-alertmanager:9093
+      - monitoring-kube-prometheus-alertmanager:http-web
+      - monitoring-kube-prometheus-prometheus
+      - monitoring-kube-prometheus-prometheus:9090
+      - monitoring-kube-prometheus-prometheus:http-web
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloud-readonly-monitoring-proxy
+  namespace: monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cloud-readonly-monitoring-proxy
+subjects:
+  - kind: ServiceAccount
+    name: cloud-readonly
+    namespace: cloud-readonly

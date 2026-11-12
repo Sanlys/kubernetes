@@ -1,0 +1,28 @@
+# Read-only identity for scheduled cloud Claude sessions (health sweep +
+# Sunday deep scan). This app ONLY creates the ServiceAccount, its RBAC and
+# its token Secret - nothing here is reachable from outside the cluster.
+# The internet-facing part lives in ./exposure and is deliberately NOT
+# synced by anything yet (its Application is app.yaml.disabled, which the
+# root app's "**/app.yaml" include doesn't match). See README.md.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloud-readonly
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Sanlys/kubernetes.git
+    targetRevision: main
+    path: cluster/prod/platform/cloud-readonly
+    directory:
+      exclude: "{app.yaml,README.md}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cloud-readonly
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

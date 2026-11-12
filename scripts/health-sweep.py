@@ -21,13 +21,36 @@ Checks:
   - CVE watch (delegates to cve-watch.py, relays its output if not clean)
 
 Exit code is always 0. Empty stdout == fully clean cycle.
+
+Runs either from the LAN/VPN with an admin kubeconfig, or from a cloud
+session with the read-only identity in cluster/prod/platform/cloud-readonly
+(set HEALTH_SWEEP_REMOTE=1 there). Every cluster check below is plain
+get/list or a GET through the API server's service proxy - no pods/exec -
+so it works under that read-only RBAC.
+
+Env:
+  HEALTH_SWEEP_REMOTE=1   cluster is reached over the public read-only
+                          endpoint; skip the "am I on the LAN?" ping logic
+  HEALTH_SWEEP_STATE=...  state file path (cloud containers are ephemeral,
+                          point this somewhere that persists between runs)
 """
 import json
+import os
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
-REPO_DIR = "/Users/sanderlysakermoen/Documents/git/kubernetes"
-STATE_FILE = Path(__file__).parent / ".health-sweep-state.json"
+REPO_DIR = str(Path(__file__).resolve().parent.parent)
+STATE_FILE = Path(os.environ.get("HEALTH_SWEEP_STATE") or Path(__file__).parent / ".health-sweep-state.json")
+REMOTE = os.environ.get("HEALTH_SWEEP_REMOTE") == "1"
+
+ALERTMANAGER_PROXY = (
+    "/api/v1/namespaces/monitoring/services/"
+    "monitoring-kube-prometheus-alertmanager:9093/proxy/api/v2/alerts"
+)
+# Rook refreshes CephCluster .status.ceph roughly every minute; older than
+# this means the operator (or its view of the mons) is stuck.
+CEPH_STATUS_STALE_SECONDS = 15 * 60
 
 # LAN gateway for the cluster's home network - used to tell "I'm not on this
 # network right now" apart from "the cluster itself is actually down".
@@ -75,6 +98,16 @@ def check_connectivity(state, report):
         state["conn_last"] = "ok"
         return True
 
+    if REMOTE:
+        # No LAN to be "off" in the cloud - unreachable is always real (API
+        # server, Traefik, frpc or the VPS). Never muted.
+        report.append(
+            "CLUSTER UNREACHABLE via public read-only endpoint - check frps/frpc, "
+            "traefik-public and the API server"
+        )
+        state["conn_last"] = "remote_down"
+        return False
+
     _, _, gw_rc = run(["ping", "-c", "1", "-W", "2000", GATEWAY_IP], timeout=5)
     _, _, ext_rc = run(["ping", "-c", "1", "-W", "2000", EXTERNAL_PROBE_IP], timeout=5)
 
@@ -99,11 +132,37 @@ def check_connectivity(state, report):
 
 
 def check_ceph(state, report):
-    out, err, rc = run(["kubectl", "exec", "-n", "rook-ceph", "deploy/rook-ceph-tools", "--", "ceph", "health"])
+    # Read from the CephCluster CR's status (kept current by the Rook
+    # operator) rather than `kubectl exec` into rook-ceph-tools - exec into
+    # the toolbox means the Ceph admin keyring, which the read-only cloud
+    # identity deliberately doesn't get.
+    out, err, rc = run(["kubectl", "get", "cephcluster", "-n", "rook-ceph", "-o", "json"])
     if rc != 0:
         report.append(f"! CEPH check failed: {err or out}")
         return
-    current = out
+    try:
+        items = json.loads(out).get("items", [])
+    except Exception as e:
+        report.append(f"! CEPH parse failed: {e}")
+        return
+    if not items:
+        report.append("! CEPH check failed: no CephCluster in rook-ceph")
+        return
+    ceph = items[0].get("status", {}).get("ceph", {})
+    health = ceph.get("health", "UNKNOWN")
+    details = ceph.get("details", {}) or {}
+    msgs = "; ".join(f"{k}: {v.get('message', '')}" for k, v in sorted(details.items()))
+    current = f"{health} {msgs}".strip()
+
+    last_checked = ceph.get("lastChecked")
+    if last_checked:
+        try:
+            age = (datetime.now(timezone.utc) - datetime.fromisoformat(last_checked.replace("Z", "+00:00"))).total_seconds()
+            if age > CEPH_STATUS_STALE_SECONDS:
+                current += f" (STALE: status last refreshed {int(age // 60)}m ago - rook operator stuck?)"
+        except ValueError:
+            pass
+
     last = state.get("ceph_last")
     if current != last:
         if last is None:
@@ -172,18 +231,8 @@ def check_pods(state, report):
 
 
 def check_alerts(state, report):
-    name_out, _, rc = run([
-        "kubectl", "get", "pods", "-n", "monitoring",
-        "-l", "app.kubernetes.io/name=alertmanager",
-        "-o", "jsonpath={.items[0].metadata.name}",
-    ])
-    if rc != 0 or not name_out:
-        report.append("! ALERTS check failed: could not find alertmanager pod")
-        return
-    out, err, rc = run([
-        "kubectl", "exec", "-n", "monitoring", name_out, "-c", "alertmanager",
-        "--", "wget", "-qO-", "http://localhost:9093/api/v2/alerts",
-    ])
+    # API server service proxy (GET only) instead of exec+wget in the pod.
+    out, err, rc = run(["kubectl", "get", "--raw", ALERTMANAGER_PROXY])
     if rc != 0:
         report.append(f"! ALERTS check failed: {err or out}")
         return
