@@ -284,6 +284,10 @@ def check_alerts(state, report):
 
 
 def check_prs(state, report):
+    if REMOTE:
+        # `gh pr list` uses GraphQL, which cloud sessions block. The routine
+        # lists PRs with its GitHub tools instead.
+        return
     out, err, rc = run(["gh", "pr", "list", "--state", "open", "--json", "number,title,url"], cwd=REPO_DIR)
     if rc != 0:
         report.append(f"! PR check failed: {err or out}")
@@ -301,7 +305,7 @@ def check_prs(state, report):
 
 
 def check_cve(report):
-    out, err, rc = run(["python3", str(Path(__file__).parent / "cve-watch.py")], timeout=180)
+    out, err, rc = run(["python3", str(Path(__file__).parent / "cve-watch.py")], timeout=480)  # 15 NVD queries, 6s apart, up to 20s each
     first_line = out.splitlines()[0] if out else ""
     if rc != 0:
         report.append(f"! CVE check failed: {err or out}")
