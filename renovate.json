@@ -68,6 +68,36 @@
         "major"
       ],
       "enabled": false
+    },
+    {
+      "description": "Cilium is the CNI: never automerge, and propose each minor separately so upgrades go one minor at a time. Merging only changes the pin; the cluster is upgraded by running cilium/upgrade.sh.",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchPackageNames": [
+        "cilium"
+      ],
+      "separateMultipleMinor": true,
+      "automerge": false,
+      "labels": [
+        "cilium",
+        "manual-apply"
+      ],
+      "prBodyNotes": [
+        "⚠️ Merging this does not upgrade the cluster. After merge, run `cilium/upgrade.sh check`, `preflight`, `apply` (see cilium/README.md). For a minor bump, read the Cilium upgrade notes first."
+      ]
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Cilium chart version, applied by hand with cilium/upgrade.sh (Cilium is the CNI, so Argo CD doesn't manage it).",
+      "managerFilePatterns": [
+        "/^cilium/release\\.env$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) registryUrl=(?<registryUrl>\\S+) depName=(?<depName>\\S+)\\n[A-Z_]+=(?<currentValue>\\S+)"
+      ]
     }
   ]
 }

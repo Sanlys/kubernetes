@@ -1,0 +1,61 @@
+# Helm values for the `cilium` release in kube-system.
+#
+# Cilium is the CNI, so it is NOT deployed by Argo CD (Argo itself needs pod
+# networking to run). It is installed and upgraded by hand with Helm, using
+# this file and the chart version in ./release.env. See ./README.md.
+#
+# These values were rebuilt on 2026-11-12 from the live cluster: rendering
+# chart 1.18.0 with this file reproduces the running cilium-config,
+# DaemonSets, Deployments, Services, ServiceMonitors and the certgen CronJob
+# exactly (only image digests differ, which the published chart adds).
+# `./upgrade.sh check` compares this file against `helm get values` before
+# anything is changed.
+
+cluster:
+  name: kubernetes
+
+ipam:
+  mode: kubernetes
+
+# Talos runs kube-proxy, so Cilium does not replace it.
+kubeProxyReplacement: false
+
+# Talos: no SYS_MODULE (Talos doesn't allow loading kernel modules from
+# pods), and cgroupv2 is already mounted by Talos at /sys/fs/cgroup.
+securityContext:
+  capabilities:
+    ciliumAgent: [CHOWN, KILL, NET_ADMIN, NET_RAW, IPC_LOCK, SYS_ADMIN, SYS_RESOURCE, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    cleanCiliumState: [NET_ADMIN, SYS_ADMIN, SYS_RESOURCE]
+cgroup:
+  autoMount:
+    enabled: false
+  hostRoot: /sys/fs/cgroup
+
+# Two agents restart at a time during a rollout (8 nodes).
+updateStrategy:
+  rollingUpdate:
+    maxUnavailable: 2
+
+operator:
+  replicas: 1
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+prometheus:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+  metrics:
+    enabled: [dns, drop, flow, http, icmp, tcp]
+  tls:
+    auto:
+      method: cronJob
