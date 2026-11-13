@@ -66,6 +66,10 @@
   ],
 
   "update_mode": "Recreate",
+  "_comment_update_mode_overrides": "Per-workload updateMode, first match (namespace/name) wins. photoprism: VPA's idle-based ~215Mi recommendation became the memory limit (RequestsAndLimits) and OOMKilled the postStart hook (apt-get + rclone serve nfs) on 2026-11-13; keep its declared 4Gi.",
+  "update_mode_overrides": [
+    { "namespace": "photoprism", "name": "photoprism", "update_mode": "Off" }
+  ],
   "sparse_data_window_days": 14,
 
   "waves": {
