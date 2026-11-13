@@ -90,6 +90,21 @@ def is_sparse(creation_timestamp, window_days):
     return age_days < window_days
 
 
+def resolve_update_mode(ns, name, cfg):
+    """Per-workload updateMode, first matching rule in update_mode_overrides wins,
+    else the global update_mode. Used to keep VPA from evicting/resizing workloads
+    where an idle-based recommendation is unsafe (e.g. photoprism, whose postStart
+    hook and indexing need far more memory than its idle footprint)."""
+    for rule in cfg.get("update_mode_overrides", []):
+        if rule.get("namespace") and rule["namespace"] != ns:
+            continue
+        if rule.get("name") and rule["name"] != name:
+            continue
+        if rule.get("namespace") or rule.get("name"):
+            return rule["update_mode"]
+    return cfg["update_mode"]
+
+
 def build_vpa(ns, kind, name, containers, creation_timestamp, cfg):
     tier_name, tier_min, tier_max = resolve_bounds(ns, name, cfg)
     sparse = is_sparse(creation_timestamp, cfg["sparse_data_window_days"])
@@ -125,7 +140,7 @@ def build_vpa(ns, kind, name, containers, creation_timestamp, cfg):
         },
         "spec": {
             "targetRef": {"apiVersion": "apps/v1", "kind": kind, "name": name},
-            "updatePolicy": {"updateMode": cfg["update_mode"]},
+            "updatePolicy": {"updateMode": resolve_update_mode(ns, name, cfg)},
             "resourcePolicy": {"containerPolicies": container_policies},
         },
     }
