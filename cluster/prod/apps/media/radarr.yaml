@@ -50,7 +50,7 @@ spec:
               mountPath: /shared-bin
       containers:
         - name: radarr
-          image: lscr.io/linuxserver/radarr:6.4.4
+          image: lscr.io/linuxserver/radarr:7.0.3
           env:
             - name: PUID
               value: "1000"
