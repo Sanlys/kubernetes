@@ -11,7 +11,7 @@ spec:
     kind: Deployment
     name: photoprism
   updatePolicy:
-    updateMode: Recreate
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: photoprism

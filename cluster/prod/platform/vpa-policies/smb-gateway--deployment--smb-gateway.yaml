@@ -11,7 +11,7 @@ spec:
     kind: Deployment
     name: smb-gateway
   updatePolicy:
-    updateMode: Recreate
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: smb-gateway

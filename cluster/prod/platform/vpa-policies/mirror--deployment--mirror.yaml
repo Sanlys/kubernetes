@@ -11,7 +11,7 @@ spec:
     kind: Deployment
     name: mirror
   updatePolicy:
-    updateMode: Recreate
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: mirror

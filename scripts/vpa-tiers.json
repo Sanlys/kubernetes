@@ -65,7 +65,8 @@
     { "namespace": "database", "name_prefix": "cnpg-central-cluster-pooler", "_note": "the pooler Deployments ARE valid targets - this entry intentionally does nothing; kept to document that cnpg-central-cluster-1/2/4 (owned by the CNPG Cluster CRD, not a Deployment/StatefulSet) never appear in the generator's input to begin with" }
   ],
 
-  "update_mode": "Recreate",
+  "_comment_update_mode": "Off = recommendation-only: VPA computes recommendations (kubectl describe vpa) but never evicts pods or rewrites their requests/limits; the values in git apply. Recreate/RequestsAndLimits squeezed limits down to idle recommendations (PhotoPrism OOM 2026-11-13, Arch mirror page-cache starvation 2026-11-15) and evicted single-replica pods (Forgejo outage 2026-11-12).",
+  "update_mode": "Off",
   "sparse_data_window_days": 14,
 
   "waves": {

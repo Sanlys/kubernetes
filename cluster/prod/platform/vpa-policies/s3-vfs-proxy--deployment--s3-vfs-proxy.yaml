@@ -11,7 +11,7 @@ spec:
     kind: Deployment
     name: s3-vfs-proxy
   updatePolicy:
-    updateMode: Recreate
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: s3-vfs-proxy

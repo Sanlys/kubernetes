@@ -11,7 +11,7 @@ spec:
     kind: Deployment
     name: tools-game-mgr
   updatePolicy:
-    updateMode: Recreate
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: game-mgr

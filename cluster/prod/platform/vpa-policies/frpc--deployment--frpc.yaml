@@ -11,7 +11,7 @@ spec:
     kind: Deployment
     name: frpc
   updatePolicy:
-    updateMode: Recreate
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: frpc
