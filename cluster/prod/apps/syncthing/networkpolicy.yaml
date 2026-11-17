@@ -1,0 +1,34 @@
+# Syncthing's own ports stay open to the LAN and the cluster (sync, discovery,
+# GUI via Traefik and the blackbox probe), but the SFTP sidecar only accepts
+# smb-gateway. Its login is a plain user/password, so this keeps any other pod
+# from reaching it. Selecting the pod for ingress switches it to
+# default-deny-except-listed; egress is untouched.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: syncthing
+  namespace: syncthing
+spec:
+  endpointSelector:
+    matchLabels:
+      app: syncthing
+  ingress:
+    - fromEntities: [world, cluster]
+      toPorts:
+        - ports:
+            - port: "22000"
+              protocol: TCP
+            - port: "22000"
+              protocol: UDP
+            - port: "21027"
+              protocol: UDP
+            - port: "8384"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: smb-gateway
+            app: smb-gateway
+      toPorts:
+        - ports:
+            - port: "22"
+              protocol: TCP

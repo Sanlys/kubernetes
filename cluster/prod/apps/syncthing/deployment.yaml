@@ -47,7 +47,11 @@ spec:
               memory: 512Mi
 
         - name: sftp
-          image: atmoz/sftp:alpine-3.7
+          # Only consumer is smb-gateway's /syncthing mount (rclone over SFTP,
+          # see services/smb-gateway). Was the 2019 alpine-3.7 tag with an
+          # unpatched OpenSSH; the floating alpine tag is rebuilt upstream, and
+          # the digest lets Renovate propose those rebuilds.
+          image: atmoz/sftp:alpine@sha256:c5fb9e4beb8b7054a4c0b65c5e11df47cc20da95ad6002e88aecff62bab06372
           args:
             - user:password:1000:1000:upload
           ports:

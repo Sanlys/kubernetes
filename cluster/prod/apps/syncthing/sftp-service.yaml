@@ -4,7 +4,10 @@ metadata:
   name: syncthing-sftp
   namespace: syncthing
 spec:
-  type: LoadBalancer
+  # In-cluster only: smb-gateway reaches it as
+  # syncthing-sftp.syncthing.svc.cluster.local. It used to be a LAN
+  # LoadBalancer (10.0.6.206) that nothing on the LAN used.
+  type: ClusterIP
   selector:
     app: syncthing
   ports:
