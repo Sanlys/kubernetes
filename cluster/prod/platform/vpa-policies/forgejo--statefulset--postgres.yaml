@@ -11,7 +11,7 @@ spec:
     kind: StatefulSet
     name: postgres
   updatePolicy:
-    updateMode: Recreate
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: postgres

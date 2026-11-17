@@ -11,7 +11,7 @@ spec:
     kind: Deployment
     name: tools-portal
   updatePolicy:
-    updateMode: Recreate
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: portal

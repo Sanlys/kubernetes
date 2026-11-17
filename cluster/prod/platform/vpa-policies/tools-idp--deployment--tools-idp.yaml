@@ -11,7 +11,7 @@ spec:
     kind: Deployment
     name: tools-idp
   updatePolicy:
-    updateMode: Recreate
+    updateMode: "Off"
   resourcePolicy:
     containerPolicies:
       - containerName: idp
