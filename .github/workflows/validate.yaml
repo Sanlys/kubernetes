@@ -6,11 +6,6 @@ name: validate
 on:
   pull_request:
   workflow_dispatch:
-    inputs:
-      all:
-        description: Render every Helm app, not only the ones the diff touches
-        type: boolean
-        default: true
 
 permissions:
   contents: read
@@ -20,8 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
       - uses: azure/setup-helm@v4
         with:
           version: v3.19.0
@@ -33,15 +26,9 @@ jobs:
             | sudo tar xz -C /usr/local/bin kubeconform
           kubeconform -v
       - name: Validate manifests and Helm renders
-        env:
-          BASE_REF: origin/${{ github.base_ref || 'main' }}
         run: |
           python3 -c "import yaml" 2>/dev/null || pip install --quiet --break-system-packages pyyaml
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.all }}" = "true" ]; then
-            python3 scripts/ci/validate-manifests.py --all
-          else
-            python3 scripts/ci/validate-manifests.py
-          fi
+          python3 scripts/ci/validate-manifests.py
 
   renovate-config:
     runs-on: ubuntu-latest

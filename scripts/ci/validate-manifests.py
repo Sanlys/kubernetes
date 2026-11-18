@@ -7,15 +7,16 @@
    `valuesObject` and `$values/...` valueFiles), and the output is checked
    with kubeconform.
 
-By default only Helm apps touched by the diff against BASE_REF are rendered
-(their app.yaml, or any file in the app's directory such as values.yaml).
-Pass --all to render every Helm app; a change to the validator itself
-(scripts/ci/ or the workflow) also renders everything.
+Every Helm app is rendered on every run (about 15s), because CRDs found in
+the plain manifests and the rendered charts are turned into schemas first,
+so custom resources are checked against the CRD versions we actually ship.
+The datreeio catalog is only a fallback for CRDs we don't have locally.
 
 SOPS-encrypted files (*.enc.yaml) are never read. Needs helm and kubeconform
 on PATH, and PyYAML.
 """
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -73,18 +74,6 @@ def plain_manifests():
             continue
         out.append(str(p))
     return out
-
-
-def changed_files(base):
-    try:
-        res = subprocess.run(
-            ["git", "diff", "--name-only", f"{base}...HEAD"],
-            cwd=ROOT, check=True, capture_output=True, text=True,
-        )
-    except subprocess.CalledProcessError as e:
-        print(f"git diff against {base} failed ({e.stderr.strip()}); rendering all apps")
-        return None
-    return [ROOT / f for f in res.stdout.split()]
 
 
 def helm_sources(app_file):
@@ -146,7 +135,9 @@ def render(app_file, name, ns, src, workdir):
     for p in helm.get("parameters") or []:
         if "{{" not in str(p.get("value", "")):
             cmd += ["--set-string", f"{p['name']}={p['value']}"]
-    res = run(cmd, capture_output=True, text=True)
+    # cwd=workdir: helm prefers a same-named local directory over --repo
+    # (the CNPG chart is literally called "cluster").
+    res = run(cmd, capture_output=True, text=True, cwd=workdir)
     if res.returncode != 0:
         print(res.stderr, file=sys.stderr)
         return None
@@ -155,41 +146,85 @@ def render(app_file, name, ns, src, workdir):
     return out
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--all", action="store_true", help="render every Helm app")
-    ap.add_argument("--base", default=os.environ.get("BASE_REF", "origin/main"))
-    args = ap.parse_args()
+def to_json_schema(node):
+    """OpenAPI v3 (CRD flavour) -> JSON schema, in the spirit of
+    kubeconform's openapi2jsonschema.py with strict mode."""
+    if isinstance(node, list):
+        return [to_json_schema(n) for n in node]
+    if not isinstance(node, dict):
+        return node
+    if node.get("x-kubernetes-int-or-string"):
+        return {"oneOf": [{"type": "string"}, {"type": "integer"}]}
+    out = {k: to_json_schema(v) for k, v in node.items() if not k.startswith("x-kubernetes-")}
+    if node.get("x-kubernetes-preserve-unknown-fields"):
+        out["additionalProperties"] = True
+    elif "properties" in out and "additionalProperties" not in out:
+        out["additionalProperties"] = False
+    if out.pop("nullable", False) and "type" in out:
+        out["type"] = [out["type"], "null"]
+    return out
 
-    failed = []
 
-    print("== Plain manifests", flush=True)
-    files = plain_manifests()
-    if run(KUBECONFORM + files).returncode != 0:
-        failed.append("plain manifests")
-
-    changed = None if args.all else changed_files(args.base)
-    if changed is not None and any(
-        f.is_relative_to(ROOT / "scripts" / "ci") or f.name == "validate.yaml" for f in changed
-    ):
-        print("Validator itself changed; rendering all Helm apps")
-        changed = None
-    apps = sorted(CLUSTER.rglob("app.yaml"))
-    with tempfile.TemporaryDirectory() as workdir:
-        for app in apps:
-            if changed is not None and not any(
-                f == app or app.parent in f.parents for f in changed
-            ):
+def write_crd_schemas(manifest_files, schema_dir):
+    """Turn every CRD we deploy into kubeconform schemas, so custom resources
+    are checked against the exact CRD version we ship rather than the
+    community catalog (which lags, e.g. new CephCluster fields)."""
+    count = 0
+    for f in manifest_files:
+        try:
+            docs = list(yaml.safe_load_all(Path(f).read_text()))
+        except yaml.YAMLError:
+            continue
+        for doc in docs:
+            if not isinstance(doc, dict) or doc.get("kind") != "CustomResourceDefinition":
                 continue
+            spec = doc.get("spec") or {}
+            group, kind = spec.get("group"), (spec.get("names") or {}).get("kind")
+            if not group or not kind:
+                continue
+            for ver in spec.get("versions") or []:
+                schema = ((ver.get("schema") or {}).get("openAPIV3Schema"))
+                if not schema:
+                    continue
+                d = Path(schema_dir) / group
+                d.mkdir(parents=True, exist_ok=True)
+                (d / f"{kind.lower()}_{ver['name']}.json").write_text(
+                    json.dumps(to_json_schema(schema)))
+                count += 1
+    print(f"Generated {count} CRD schemas from our own CRDs", flush=True)
+
+
+def main():
+    argparse.ArgumentParser(description=__doc__).parse_args()
+    failed = []
+    with tempfile.TemporaryDirectory() as workdir:
+        rendered = []
+        for app in sorted(CLUSTER.rglob("app.yaml")):
             for name, ns, src in helm_sources(app):
                 label = f"{app.relative_to(ROOT)} ({src.get('chart') or src.get('path')})"
-                print(f"== Helm: {label}", flush=True)
+                print(f"== Render: {label}", flush=True)
                 out = render(app, name, ns, src, workdir)
                 if out is None:
                     failed.append(f"render {label}")
-                    continue
-                if run(KUBECONFORM + [str(out)]).returncode != 0:
-                    failed.append(f"validate {label}")
+                else:
+                    rendered.append((label, out))
+
+        plain = plain_manifests()
+        schema_dir = Path(workdir) / "schemas"
+        write_crd_schemas(plain + [str(o) for _, o in rendered], schema_dir)
+        kc = KUBECONFORM[:]
+        kc[kc.index("default") + 1:kc.index("default") + 1] = [
+            "-schema-location",
+            str(schema_dir) + "/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json",
+        ]
+
+        print("== Validate: plain manifests", flush=True)
+        if run(kc + plain).returncode != 0:
+            failed.append("validate plain manifests")
+        for label, out in rendered:
+            print(f"== Validate: {label}", flush=True)
+            if run(kc + [str(out)]).returncode != 0:
+                failed.append(f"validate {label}")
 
     if failed:
         print("\nFAILED:\n  " + "\n  ".join(failed), file=sys.stderr)
