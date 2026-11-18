@@ -20,7 +20,7 @@ spec:
                 claimName: tobbeos-pvc-rwx
           containers:
             - name: git-sync
-              image: alpine/git:v2.54.0
+              image: alpine/git:v2.54.1
               imagePullPolicy: IfNotPresent
               volumeMounts:
                 - name: tobbeos
