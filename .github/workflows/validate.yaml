@@ -1,0 +1,54 @@
+name: validate
+
+# Gate for Renovate automerge (renovate.json): Renovate only merges once this
+# check is green. Runs on every PR (not path-filtered) because Renovate treats
+# a PR with no checks at all as pending and would never merge it.
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      all:
+        description: Render every Helm app, not only the ones the diff touches
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.19.0
+      - name: Install kubeconform
+        env:
+          KUBECONFORM_VERSION: v0.7.0
+        run: |
+          curl -sSfL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | sudo tar xz -C /usr/local/bin kubeconform
+          kubeconform -v
+      - name: Validate manifests and Helm renders
+        env:
+          BASE_REF: origin/${{ github.base_ref || 'main' }}
+        run: |
+          python3 -c "import yaml" 2>/dev/null || pip install --quiet --break-system-packages pyyaml
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.all }}" = "true" ]; then
+            python3 scripts/ci/validate-manifests.py --all
+          else
+            python3 scripts/ci/validate-manifests.py
+          fi
+
+  renovate-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Validate renovate.json
+        run: npx --yes --package renovate@44 -- renovate-config-validator --strict renovate.json
