@@ -43,7 +43,8 @@ spec:
                 # through the clone - see backup_sqlite_hybrid_target.
 
                 create_snapshot_and_clone() {
-                  # Sets SNAP/CLONE/POD/RESTORE_SIZE/SC as a side effect.
+                  # Sets SNAP/CLONE/POD/RESTORE_SIZE/SC (the clone's StorageClass)
+                  # as a side effect.
                   # Returns non-zero (with FAIL=1 and cleanup already run)
                   # on any failure.
                   TS=$(date -u +%Y%m%d%H%M%S)
@@ -73,7 +74,22 @@ spec:
                   fi
 
                   RESTORE_SIZE=$(kubectl -n "$NS" get volumesnapshot "$SNAP" -o jsonpath='{.status.restoreSize}')
-                  SC=$(kubectl -n "$NS" get pvc "$PVC" -o jsonpath='{.spec.storageClassName}')
+                  SRC_SC=$(kubectl -n "$NS" get pvc "$PVC" -o jsonpath='{.spec.storageClassName}')
+                  # The clone goes in the same pool as the source, but via
+                  # a *-scratch StorageClass with reclaimPolicy Delete
+                  # (rook-ceph-rbd/sc.yaml). The source classes are Retain,
+                  # so a clone made with them left a Released PV and its
+                  # RBD image behind on every run. Any other class fails
+                  # here rather than risk leaking again.
+                  case "$SRC_SC" in
+                    rook-ceph-block-ssd) SC=rook-ceph-block-ssd-scratch ;;
+                    rook-ceph-block-hdd) SC=rook-ceph-block-hdd-scratch ;;
+                    *)
+                      echo "FAILED: $NAME source StorageClass '$SRC_SC' has no scratch class" >&2; FAIL=1
+                      kubectl -n "$NS" delete volumesnapshot "$SNAP" --ignore-not-found --wait=false >/dev/null 2>&1
+                      return 1
+                      ;;
+                  esac
                   return 0
                 }
 

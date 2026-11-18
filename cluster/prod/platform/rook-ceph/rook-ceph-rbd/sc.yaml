@@ -50,3 +50,51 @@ reclaimPolicy: Retain
 allowVolumeExpansion: true
 volumeBindingMode: Immediate
 
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  # Scratch volumes only: the throwaway snapshot clones that
+  # restic-file-backup (syncthing-backups-restic/file-backup-cron.yaml)
+  # creates and deletes on every run. Same pool and parameters as
+  # rook-ceph-block-ssd, but reclaimPolicy Delete, so deleting the clone PVC
+  # also deletes its PV and RBD image. With Retain, every run left a
+  # Released PV and an RBD image behind (150 of them by 2026-11-12). Never
+  # use this for real data.
+  name: rook-ceph-block-ssd-scratch
+provisioner: rook-ceph.rbd.csi.ceph.com
+parameters:
+  clusterID: rook-ceph
+  pool: ssd-pool
+  imageFeatures: layering
+  csi.storage.k8s.io/fstype: ext4
+  csi.storage.k8s.io/provisioner-secret-name: rook-csi-rbd-provisioner
+  csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
+  csi.storage.k8s.io/controller-expand-secret-name: rook-csi-rbd-provisioner
+  csi.storage.k8s.io/controller-expand-secret-namespace: rook-ceph
+  csi.storage.k8s.io/node-stage-secret-name: rook-csi-rbd-node
+  csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
+reclaimPolicy: Delete
+allowVolumeExpansion: false
+volumeBindingMode: Immediate
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  # Scratch twin of rook-ceph-block-hdd, see rook-ceph-block-ssd-scratch.
+  name: rook-ceph-block-hdd-scratch
+provisioner: rook-ceph.rbd.csi.ceph.com
+parameters:
+  clusterID: rook-ceph
+  pool: hdd-pool
+  imageFeatures: layering
+  csi.storage.k8s.io/fstype: ext4
+  csi.storage.k8s.io/provisioner-secret-name: rook-csi-rbd-provisioner
+  csi.storage.k8s.io/provisioner-secret-namespace: rook-ceph
+  csi.storage.k8s.io/controller-expand-secret-name: rook-csi-rbd-provisioner
+  csi.storage.k8s.io/controller-expand-secret-namespace: rook-ceph
+  csi.storage.k8s.io/node-stage-secret-name: rook-csi-rbd-node
+  csi.storage.k8s.io/node-stage-secret-namespace: rook-ceph
+reclaimPolicy: Delete
+allowVolumeExpansion: false
+volumeBindingMode: Immediate
