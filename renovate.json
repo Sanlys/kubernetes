@@ -70,7 +70,7 @@
       "enabled": false
     },
     {
-      "description": "Automerge minor, patch and digest updates once they are 2 days old, during the day. Renovate waits for the validate check to pass; majors and 0.x versions stay manual. Exclusions below switch automerge off again for anything stateful or CRD-heavy.",
+      "description": "Automerge minor, patch and digest updates once they are 2 days old, during the day. Renovate waits for the validate check to pass; majors stay manual.",
       "matchUpdateTypes": [
         "minor",
         "patch",
@@ -84,79 +84,6 @@
       "automergeSchedule": [
         "* 9-19 * * *"
       ]
-    },
-    {
-      "description": "0.x versions: minor bumps can be breaking, keep them manual (patch/digest still automerge).",
-      "matchCurrentVersion": "/^v?0\\./",
-      "matchUpdateTypes": [
-        "minor"
-      ],
-      "automerge": false
-    },
-    {
-      "description": "Never automerge Ceph/Rook: storage changes need Sander's explicit approval.",
-      "matchFileNames": [
-        "cluster/prod/platform/rook-ceph/**",
-        "cluster/prod/platform/ceph-snapshots/**"
-      ],
-      "automerge": false
-    },
-    {
-      "description": "Never automerge Ceph/Rook images or charts wherever they appear.",
-      "matchPackageNames": [
-        "/rook/",
-        "/ceph/"
-      ],
-      "automerge": false
-    },
-    {
-      "description": "Never automerge databases and their operators: upgrades can touch on-disk data.",
-      "matchPackageNames": [
-        "postgres",
-        "ghcr.io/immich-app/postgres",
-        "mariadb",
-        "redis",
-        "valkey/valkey",
-        "getmeili/meilisearch",
-        "/cloudnative-pg/"
-      ],
-      "automerge": false
-    },
-    {
-      "description": "Never automerge database apps by path (catches the CNPG 'cluster' chart and anything else in them).",
-      "matchFileNames": [
-        "cluster/prod/apps/postgres/**",
-        "cluster/prod/apps/postgres-lb/**",
-        "cluster/prod/platform/cloudnativepg/**"
-      ],
-      "automerge": false
-    },
-    {
-      "description": "Never automerge CRD-heavy operators and cluster plumbing: chart minors often change CRDs or admission webhooks.",
-      "matchFileNames": [
-        "cluster/prod/platform/monitoring/kube-prometheus-stack/**",
-        "cluster/prod/platform/kyverno/**",
-        "cluster/prod/platform/ingress/cert-manager/**",
-        "cluster/prod/platform/volumesnapshots/**",
-        "cluster/prod/platform/metallb/**",
-        "cluster/prod/platform/tekton-operator/**",
-        "cluster/prod/platform/vpa/**",
-        "cluster/prod/platform/kubevirt/**"
-      ],
-      "automerge": false
-    },
-    {
-      "description": "Python minor releases (3.14 -> 3.15) behave like majors for the scripts that use them.",
-      "matchDatasources": [
-        "docker"
-      ],
-      "matchPackageNames": [
-        "python"
-      ],
-      "matchUpdateTypes": [
-        "minor"
-      ],
-      "automerge": false
     },
     {
       "description": "Tekton operator images are released together; one PR instead of one per image.",
