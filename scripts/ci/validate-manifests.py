@@ -142,8 +142,19 @@ def render(app_file, name, ns, src, workdir):
         print(res.stderr, file=sys.stderr)
         return None
     out = Path(workdir) / f"{name}.rendered.yaml"
-    out.write_text(res.stdout)
+    docs = [drop_nulls(d) for d in yaml.safe_load_all(res.stdout) if d]
+    out.write_text(yaml.safe_dump_all(docs))
     return out
+
+
+def drop_nulls(node):
+    """The API server drops `key: null` on non-nullable fields before
+    validating (charts like CNPG's render `initdb: null`), so do the same."""
+    if isinstance(node, dict):
+        return {k: drop_nulls(v) for k, v in node.items() if v is not None}
+    if isinstance(node, list):
+        return [drop_nulls(v) for v in node]
+    return node
 
 
 def to_json_schema(node):
