@@ -25,6 +25,19 @@ from pathlib import Path
 
 import yaml
 
+class Loader(yaml.SafeLoader):
+    """SafeLoader that reads a bare `=` as the string it is to Kubernetes
+    (PyYAML maps it to the YAML 1.1 'value' tag and refuses to load it;
+    kube-prometheus-stack's rendered CRDs contain one)."""
+
+
+Loader.add_constructor("tag:yaml.org,2002:value", lambda loader, node: loader.construct_scalar(node))
+
+
+def load_all(text):
+    return yaml.load_all(text, Loader=Loader)
+
+
 ROOT = Path(__file__).resolve().parents[2]
 CLUSTER = ROOT / "cluster" / "prod"
 # Matches talos/topf.yaml; used for chart .Capabilities checks.
@@ -78,7 +91,7 @@ def plain_manifests():
 
 def helm_sources(app_file):
     """Yield (name, namespace, helm source dict) for each chart source."""
-    for doc in yaml.safe_load_all(app_file.read_text()):
+    for doc in load_all(app_file.read_text()):
         if not isinstance(doc, dict):
             continue
         kind = doc.get("kind")
@@ -142,7 +155,11 @@ def render(app_file, name, ns, src, workdir):
         print(res.stderr, file=sys.stderr)
         return None
     out = Path(workdir) / f"{name}.rendered.yaml"
-    docs = [drop_nulls(d) for d in yaml.safe_load_all(res.stdout) if d]
+    try:
+        docs = [drop_nulls(d) for d in load_all(res.stdout) if d]
+    except yaml.YAMLError as e:
+        print(f"rendered output is not valid YAML: {e}", file=sys.stderr)
+        return None
     out.write_text(yaml.safe_dump_all(docs))
     return out
 
@@ -183,8 +200,9 @@ def write_crd_schemas(manifest_files, schema_dir):
     count = 0
     for f in manifest_files:
         try:
-            docs = list(yaml.safe_load_all(Path(f).read_text()))
-        except yaml.YAMLError:
+            docs = list(load_all(Path(f).read_text()))
+        except yaml.YAMLError as e:
+            print(f"warning: could not parse {f} for CRDs: {e}", file=sys.stderr)
             continue
         for doc in docs:
             if not isinstance(doc, dict) or doc.get("kind") != "CustomResourceDefinition":
