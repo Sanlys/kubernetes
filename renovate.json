@@ -25,6 +25,20 @@
     ],
     "pinDigests": false
   },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "CNPG imageName inside inline Helm values in Argo CD app.yaml files (the argocd and kubernetes managers don't read those).",
+      "managerFilePatterns": [
+        "/(^|/)app\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "imageName:\\s*\"?(?<depName>[a-z0-9./-]+):(?<currentValue>[0-9][^@\"\\s]*)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    }
+  ],
   "packageRules": [
     {
       "description": "Database majors need a manual dump/restore or pg_upgrade; an in-place tag bump breaks the data directory (see the reverted immich Postgres 14->16 bump).",
@@ -33,6 +47,7 @@
       ],
       "matchPackageNames": [
         "postgres",
+        "ghcr.io/cloudnative-pg/postgresql",
         "ghcr.io/immich-app/postgres",
         "mariadb",
         "redis"
