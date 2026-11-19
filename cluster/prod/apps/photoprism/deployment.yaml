@@ -44,38 +44,6 @@ spec:
       labels:
         app: photoprism
     spec:
-      serviceAccountName: bucket-reader
-      initContainers:
-        - name: fetch-bucket-creds
-          image: alpine:3.24
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              set -euo pipefail
-              apk add --no-cache kubectl
-              {
-                echo "AWS_ACCESS_KEY_ID=$(kubectl -n syncthing get secret syncthing-images-bucket -o jsonpath='{.data.AWS_ACCESS_KEY_ID}' | base64 -d)"
-                echo "AWS_SECRET_ACCESS_KEY=$(kubectl -n syncthing get secret syncthing-images-bucket -o jsonpath='{.data.AWS_SECRET_ACCESS_KEY}' | base64 -d)"
-                echo "BUCKET_NAME=$(kubectl -n syncthing get configmap syncthing-images-bucket -o jsonpath='{.data.BUCKET_NAME}')"
-                echo "BUCKET_HOST=$(kubectl -n syncthing get configmap syncthing-images-bucket -o jsonpath='{.data.BUCKET_HOST}')"
-                echo "BUCKET_PORT=$(kubectl -n syncthing get configmap syncthing-images-bucket -o jsonpath='{.data.BUCKET_PORT}')"
-                echo "BUCKET_REGION=$(kubectl -n syncthing get configmap syncthing-images-bucket -o jsonpath='{.data.BUCKET_REGION}')"
-              } > /shared/bucket.env
-          volumeMounts:
-            - name: bucket-creds
-              mountPath: /shared
-        # Copies the rclone binary into the photoprism container itself - the
-        # mount happens there directly (see postStart below) rather than in a
-        # sidecar, since cross-container mount propagation
-        # (Bidirectional/HostToContainer) silently doesn't work on this
-        # cluster's nodes (requires kubelet/containerd MountFlags=shared,
-        # which Talos doesn't set up). Same pattern as immich/server.yaml.
-        - name: copy-rclone-binary
-          image: rclone/rclone:1.76
-          command: ["sh", "-c", "cp \"$(command -v rclone)\" /shared-bin/rclone && chmod +x /shared-bin/rclone"]
-          volumeMounts:
-            - name: rclone-bin
-              mountPath: /shared-bin
       containers:
         - name: photoprism
           image: photoprism/photoprism:261029
@@ -96,21 +64,14 @@ spec:
                 secretKeyRef:
                   name: photoprism-secrets
                   key: ADMIN_PASSWORD
-          # The bucket mount for the shared library needs CAP_SYS_ADMIN for
-          # the mount(2) syscall; it runs in-process (postStart, below)
-          # rather than in a sidecar so it doesn't depend on cross-container
-          # mount propagation.
+          # The NFS mount of the photo library needs CAP_SYS_ADMIN for the
+          # mount(2) syscall; it runs in-process (postStart, below) since
+          # cross-container mount propagation doesn't work on these nodes.
           securityContext:
             privileged: true
           volumeMounts:
             - name: storage
               mountPath: /photoprism/storage
-            - name: rclone-bin
-              mountPath: /opt/rclone-bin
-              readOnly: true
-            - name: bucket-creds
-              mountPath: /shared
-              readOnly: true
           lifecycle:
             postStart:
               exec:
@@ -119,60 +80,43 @@ spec:
                   - -c
                   - |
                     set -e
-                    # nfs-common isn't in this (Debian/Ubuntu-based) image
-                    # by default - the rclone binary itself is a static Go
-                    # build, fine copied cross-distro (see
-                    # copy-rclone-binary), but mount.nfs needs the real
-                    # package. netbase provides /etc/protocols and
-                    # /etc/rpc, which mount.nfs needs to resolve "tcp" as a
-                    # protocol name - without it, it fails instantly with
-                    # the misleading error "Protocol not supported", before
-                    # even attempting the actual mount(2) syscall (see
-                    # jellyfin.yaml).
+                    # The photo library (bucket immich-external-library, the
+                    # same one immich reads) is served read-only by the
+                    # central nfs-gateway (platform/nfs-gateway), the same
+                    # way sonarr and qbittorrent get media-library. This pod
+                    # only needs the NFS client: no rclone, no bucket
+                    # credentials, much less memory at startup.
                     export DEBIAN_FRONTEND=noninteractive
                     apt-get update -qq
-                    apt-get install -y -qq --no-install-recommends nfs-common netbase
-                    # credentials for syncthing's Ceph user, which actually
-                    # owns the bucket and its objects (see fetch-bucket-creds
-                    # init container and bucket-reader-rbac.yaml). Same
-                    # immich-external-library bucket immich itself mounts.
-                    . /shared/bucket.env
-                    export RCLONE_CONFIG_CEPHBUCKET_TYPE=s3
-                    export RCLONE_CONFIG_CEPHBUCKET_PROVIDER=Ceph
-                    export RCLONE_CONFIG_CEPHBUCKET_ENV_AUTH=false
-                    export RCLONE_CONFIG_CEPHBUCKET_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
-                    export RCLONE_CONFIG_CEPHBUCKET_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
-                    export RCLONE_CONFIG_CEPHBUCKET_ENDPOINT="http://$BUCKET_HOST:$BUCKET_PORT"
-                    export RCLONE_CONFIG_CEPHBUCKET_REGION="$BUCKET_REGION"
+                    apt-get install -y -qq --no-install-recommends nfs-common
+                    # mount.nfs needs /etc/protocols to resolve "tcp", or it
+                    # fails with "Protocol not supported" (see sonarr.yaml).
+                    if [ ! -s /etc/protocols ]; then
+                      printf 'ip\t0\tIP\nicmp\t1\tICMP\ntcp\t6\tTCP\nudp\t17\tUDP\n' > /etc/protocols
+                    fi
                     # Mounted as a subfolder of /photoprism/originals rather
                     # than at /photoprism/originals itself - PhotoPrism
                     # expects different sources to be separate subdirectories
-                    # (see https://www.photoprism.app/pro/kb/volumes/, e.g.
-                    # "./originals:/photoprism/originals" +
-                    # "/mnt/photos:/photoprism/originals/media"); mounting
-                    # the bucket filesystem directly onto the originals root
+                    # (see https://www.photoprism.app/pro/kb/volumes/);
+                    # mounting the bucket directly onto the originals root
                     # left some files unindexed.
                     mkdir -p /photoprism/originals/media
                     umount -l /photoprism/originals/media 2>/dev/null || true
-                    rpcbind 2>/dev/null || true
-                    # Loopback only (127.0.0.1) - never reachable off-pod.
-                    setsid /opt/rclone-bin/rclone serve nfs "cephbucket:$BUCKET_NAME" \
-                      --addr 127.0.0.1:2049 \
-                      --vfs-cache-mode minimal \
-                      --dir-cache-time 1h \
-                      --umask 022 \
-                      --log-level INFO \
-                      > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
+                    # Same vers=4.1,soft,proto=tcp recipe sonarr uses against
+                    # the gateway, mounted from this pod's netns so cluster
+                    # DNS resolves (a native kubelet `nfs:` volume can't).
+                    # 120s: the gateway only adds this export once its own
+                    # rclone mount of the bucket is up.
                     mounted=0
-                    for i in $(seq 1 30); do
-                      if mount -t nfs -o vers=3,tcp,nolock,port=2049,mountport=2049,soft,ro 127.0.0.1:/ /photoprism/originals/media 2>/tmp/mount.err; then
+                    for i in $(seq 1 120); do
+                      if mount -t nfs -o vers=4.1,soft,proto=tcp,ro nfs-gateway.nfs-gateway.svc.cluster.local:/immich-external-library /photoprism/originals/media 2>/tmp/mount.err; then
                         mounted=1
                         break
                       fi
                       sleep 1
                     done
                     if [ "$mounted" -ne 1 ]; then
-                      echo "failed to mount rclone NFS export after 30s, last error:" >&2
+                      echo "failed to mount nfs-gateway export after 120s, last error:" >&2
                       cat /tmp/mount.err >&2
                       exit 1
                     fi
@@ -187,10 +131,9 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 12
-          # Liveness also checks the in-process rclone NFS mount: if rclone dies
-          # or the bucket backend wedges, the soft mount returns I/O errors
-          # forever and only a container restart (re-running postStart) fixes
-          # it. HTTP check uses curl/wget if the image has one.
+          # Liveness also checks the nfs-gateway mount: if the gateway dies or
+          # wedges, the soft mount returns I/O errors forever and only a
+          # container restart (re-running postStart) fixes it. HTTP check uses curl/wget if the image has one.
           livenessProbe:
             exec:
               command:
@@ -217,7 +160,3 @@ spec:
         - name: storage
           persistentVolumeClaim:
             claimName: photoprism-storage
-        - name: bucket-creds
-          emptyDir: {}
-        - name: rclone-bin
-          emptyDir: {}

@@ -1,3 +1,11 @@
+# ServiceAccount for reading the photo library bucket's credentials from the
+# syncthing namespace (see fetch-images-bucket-creds below).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bucket-reader
+  namespace: nfs-gateway
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -49,7 +57,37 @@ spec:
       labels:
         app: nfs-gateway
     spec:
+      # Reads the photo library bucket's credentials from the syncthing
+      # namespace (RoleBinding in
+      # cluster/prod/apps/syncthing/rbac-nfs-gateway-bucket-reader.yaml),
+      # the same way photoprism and immich did for their own rclone mounts.
+      serviceAccountName: bucket-reader
       initContainers:
+        - name: fetch-images-bucket-creds
+          image: alpine:3.24
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              # Best effort, always exits 0: a failure here (e.g. the Alpine
+              # mirror is down) must not keep media-library from starting.
+              # Without the env file the photo mount is skipped (see below).
+              set -o pipefail
+              apk add --no-cache kubectl || { echo "apk failed; photo library export disabled" >&2; exit 0; }
+              {
+                echo "IMG_ACCESS_KEY_ID=$(kubectl -n syncthing get secret syncthing-images-bucket -o jsonpath='{.data.AWS_ACCESS_KEY_ID}' | base64 -d)"
+                echo "IMG_SECRET_ACCESS_KEY=$(kubectl -n syncthing get secret syncthing-images-bucket -o jsonpath='{.data.AWS_SECRET_ACCESS_KEY}' | base64 -d)"
+                echo "IMG_BUCKET_NAME=$(kubectl -n syncthing get configmap syncthing-images-bucket -o jsonpath='{.data.BUCKET_NAME}')"
+                echo "IMG_BUCKET_HOST=$(kubectl -n syncthing get configmap syncthing-images-bucket -o jsonpath='{.data.BUCKET_HOST}')"
+                echo "IMG_BUCKET_PORT=$(kubectl -n syncthing get configmap syncthing-images-bucket -o jsonpath='{.data.BUCKET_PORT}')"
+                echo "IMG_BUCKET_REGION=$(kubectl -n syncthing get configmap syncthing-images-bucket -o jsonpath='{.data.BUCKET_REGION}')"
+              } > /shared/images-bucket.env.tmp &&
+                grep -q '^IMG_ACCESS_KEY_ID=.' /shared/images-bucket.env.tmp &&
+                mv /shared/images-bucket.env.tmp /shared/images-bucket.env ||
+                echo "could not read syncthing-images-bucket; photo library export disabled" >&2
+              exit 0
+          volumeMounts:
+            - name: images-bucket-creds
+              mountPath: /shared
         - name: copy-rclone-binary
           image: rclone/rclone:1.76
           command: ["sh", "-c", "cp \"$(command -v rclone)\" /shared-bin/rclone && chmod +x /shared-bin/rclone"]
@@ -165,6 +203,44 @@ spec:
                 echo "rclone mount did not come up after 3600s" >&2
                 exit 1
               fi
+              # Photo library (immich-external-library, read-only, for
+              # photoprism). Its own rclone remote and a small heap cap, since
+              # it's read-only and mostly serves listings and whole-file reads.
+              # Best effort: if it doesn't come up, media-library is served
+              # anyway and the photo export is left out (see configmap.yaml).
+              images_up=0
+              if [ -s /shared/images-bucket.env ]; then
+              . /shared/images-bucket.env
+              mkdir -p /mnt/s3/immich-external-library
+              RCLONE_CONFIG_IMAGES_TYPE=s3 \
+              RCLONE_CONFIG_IMAGES_PROVIDER=Ceph \
+              RCLONE_CONFIG_IMAGES_ENV_AUTH=false \
+              RCLONE_CONFIG_IMAGES_ACCESS_KEY_ID="$IMG_ACCESS_KEY_ID" \
+              RCLONE_CONFIG_IMAGES_SECRET_ACCESS_KEY="$IMG_SECRET_ACCESS_KEY" \
+              RCLONE_CONFIG_IMAGES_ENDPOINT="http://$IMG_BUCKET_HOST:$IMG_BUCKET_PORT" \
+              RCLONE_CONFIG_IMAGES_REGION="$IMG_BUCKET_REGION" \
+              GOMEMLIMIT=400MiB \
+              setsid /opt/rclone-bin/rclone mount "images:$IMG_BUCKET_NAME" /mnt/s3/immich-external-library \
+                --read-only \
+                --vfs-cache-mode off \
+                --dir-cache-time 1h \
+                --allow-other \
+                --uid 1000 --gid 1000 --umask 022 \
+                --log-level INFO \
+                > /proc/1/fd/1 2>/proc/1/fd/2 < /dev/null &
+              for i in $(seq 1 120); do
+                if mountpoint -q /mnt/s3/immich-external-library && ls /mnt/s3/immich-external-library >/dev/null 2>&1; then
+                  images_up=1
+                  break
+                fi
+                sleep 1
+              done
+              fi
+              if [ "$images_up" -eq 1 ]; then
+                cat /config/export-images.conf >> /etc/ganesha/ganesha.conf
+              else
+                echo "immich-external-library mount did not come up after 120s; serving media-library only" >&2
+              fi
               exec ganesha.nfsd -F -L STDERR -N NIV_INFO
           ports:
             - containerPort: 2049
@@ -176,6 +252,13 @@ spec:
             - name: ganesha-config
               mountPath: /config/ganesha.conf
               subPath: ganesha.conf
+              readOnly: true
+            - name: ganesha-config
+              mountPath: /config/export-images.conf
+              subPath: export-images.conf
+              readOnly: true
+            - name: images-bucket-creds
+              mountPath: /shared
               readOnly: true
             - name: cache
               mountPath: /var/cache/rclone
@@ -215,3 +298,5 @@ spec:
         - name: cache
           persistentVolumeClaim:
             claimName: nfs-gateway-cache
+        - name: images-bucket-creds
+          emptyDir: {}

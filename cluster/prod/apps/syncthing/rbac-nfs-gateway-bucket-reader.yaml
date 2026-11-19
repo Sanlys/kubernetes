@@ -1,0 +1,18 @@
+# Grants nfs-gateway (via its bucket-reader ServiceAccount,
+# cluster/prod/platform/nfs-gateway/deployment.yaml) read access to the
+# photo library bucket's connection Secret/ConfigMap, so it can mount
+# immich-external-library read-only and export it to photoprism. Reuses the
+# Role defined in rbac-immich-bucket-reader.yaml.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-images-bucket-creds-nfs-gateway
+  namespace: syncthing
+subjects:
+  - kind: ServiceAccount
+    name: bucket-reader
+    namespace: nfs-gateway
+roleRef:
+  kind: Role
+  name: read-images-bucket-creds
+  apiGroup: rbac.authorization.k8s.io

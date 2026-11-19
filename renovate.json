@@ -85,7 +85,7 @@
       "enabled": false
     },
     {
-      "description": "Automerge minor, patch and digest updates once they are 2 days old, during the day. Renovate waits for the validate check to pass; majors stay manual. Renovate only gets release dates for Docker Hub images (and Helm charts, Go modules etc.); without minimumReleaseAgeBehaviour timestamp-optional, updates from ghcr.io, quay.io, lscr.io and code.forgejo.org never pass the age check and sit under 'Pending Status Checks' forever. Those now go through without the 2-day wait.",
+      "description": "Automerge minor, patch and digest updates once they are 2 days old, during the day. internalChecksFilter none opens the PR right away, with a pending renovate/stability-days check that blocks the automerge until the 2 days are up, so pending updates are visible and can be merged by hand early. Renovate waits for the validate check to pass; majors stay manual. Renovate only gets release dates for Docker Hub images (and Helm charts, Go modules etc.); without minimumReleaseAgeBehaviour timestamp-optional, updates from ghcr.io, quay.io, lscr.io and code.forgejo.org never pass the age check. Those go through without the 2-day wait.",
       "matchUpdateTypes": [
         "minor",
         "patch",
@@ -97,6 +97,7 @@
       "automergeType": "pr",
       "minimumReleaseAge": "2 days",
       "minimumReleaseAgeBehaviour": "timestamp-optional",
+      "internalChecksFilter": "none",
       "automergeSchedule": [
         "* 9-19 * * *"
       ]
