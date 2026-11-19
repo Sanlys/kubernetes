@@ -27,6 +27,13 @@ spec:
         cluster:
           instances: 3
 
+          # Pinned instead of the chart default (the legacy rolling
+          # postgresql:16 tag, frozen at 16.15 on Debian bullseye). The
+          # cluster was initdb'd with C collation, so the move to bookworm's
+          # glibc does not affect index ordering. Renovate keeps this current
+          # within 16.x via the customManager in renovate.json.
+          imageName: ghcr.io/cloudnative-pg/postgresql:16.16-system-bookworm@sha256:f8e727e663ecffc14b906abb40000b7a00b31f3d546f4efe78f8e1c4839d8645
+
           affinity:
             enablePodAntiAffinity: true
             topologyKey: kubernetes.io/hostname
