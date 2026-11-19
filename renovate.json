@@ -91,6 +91,16 @@
         "ghcr.io/tektoncd/operator/**"
       ],
       "groupName": "tekton operator images"
+    },
+    {
+      "description": "Helm in the validate workflow only renders charts for CI; Argo CD uses its own bundled Helm. Stay on Helm 3 (still get 3.x minors/patches) so CI renders like Argo.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchDepNames": [
+        "helm"
+      ],
+      "allowedVersions": "<4"
     }
   ],
   "timezone": "Europe/Oslo",
