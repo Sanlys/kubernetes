@@ -27,7 +27,7 @@ spec:
           # Digest-pinned so every node runs the exact same image; the digest
           # is the one the running pod pulled (imageID, 2026-11-19). Renovate
           # updates tag and digest together.
-          image: code.forgejo.org/forgejo/forgejo:17.0.1@sha256:fcd19ff4ebc85fb098a67e8e1d0d5a84d07dd6e8a23edcfdfd5b71a6178953be
+          image: code.forgejo.org/forgejo/forgejo:17.0.2@sha256:879f4f10a98e3e167b32cde5f7ae3af0163d50bfacf567559a27a0e95a95670c
           env:
             - name: USER_UID
               value: "1000"
