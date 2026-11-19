@@ -12,11 +12,15 @@
 # real bucket. Ganesha just exports that local directory over NFS like
 # any other filesystem; FSAL_VFS has no write-ordering restriction.
 #
-# One EXPORT block per served bucket. Only media-library is wired up so
-# far (replacing sonarr's own broken rclone-serve-nfs loopback); add
-# another block + another rclone mount in deployment.yaml's startup
-# script + another credentials Secret (see secret.enc.yaml) to serve
-# another app's bucket (e.g. immich's immich-external-library).
+# One EXPORT block per served bucket: media-library (read/write, sonarr,
+# qbittorrent) in ganesha.conf, and the photo library
+# immich-external-library (read-only, photoprism) in export-images.conf.
+# The startup script only appends export-images.conf once that bucket's
+# rclone mount is up, so a broken photo mount can never take media-library
+# down with it, and Ganesha never exports the empty mountpoint (PhotoPrism
+# would see an empty library). To serve another bucket: add a key like
+# export-images.conf, another rclone mount in deployment.yaml, and its
+# credentials.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -41,6 +45,19 @@ data:
             Path = "/mnt/s3/media-library";
             Pseudo = "/media-library";
             Access_Type = RW;
+            Protocols = 4;
+            Transports = TCP;
+            Squash = No_Root_Squash;
+            FSAL {
+                    Name = VFS;
+            }
+    }
+  export-images.conf: |
+    EXPORT {
+            Export_Id = 2;
+            Path = "/mnt/s3/immich-external-library";
+            Pseudo = "/immich-external-library";
+            Access_Type = RO;
             Protocols = 4;
             Transports = TCP;
             Squash = No_Root_Squash;
