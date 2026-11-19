@@ -50,7 +50,7 @@ spec:
                 # media-fs pg_num change, with no clear infra-side cause found
                 # by inspecting Ceph directly. --verbose=2 prints per-file
                 # progress so the next run's logs show exactly where time goes.
-                restic backup /data --cache-dir /cache --host syncthing --tag file --verbose=2 || FAIL=1
+                restic backup /data --cache-dir /cache --retry-lock 30m --host syncthing --tag file --verbose=2 || FAIL=1
 
                 # DB dumps land in the SAME repo, tagged "db", one restic
                 # host per app - same place/timeline as the file backups
@@ -77,7 +77,7 @@ spec:
                     rm -f "$TMP"
                     return
                   fi
-                  if ! restic backup "$TMP" --cache-dir /cache --host "$NAME" --tag db; then
+                  if ! restic backup "$TMP" --cache-dir /cache --retry-lock 30m --host "$NAME" --tag db; then
                     echo "FAILED: $NAME dump (restic backup)" >&2
                     FAIL=1
                   fi
@@ -140,7 +140,7 @@ spec:
                   fi
                   kubectl -n "$NS" exec "$POD" -- rm -f "/${BACKUP_FILE}" >/dev/null 2>&1
 
-                  if ! restic backup "$TMP" --cache-dir /cache --host vaultwarden --tag db; then
+                  if ! restic backup "$TMP" --cache-dir /cache --retry-lock 30m --host vaultwarden --tag db; then
                     echo "FAILED: vaultwarden restic backup (db)" >&2
                     FAIL=1
                   fi
@@ -153,7 +153,7 @@ spec:
                     rm -f "$TMP2"
                     return
                   fi
-                  if ! restic backup "$TMP2" --cache-dir /cache --host vaultwarden --tag file; then
+                  if ! restic backup "$TMP2" --cache-dir /cache --retry-lock 30m --host vaultwarden --tag file; then
                     echo "FAILED: vaultwarden restic backup (files)" >&2
                     FAIL=1
                   fi

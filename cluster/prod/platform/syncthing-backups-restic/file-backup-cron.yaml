@@ -212,7 +212,7 @@ spec:
                     echo "FAILED: $NAME tar stream (exec)" >&2; FAIL=1; rm -f "$TMP"; cleanup_snapshot_clone; return
                   fi
 
-                  if ! restic backup "$TMP" --cache-dir /cache --host "$NAME" --tag file; then
+                  if ! restic backup "$TMP" --cache-dir /cache --retry-lock 30m --host "$NAME" --tag file; then
                     echo "FAILED: $NAME restic backup" >&2; FAIL=1
                   fi
 
@@ -333,10 +333,10 @@ spec:
                     rm -f $SQLTMP "$FILETMP"; cleanup_snapshot_clone; return
                   fi
 
-                  if ! restic backup $SQLTMP --cache-dir /cache --host "$NAME" --tag db; then
+                  if ! restic backup $SQLTMP --cache-dir /cache --retry-lock 30m --host "$NAME" --tag db; then
                     echo "FAILED: $NAME restic backup (db)" >&2; FAIL=1
                   fi
-                  if ! restic backup "$FILETMP" --cache-dir /cache --host "$NAME" --tag file; then
+                  if ! restic backup "$FILETMP" --cache-dir /cache --retry-lock 30m --host "$NAME" --tag file; then
                     echo "FAILED: $NAME restic backup (files)" >&2; FAIL=1
                   fi
 

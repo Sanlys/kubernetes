@@ -4,7 +4,12 @@ metadata:
   name: restic-prune
   namespace: syncthing
 spec:
-  schedule: "0 3 * * 0"
+  # Sunday 03:07, not 03:00: at 03:00 it raced the */15 restic-backup for
+  # the repo lock (failed backup job 29911860 on 2026-11-15, AI-025). The
+  # 03:00 backup normally finishes in ~1 min. Both sides also wait for the
+  # lock (--retry-lock) instead of failing: prune takes ~16 min, so the
+  # backups that start meanwhile wait up to 30 min for it.
+  schedule: "7 3 * * 0"
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
@@ -18,7 +23,7 @@ spec:
             - -c
             - |
               restic unlock &&
-              restic forget \
+              restic forget --retry-lock 30m \
                 --keep-hourly=24 \
                 --keep-daily=7 \
                 --keep-weekly=4 \
