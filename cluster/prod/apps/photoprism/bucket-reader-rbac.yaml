@@ -1,0 +1,11 @@
+# No longer used for bucket access (PhotoPrism mounts its library from
+# nfs-gateway, see deployment.yaml), and it has no RoleBindings any more.
+# Kept because the live Deployment still carries serviceAccountName /
+# serviceAccount: bucket-reader from before: removing the field from git
+# doesn't clear it, so deleting this ServiceAccount stops new pods being
+# created ("serviceaccount bucket-reader not found", 2026-11-19).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bucket-reader
+  namespace: photoprism
