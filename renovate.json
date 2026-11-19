@@ -28,12 +28,13 @@
   "customManagers": [
     {
       "customType": "regex",
-      "description": "CNPG imageName inside inline Helm values in Argo CD app.yaml files (the argocd and kubernetes managers don't read those).",
+      "description": "CNPG imageName and the pinned pgbouncer image inside inline Helm values in Argo CD app.yaml files (the argocd and kubernetes managers don't read those).",
       "managerFilePatterns": [
         "/(^|/)app\\.ya?ml$/"
       ],
       "matchStrings": [
-        "imageName:\\s*\"?(?<depName>[a-z0-9./-]+):(?<currentValue>[0-9][^@\"\\s]*)@(?<currentDigest>sha256:[a-f0-9]{64})"
+        "imageName:\\s*\"?(?<depName>[a-z0-9./-]+):(?<currentValue>[0-9][^@\"\\s]*)@(?<currentDigest>sha256:[a-f0-9]{64})",
+        "image:\\s*\"?(?<depName>ghcr\\.io/cloudnative-pg/pgbouncer):(?<currentValue>[0-9][^@\"\\s]*)@(?<currentDigest>sha256:[a-f0-9]{64})"
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
