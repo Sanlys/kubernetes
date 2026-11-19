@@ -101,6 +101,16 @@
         "helm"
       ],
       "allowedVersions": "<4"
+    },
+    {
+      "description": "Node in the validate workflow only runs renovate-config-validator. Track the Node LTS line that Renovate itself supports (26, Active LTS); take 26.x updates, move majors by hand.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchDepNames": [
+        "node"
+      ],
+      "allowedVersions": "<27"
     }
   ],
   "timezone": "Europe/Oslo",
