@@ -22,7 +22,7 @@ spec:
         runAsGroup: 1000
       containers:
         - name: exporter
-          image: python:3.13-alpine
+          image: python:3.15-alpine
           command: ["python3", "/app/exporter.py"]
           ports:
             - name: http
