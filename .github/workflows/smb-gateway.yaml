@@ -16,7 +16,9 @@ permissions:
 jobs:
   integration:
     name: integration (${{ matrix.transport }})
-    runs-on: ubuntu-latest
+    # Pinned: on ubuntu-26.04 (ubuntu-latest since mid-Nov 2026) FUSE mounts in
+    # the test container fail with "fusermount: Permission denied".
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -46,7 +48,9 @@ jobs:
         run: ./test/integration.sh smb-gateway:dev
 
   alerts:
-    runs-on: ubuntu-latest
+    # Pinned: on ubuntu-26.04 (ubuntu-latest since mid-Nov 2026) FUSE mounts in
+    # the test container fail with "fusermount: Permission denied".
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - name: Check and unit-test the PrometheusRule
@@ -55,7 +59,9 @@ jobs:
   # Streaming-read throughput through SMB -> NFS -> rclone -> S3 for a few
   # read settings; results go to the run summary. Informational only.
   bench:
-    runs-on: ubuntu-latest
+    # Pinned: on ubuntu-26.04 (ubuntu-latest since mid-Nov 2026) FUSE mounts in
+    # the test container fail with "fusermount: Permission denied".
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: services/smb-gateway
