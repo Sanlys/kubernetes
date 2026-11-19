@@ -347,7 +347,7 @@ def check_prs(state, report):
 
 
 def check_cve(report):
-    out, err, rc = run(["python3", str(Path(__file__).parent / "cve-watch.py")], timeout=480)  # 15 NVD queries, 6s apart, up to 20s each
+    out, err, rc = run(["python3", str(Path(__file__).parent / "cve-watch.py")], timeout=480)  # 14 NVD queries 6s apart; cve-watch.py stops new ones after 420s
     first_line = out.splitlines()[0] if out else ""
     if rc != 0:
         report.append(f"! CVE check failed: {err or out}")
