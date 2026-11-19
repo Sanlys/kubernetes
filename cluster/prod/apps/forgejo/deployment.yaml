@@ -24,9 +24,10 @@ spec:
           # instead of codeberg.org: on 2026-11-12 codeberg.org's registry
           # answered 403 Forbidden to the cluster's manifest requests, so a
           # VPA-triggered reschedule left the pod in ImagePullBackOff.
-          # Not digest-pinned: the proxy in this environment blocks both
-          # registries, so the digest couldn't be resolved here.
-          image: code.forgejo.org/forgejo/forgejo:17.0.1
+          # Digest-pinned so every node runs the exact same image; the digest
+          # is the one the running pod pulled (imageID, 2026-11-19). Renovate
+          # updates tag and digest together.
+          image: code.forgejo.org/forgejo/forgejo:17.0.1@sha256:fcd19ff4ebc85fb098a67e8e1d0d5a84d07dd6e8a23edcfdfd5b71a6178953be
           env:
             - name: USER_UID
               value: "1000"
