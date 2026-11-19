@@ -93,5 +93,6 @@
       "groupName": "tekton operator images"
     }
   ],
-  "timezone": "Europe/Oslo"
+  "timezone": "Europe/Oslo",
+  "rebaseWhen": "conflicted"
 }
