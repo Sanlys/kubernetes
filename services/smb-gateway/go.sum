@@ -228,6 +228,8 @@ github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWD
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 github.com/willscott/go-nfs-client v0.0.0-20251022144359-801f10d98886 h1:DtrBtkgTJk2XGt4T7eKdKVkd9A5NCevN2e4inLXtsqA=
 github.com/willscott/go-nfs-client v0.0.0-20251022144359-801f10d98886/go.mod h1:Tq++Lr/FgiS3X48q5FETemXiSLGuYMQT2sPjYNPJSwA=
+github.com/willscott/go-nfs-client v0.0.0-20261119163802-435f28074572 h1:5rTDLNB6qC0mEnGfzFu9G/gQx7kUvqJQ1VLZpWACM1E=
+github.com/willscott/go-nfs-client v0.0.0-20261119163802-435f28074572/go.mod h1:Tq++Lr/FgiS3X48q5FETemXiSLGuYMQT2sPjYNPJSwA=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
 go.opentelemetry.io/auto/sdk v1.2.1/go.mod h1:KRTj+aOaElaLi+wW1kO/DZRXwkF4C5xPbEe3ZiIhN7Y=
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.72.0 h1:LxwW/9ctSCv+QkE/cLR7M91ZIkXNMqJtEMi1vCw9U8s=
