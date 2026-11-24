@@ -32,7 +32,7 @@ spec:
           # cluster was initdb'd with C collation, so the move to bookworm's
           # glibc does not affect index ordering. Renovate keeps this current
           # within 16.x via the customManager in renovate.json.
-          imageName: ghcr.io/cloudnative-pg/postgresql:16.16-system-bookworm@sha256:f8e727e663ecffc14b906abb40000b7a00b31f3d546f4efe78f8e1c4839d8645
+          imageName: ghcr.io/cloudnative-pg/postgresql:16.16-system-bookworm@sha256:83525cc7988e0340d9cae6fc06543944fd83c4dbb6bee14609fab18ccd23f88b
 
           affinity:
             enablePodAntiAffinity: true
