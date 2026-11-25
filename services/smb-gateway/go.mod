@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sns v1.48.0
 	github.com/aws/smithy-go v1.28.9
 	github.com/prometheus/client_golang v1.25.0
-	github.com/willscott/go-nfs-client v0.0.0-20251022144359-801f10d98886
+	github.com/willscott/go-nfs-client v0.0.0-20261119163802-435f28074572
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.72.0
 	go.opentelemetry.io/otel v1.47.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.47.0
