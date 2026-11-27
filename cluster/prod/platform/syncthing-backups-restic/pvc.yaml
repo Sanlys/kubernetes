@@ -11,4 +11,8 @@ spec:
       # 1Gi was running at 98% and caused one backup run to fail outright
       # ("no space left on device" mid-snapshot) - restic's local metadata
       # cache grows with the repo's object count over time.
-      storage: 5Gi
+      # 5Gi filled up on 2026-11-27 (~0.15 GiB/day growth, shared by the
+      # backup, file-backup and Backblaze copy jobs) and every Syncthing
+      # file backup failed with "no space left on device" - 20Gi gives
+      # months of headroom at that rate.
+      storage: 20Gi
